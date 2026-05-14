@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getMe, login, register, logout } from './adapters/auth-adapters';
 import AuthPage from './components/AuthPage';
-import TodoPage from './components/TodoPage';
+import TaskPage from './components/TaskPage';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -40,7 +40,7 @@ function App() {
     <main>
       <h1>Todo App</h1>
       {currentUser
-        ? <TodoPage currentUser={currentUser} handleLogout={handleLogout} />
+        ? <TaskPage currentUser={currentUser} handleLogout={handleLogout} />
         : <AuthPage handleLogin={handleLogin} handleRegister={handleRegister} />
       }
     </main>

@@ -9,26 +9,26 @@ const handleFetch = async (url, options = {}) => {
   }
 };
 
-export const fetchAllTodos = async () => {
-  return handleFetch('/api/todos');
+export const fetchAllTasks = async () => {
+  return handleFetch('/api/tasks');
 };
 
-export const createTodo = async (title) => {
-  return handleFetch('/api/todos', {
+export const createTask = async (title) => {
+  return handleFetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title }),
   });
 };
 
-export const updateTodo = async (todo_id, updates) => {
-  return handleFetch(`/api/todos/${todo_id}`, {
+export const updateTask = async (task_id, updates) => {
+  return handleFetch(`/api/tasks/${task_id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   });
 };
 
-export const deleteTodo = async (todo_id) => {
-  return handleFetch(`/api/todos/${todo_id}`, { method: 'DELETE' });
+export const deleteTask = async (task_id) => {
+  return handleFetch(`/api/tasks/${task_id}`, { method: 'DELETE' });
 };
