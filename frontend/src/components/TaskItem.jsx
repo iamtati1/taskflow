@@ -44,15 +44,13 @@ function TaskItem({ task, loadTasks }) {
   return (
     <li
       className="
-        bg-zinc-900
-        border border-zinc-800
-        rounded-2xl
-        p-5
-        shadow-lg
-        flex
-        flex-col
-        gap-4
-      "
+  task-card
+  hover-lift
+  fade-in
+  flex
+  flex-col
+  gap-4
+"
     >
 
       {/* TOP ROW */}
@@ -66,7 +64,15 @@ function TaskItem({ task, loadTasks }) {
             type="checkbox"
             checked={task.is_complete}
             onChange={handleChange}
-            className="mt-1 h-5 w-5"
+            className="
+  mt-1
+  h-5
+  w-5
+  accent-cyan-400
+  cursor-pointer
+  transition
+  hover:scale-110
+"
           />
 
           {/* TASK INFO */}
@@ -74,8 +80,8 @@ function TaskItem({ task, loadTasks }) {
 
             <h3
               className={`text-lg font-semibold ${task.is_complete
-                  ? "line-through text-zinc-500"
-                  : "text-white"
+                ? "task-complete text-cyan-300"
+                : "text-white"
                 }`}
             >
               {task.title}
@@ -104,13 +110,9 @@ function TaskItem({ task, loadTasks }) {
         {/* DELETE BUTTON */}
         <button
           className="
-            bg-red-600
-            hover:bg-red-500
-            transition
-            px-4 py-2
-            rounded-lg
-            font-medium
-          "
+    btn-flow
+    text-sm
+  "
           onClick={handleDelete}
         >
           Delete
@@ -120,14 +122,13 @@ function TaskItem({ task, loadTasks }) {
       {/* OPTIONAL AI BUTTON */}
       <button
         className="
-          bg-blue-600
-          hover:bg-blue-500
-          transition
-          px-4 py-2
-          rounded-lg
-          font-medium
-          self-start
-        "
+    glass-card
+    px-4
+    py-2
+    hover-scale
+    text-cyan-300
+    self-start
+  "
       >
         Generate AI Plan
       </button>

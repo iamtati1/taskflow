@@ -14,11 +14,20 @@ const PORT = process.env.PORT || 8080;
 // ====================================
 // Middleware
 // ====================================
+const cors = require("cors");
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
 
 app.use(cookieSession({
   name: 'session',
-  secret: process.env.SESSION_SECRET,
-  httpOnly: true
+  keys: [process.env.SESSION_SECRET], // IMPORTANT (not "secret")
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: false, // MUST be false in local dev
+  maxAge: 24 * 60 * 60 * 1000 // 1 day
 }));
 
 app.use(express.json());
@@ -27,7 +36,7 @@ app.use(logRoutes);
 // In production, serve the built React app from frontend/dist.
 // In development, Vite's dev server handles the frontend on a separate port
 // and proxies /api requests to this server.
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// app.use(express.static(path.join(__dirname, '../frontend/dist')));
 // ====================================
 // Auth routes
 // ====================================
@@ -61,6 +70,6 @@ app.use(handleError);
 // ====================================
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+// });

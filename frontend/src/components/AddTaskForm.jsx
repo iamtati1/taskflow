@@ -46,17 +46,19 @@ function AddTaskForm({ loadTasks }) {
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-lg">
+    <div className="glass-card p-6 hover-lift fade-in">
 
-      <h2 className="text-2xl font-bold mb-4">
+      <h2 className="heading-flow text-glow mb-4">
         Create New Task
       </h2>
 
-      {errorMessage && (
-        <p className="text-red-400 mb-4">
-          {errorMessage}
-        </p>
-      )}
+      {
+        errorMessage && (
+          <p className="text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4">
+            {errorMessage}
+          </p>
+        )
+      }
 
       <form
         id="add-task-form"
@@ -71,14 +73,14 @@ function AddTaskForm({ loadTasks }) {
           placeholder="What needs to be done?"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700"
+          className="input-flow"
         />
 
         {/* PRIORITY */}
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
-          className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700"
+          className="input-flow"
         >
           <option value="low">Low Priority</option>
           <option value="medium">Medium Priority</option>
@@ -89,14 +91,19 @@ function AddTaskForm({ loadTasks }) {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 hover:bg-blue-500 p-3 rounded-lg font-semibold"
+          className="
+  btn-flow
+  w-full
+  font-semibold
+  hover-scale
+"
         >
           {isLoading
             ? "Adding Task..."
             : "Add Task"}
         </button>
       </form>
-    </div>
+    </div >
   );
 }
 

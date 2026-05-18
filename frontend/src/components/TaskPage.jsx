@@ -42,16 +42,19 @@ function TaskPage({ currentUser, handleLogout }) {
       : 0;
 
   return (
-    <section className="min-h-screen bg-zinc-950 text-white relative">
+    <section className="relative min-h-screen text-white overflow-hidden">
 
       {/* subtle background depth */}
-      <div className="fixed inset-0 bg-gradient-to-b from-zinc-900/40 via-zinc-950 to-zinc-950 pointer-events-none" />
+      <div className="absolute inset-0 bg-drift">
+        <div className="bg-glow w-[400px] h-[400px] bg-cyan-500 top-[-120px] left-[-120px]" />
+        <div className="bg-glow w-[500px] h-[500px] bg-violet-500 bottom-[-150px] right-[-150px]" />
+      </div>
 
       {/* centered layout */}
-      <div className="relative max-w-5xl mx-auto p-6 space-y-6">
+      <div className="relative z-10 container-flow space-y-6">
 
         {/* USER BAR */}
-        <div className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
+        <div className="glass-card p-4 flex items-center justify-between">
           <span className="text-sm text-zinc-300">
             Welcome,{" "}
             <span className="text-white font-semibold">
@@ -61,14 +64,14 @@ function TaskPage({ currentUser, handleLogout }) {
 
           <button
             onClick={handleLogout}
-            className="bg-red-500/80 hover:bg-red-500 transition px-3 py-1 rounded-lg text-sm"
+            className="btn-flow text-sm"
           >
             Log Out
           </button>
         </div>
 
         {/* ADD TASK */}
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
+        <div className="glass-card p-4">
           <AddTaskForm loadTasks={loadTasks} />
         </div>
 
@@ -94,7 +97,7 @@ function TaskPage({ currentUser, handleLogout }) {
         />
 
         {/* TASKS */}
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
+        <div className="glass-card p-4">
           <TaskList
             tasks={tasks}
             loadTasks={loadTasks}
@@ -106,7 +109,7 @@ function TaskPage({ currentUser, handleLogout }) {
         <AIPlanCard task={selectedTask} />
 
       </div>
-    </section>
+    </section >
   );
 }
 

@@ -1,185 +1,220 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+
+/* =========================
+   🌊 FLOW UI DESIGN SYSTEM
+   ========================= */
+
+/* 🌌 GLOBAL BACKGROUND */
 body {
-  font-family: system-ui, sans-serif;
-  background: #f5f5f5;
-  color: #1a1a1a;
+  @apply min-h-screen text-white overflow-x-hidden;
+  background: radial-gradient(circle at top left, #0b1220, #020617 40%, #0f172a 100%);
 }
 
-main {
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+/* =========================
+   🎨 ANIMATED BACKGROUND
+   ========================= */
+
+@keyframes slow-drift {
+  0% {
+    transform: translate(0px, 0px);
+  }
+
+  50% {
+    transform: translate(20px, -30px);
+  }
+
+  100% {
+    transform: translate(0px, 0px);
+  }
 }
 
-h1 {
-  font-size: 1.75rem;
-  margin-bottom: 1.5rem;
-  color: #1d4ed8;
+.bg-drift {
+  animation: slow-drift 20s ease-in-out infinite;
 }
 
-/* Auth forms */
-#auth-section {
-  display: flex;
-  gap: 1.5rem;
+.bg-glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.35;
+  animation: slow-drift 18s ease-in-out infinite;
 }
 
-form {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  flex: 1;
+/* =========================
+   🧊 GLASS CARDS
+   ========================= */
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s ease;
 }
 
-form h2 {
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-  color: #374151;
+.glass-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
 }
 
-form input {
-  display: block;
-  width: 100%;
-  padding: 0.5rem;
-  margin-bottom: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.95rem;
-}
+/* =========================
+   🔘 FLOW BUTTONS
+   ========================= */
 
-form button[type='submit'] {
-  background: #1d4ed8;
+.btn-flow {
+  background: linear-gradient(135deg, #06b6d4, #2563eb);
   color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 0.9rem;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
 }
 
-.error {
-  color: #dc2626;
-  font-size: 0.85rem;
-  margin-bottom: 0.5rem;
+.btn-flow:hover {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 20px 40px rgba(124, 58, 237, 0.35);
 }
 
-/* Logged-in view */
-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+/* =========================
+   ✨ INPUTS
+   ========================= */
+
+.input-flow {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: white;
+  outline: none;
+  transition: all 0.2s ease;
 }
 
-#user-controls {
+.input-flow:focus {
+  border-color: rgba(34, 211, 238, 0.7);
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+}
+
+/* =========================
+   🌬️ MICRO INTERACTIONS
+   ========================= */
+
+.hover-lift {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+}
+
+.hover-scale {
+  transition: all 0.3s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.03);
+}
+
+/* =========================
+   🌈 TEXT SYSTEM
+   ========================= */
+
+.heading-flow {
+  font-size: 1.85rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #22d3ee, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-glow {
+  text-shadow: 0 0 25px rgba(34, 211, 238, 0.25);
+}
+
+/* =========================
+   📦 LAYOUT SYSTEM
+   ========================= */
+
+.container-flow {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* =========================
+   🧠 TASK CARDS
+   ========================= */
+
+.task-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: white;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  transition: all 0.25s ease;
 }
 
-#user-controls button {
-  background: #dc2626;
-  color: white;
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
+.task-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
-/* Add todo form */
-#add-todo-form {
-  display: flex;
-  gap: 0.5rem;
-  background: white;
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  flex-direction: column;
-}
-
-#add-todo-form label {
-  font-size: 0.9rem;
-  color: #374151;
-  display: none;
-}
-
-#add-todo-form input {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  margin-bottom: 0;
-}
-
-#add-todo-form button {
-  background: #1d4ed8;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.95rem;
-}
-
-/* Todo list */
-#todo-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.todo-item {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.todo-item input[type='checkbox'] {
-  width: 1rem;
-  height: 1rem;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.todo-item span {
-  flex: 1;
-  font-size: 0.95rem;
-}
-
-.todo-item span.completed {
+.task-complete {
   text-decoration: line-through;
-  color: #9ca3af;
+  opacity: 0.5;
 }
 
-.delete-btn {
-  background: #dc2626;
-  color: white;
-  border: none;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  flex-shrink: 0;
+/* =========================
+   🧩 EMPTY STATE
+   ========================= */
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-@media (min-width: 480px) {
-  #add-todo-form {
-    flex-direction: row;
-    align-items: flex-end;
+/* =========================
+   ⚡ ANIMATIONS
+   ========================= */
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+/* =========================
+   📱 RESPONSIVE
+   ========================= */
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
   }
 }

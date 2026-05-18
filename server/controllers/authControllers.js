@@ -20,7 +20,7 @@ module.exports.register = async (req, res, next) => {
 
     const user = await userModel.create(username, password);
 
-    req.session.user_id = user.user_id;
+    req.session.userId = user.user_id;
 
     res.status(201).send(user);
   } catch (err) {
@@ -47,7 +47,7 @@ module.exports.login = async (req, res, next) => {
       });
     }
 
-    req.session.user_id = user.user_id;
+    req.session.userId = user.user_id;
 
     res.send(user);
   } catch (err) {
@@ -60,13 +60,15 @@ module.exports.login = async (req, res, next) => {
 // can always call response.json() without hitting a parse error.
 module.exports.getMe = async (req, res, next) => {
   try {
-    if (!req.session.user_id) {
+    if (!req.session.userId) {
       return res.json(null);
     }
 
-    const user = await userModel.find(req.session.user_id);
+    const user = await userModel.find(req.session.userId);
 
-    res.json(user);
+    return res.json({
+      user
+    });
   } catch (err) {
     next(err);
   }
