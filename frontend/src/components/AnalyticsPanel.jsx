@@ -14,11 +14,9 @@ function AnalyticsPanel({
     }
 
     return (
-        <div className="flow-card p-5 space-y-6 hover-lift">
+        <div className="flow-card p-5 space-y-5 hover-lift">
 
-            {/* =========================
-                HEADER
-            ========================= */}
+            {/* HEADER */}
             <div className="space-y-1">
                 <h2 className="text-section">
                     Progress Overview
@@ -27,47 +25,37 @@ function AnalyticsPanel({
                 <div className="accent-line" />
             </div>
 
-            {/* =========================
-                METRICS GRID
-            ========================= */}
+            {/* METRICS */}
             <div className="grid grid-cols-3 gap-4 text-center">
 
-                <div className="space-y-1">
+                <div>
                     <p className="stat-label">Total</p>
                     <p className="stat-number">{totalTasks}</p>
                 </div>
 
-                <div className="space-y-1">
+                <div>
                     <p className="stat-label">Done</p>
-                    <p className="stat-number text-cyan-300">
-                        {completedTasks}
-                    </p>
+                    <p className="stat-number">{completedTasks}</p>
                 </div>
 
-                <div className="space-y-1">
+                <div>
                     <p className="stat-label">Rate</p>
-                    <p className="stat-number text-violet-300">
-                        {completionRate}%
-                    </p>
+                    <p className="stat-number">{completionRate}%</p>
                 </div>
 
             </div>
 
-            {/* =========================
-                DIVIDER
-            ========================= */}
+            {/* DIVIDER */}
             <div className="divider-soft" />
 
-            {/* =========================
-                INSIGHT SECTION
-            ========================= */}
-            <div className="space-y-3">
+            {/* INSIGHT */}
+            <div className="space-y-2">
 
                 <p className="text-body leading-relaxed">
                     {insight}
                 </p>
 
-                <p className="text-muted text-xs">
+                <p className="text-muted">
                     Based on your current task completion patterns
                 </p>
 

@@ -15,9 +15,7 @@ function AddTaskForm({ loadTasks }) {
     setIsLoading(true);
     setErrorMessage(null);
 
-    const taskData = { title, priority };
-
-    const { error } = await createTask(taskData);
+    const { error } = await createTask({ title, priority });
 
     if (error) {
       setErrorMessage("Could not create task.");
@@ -33,20 +31,9 @@ function AddTaskForm({ loadTasks }) {
   };
 
   return (
-    <div className="flow-card p-6 space-y-5 hover-lift fade-in">
+    <div className="space-y-4">
 
-      {/* HEADER */}
-      <div className="space-y-1">
-        <h2 className="text-title text-cyan-300">
-          Create New Task
-        </h2>
-
-        <p className="text-muted">
-          Add a task to your workflow
-        </p>
-      </div>
-
-      {/* ERROR */}
+      {/* ERROR ONLY */}
       {errorMessage && (
         <div className="flow-card border border-red-500/20 bg-red-500/10 text-red-300 p-3">
           {errorMessage}
@@ -57,11 +44,9 @@ function AddTaskForm({ loadTasks }) {
       <form onSubmit={handleSubmit} className="space-y-4">
 
         <input
-          type="text"
-          name="title"
-          placeholder="What needs to be done?"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          placeholder="What needs to be done?"
           className="input-flow"
         />
 
@@ -78,8 +63,7 @@ function AddTaskForm({ loadTasks }) {
         <button
           type="submit"
           disabled={isLoading}
-          className={`btn-flow w-full hover-scale ${isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+          className={`btn-flow w-full ${isLoading ? "opacity-50" : ""}`}
         >
           {isLoading ? "Adding Task..." : "Add Task"}
         </button>

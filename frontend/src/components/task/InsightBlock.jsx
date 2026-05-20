@@ -13,21 +13,16 @@ function InsightBlock({
 
             <div className="space-y-6">
 
-                <div className="flow-card p-5 hover-lift">
-                    <AnalyticsPanel
-                        totalTasks={tasks.length}
-                        completedTasks={completedTasks}
-                        completionRate={completionRate}
-                    />
-                </div>
+                {/* NO WRAPPER CARDS HERE — THEY OWN THEIR OWN STYLE */}
+                <AnalyticsPanel
+                    totalTasks={tasks.length}
+                    completedTasks={completedTasks}
+                    completionRate={completionRate}
+                />
 
-                <div className="flow-card p-5 hover-lift">
-                    <MotivationalCard tasks={tasks} />
-                </div>
+                <MotivationalCard tasks={tasks} />
 
-                <div className="flow-card p-5 hover-lift">
-                    <AIPlanCard task={selectedTask} />
-                </div>
+                <AIPlanCard task={selectedTask} />
 
             </div>
 
