@@ -1,19 +1,21 @@
-import { useState, useEffect } from 'react';
-import { getTasks } from '../adapters/task-adapters';
-
-import AddTaskForm from './AddTaskForm';
-import TaskList from './TaskList';
-import MotivationalCard from "./MotivationalCard";
-import AnalyticsPanel from './AnalyticsPanel';
-import AIPlanCard from './AIPlanCard';
+import { useState, useEffect } from "react";
+import { getTasks } from "../adapters/task-adapters";
+import ExecutionBlock from "./task/ExecutionBlock";
+import InsightBlock from "./task/InsightBlock";
+import { LayoutDashboard, LogOut } from "lucide-react";
 
 function TaskPage({ currentUser, handleLogout }) {
+  // =========================
+  // STATE
+  // =========================
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
 
-  // Fetch tasks
+  // =========================
+  // DATA FETCH
+  // =========================
   const loadTasks = async () => {
     setIsLoading(true);
     setError(null);
@@ -33,83 +35,124 @@ function TaskPage({ currentUser, handleLogout }) {
     loadTasks();
   }, []);
 
-  // analytics
-  const completedTasks = tasks.filter(t => t.is_complete).length;
+  // =========================
+  // DERIVED STATE
+  // =========================
+  const completedTasks = tasks.filter((t) => t.is_complete).length;
   const totalTasks = tasks.length;
+
   const completionRate =
-    totalTasks > 0
-      ? Math.round((completedTasks / totalTasks) * 100)
-      : 0;
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  return (
-    <section className="relative min-h-screen text-white overflow-hidden">
-
-      {/* subtle background depth */}
-      <div className="absolute inset-0 bg-drift">
-        <div className="bg-glow w-[400px] h-[400px] bg-cyan-500 top-[-120px] left-[-120px]" />
-        <div className="bg-glow w-[500px] h-[500px] bg-violet-500 bottom-[-150px] right-[-150px]" />
+  // =========================
+  // STATS SECTION
+  // =========================
+  const StatsStrip = () => (
+    <section className="dashboard-grid">
+      <div className="flow-card p-6 hover-lift">
+        <p className="stat-label">Total Tasks</p>
+        <h3 className="stat-number">{totalTasks}</h3>
       </div>
 
-      {/* centered layout */}
-      <div className="relative z-10 container-flow space-y-6">
+      <div className="flow-card p-6 hover-lift">
+        <p className="stat-label">Completed</p>
+        <h3 className="stat-number text-cyan-400">{completedTasks}</h3>
+      </div>
 
-        {/* USER BAR */}
-        <div className="glass-card p-4 flex items-center justify-between">
-          <span className="text-sm text-zinc-300">
-            Welcome,{" "}
-            <span className="text-white font-semibold">
-              {currentUser.username}
-            </span>
-          </span>
+      <div className="flow-card p-6 hover-lift">
+        <p className="stat-label">Productivity Score</p>
+        <h3 className="stat-number text-violet-300">
+          {completionRate}%
+        </h3>
+      </div>
+    </section>
+  );
 
-          <button
-            onClick={handleLogout}
-            className="btn-flow text-sm"
-          >
-            Log Out
-          </button>
-        </div>
+  // =========================
+  // HERO SECTION
+  // =========================
+  const HeroSection = () => (
+    <section className="dashboard-section">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <LayoutDashboard className="text-cyan-400" />
+            <h1 className="text-hero heading-flow">
+              Flow Dashboard
+            </h1>
+          </div>
 
-        {/* ADD TASK */}
-        <div className="glass-card p-4">
-          <AddTaskForm loadTasks={loadTasks} />
-        </div>
-
-        {/* LOADING / ERROR */}
-        {isLoading && (
-          <p className="text-zinc-400">Loading tasks...</p>
-        )}
-
-        {error && (
-          <p className="text-red-400">
-            Something went wrong: {error}
+          <p className="text-body mt-2 max-w-xl">
+            Organize priorities, build momentum, and execute consistently.
           </p>
-        )}
-
-        {/* MOTIVATION */}
-        <MotivationalCard tasks={tasks} />
-
-        {/* ANALYTICS */}
-        <AnalyticsPanel
-          totalTasks={totalTasks}
-          completedTasks={completedTasks}
-          completionRate={completionRate}
-        />
-
-        {/* TASKS */}
-        <div className="glass-card p-4">
-          <TaskList
-            tasks={tasks}
-            loadTasks={loadTasks}
-            setSelectedTask={setSelectedTask}
-          />
         </div>
 
-        {/* AI */}
-        <AIPlanCard task={selectedTask} />
-
+        <button onClick={handleLogout} className="btn-secondary">
+          <LogOut size={16} />
+          Log Out
+        </button>
       </div>
-    </section >
+
+      <div className="flow-card p-5 flex items-center justify-between">
+        <div>
+          <p className="text-muted uppercase tracking-wider">
+            Logged in as
+          </p>
+          <h2 className="text-section mt-1">
+            {currentUser.username}
+          </h2>
+        </div>
+
+        <div className="text-right">
+          <p className="text-muted uppercase tracking-wider">
+            Completion Rate
+          </p>
+          <h2 className="stat-number text-cyan-400">
+            {completionRate}%
+          </h2>
+        </div>
+      </div>
+    </section>
+  );
+
+  // =========================
+  // MAIN UI
+  // =========================
+  return (
+    <section className="min-h-screen relative overflow-hidden">
+      {/* background glow */}
+      <div className="bg-glow w-96 h-96 bg-cyan-500 top-0 left-1/3" />
+      <div className="bg-glow w-96 h-96 bg-violet-500 bottom-0 right-1/4" />
+
+      <div className="container-flow dashboard-section">
+        <HeroSection />
+
+        <div className="divider" />
+
+        <StatsStrip />
+
+        <section className="grid grid-cols-1 xl:grid-cols-12 gap-10 mt-6">
+          <div className="xl:col-span-8">
+            <ExecutionBlock
+              tasks={tasks}
+              isLoading={isLoading}
+              error={error}
+              loadTasks={loadTasks}
+              setSelectedTask={setSelectedTask}
+            />
+          </div>
+
+          <div className="xl:col-span-4">
+            <InsightBlock
+              tasks={tasks}
+              completedTasks={completedTasks}
+              completionRate={completionRate}
+              selectedTask={selectedTask}
+            />
+          </div>
+        </section>
+      </div>
+    </section>
   );
 }
 

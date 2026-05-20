@@ -1,6 +1,4 @@
 function WelcomeBanner({ currentUser }) {
-
-    // 👋 OPTIONAL TIME-BASED GREETING
     const hour = new Date().getHours();
 
     let greeting = "Welcome";
@@ -14,14 +12,22 @@ function WelcomeBanner({ currentUser }) {
     }
 
     return (
-        <div>
+        <div className="space-y-2">
 
-            <h1 className="text-4xl font-bold">
-                {greeting}, {currentUser.username}
+            {/* MAIN HEADER */}
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+                {greeting},{" "}
+                <span className="text-cyan-300">
+                    {currentUser?.username || "there"}
+                </span>
             </h1>
 
-            <p className="text-zinc-400 mt-2">
-                Stay focused. Small progress compounds.
+            {/* ACCENT LINE */}
+            <div className="w-16 h-px bg-cyan-400/40" />
+
+            {/* SUBTEXT */}
+            <p className="text-zinc-400 text-sm md:text-base max-w-md leading-relaxed">
+                Stay focused. Small progress compounds over time.
             </p>
 
         </div>

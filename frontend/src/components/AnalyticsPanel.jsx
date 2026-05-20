@@ -3,8 +3,6 @@ function AnalyticsPanel({
     completedTasks = 0,
     completionRate = 0,
 }) {
-
-    // 🔥 SIMPLE INSIGHT LOGIC
     let insight = "Start completing tasks to see insights.";
 
     if (totalTasks > 0 && completionRate === 100) {
@@ -16,43 +14,65 @@ function AnalyticsPanel({
     }
 
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg">
+        <div className="flow-card p-5 space-y-6 hover-lift">
 
-            <h2 className="text-xl font-bold mb-4">
-                Progress Overview
-            </h2>
+            {/* =========================
+                HEADER
+            ========================= */}
+            <div className="space-y-1">
+                <h2 className="text-section">
+                    Progress Overview
+                </h2>
 
-            {/* STATS */}
-            <div className="space-y-2 text-zinc-300">
-
-                <p>
-                    Total Tasks:{" "}
-                    <span className="text-white font-semibold">
-                        {totalTasks}
-                    </span>
-                </p>
-
-                <p>
-                    Completed:{" "}
-                    <span className="text-white font-semibold">
-                        {completedTasks}
-                    </span>
-                </p>
-
-                <p>
-                    Completion Rate:{" "}
-                    <span className="text-white font-semibold">
-                        {completionRate}%
-                    </span>
-                </p>
+                <div className="accent-line" />
             </div>
 
-            {/* INSIGHT BOX */}
-            <div className="mt-4 p-3 bg-zinc-800 rounded-lg">
-                <p className="text-sm text-zinc-300">
+            {/* =========================
+                METRICS GRID
+            ========================= */}
+            <div className="grid grid-cols-3 gap-4 text-center">
+
+                <div className="space-y-1">
+                    <p className="stat-label">Total</p>
+                    <p className="stat-number">{totalTasks}</p>
+                </div>
+
+                <div className="space-y-1">
+                    <p className="stat-label">Done</p>
+                    <p className="stat-number text-cyan-300">
+                        {completedTasks}
+                    </p>
+                </div>
+
+                <div className="space-y-1">
+                    <p className="stat-label">Rate</p>
+                    <p className="stat-number text-violet-300">
+                        {completionRate}%
+                    </p>
+                </div>
+
+            </div>
+
+            {/* =========================
+                DIVIDER
+            ========================= */}
+            <div className="divider-soft" />
+
+            {/* =========================
+                INSIGHT SECTION
+            ========================= */}
+            <div className="space-y-3">
+
+                <p className="text-body leading-relaxed">
                     {insight}
                 </p>
+
+                <p className="text-muted text-xs">
+                    Based on your current task completion patterns
+                </p>
+
             </div>
+
         </div>
     );
 }

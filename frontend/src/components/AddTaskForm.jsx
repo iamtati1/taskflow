@@ -1,14 +1,10 @@
 import { useState } from "react";
-
 import { createTask } from "../adapters/task-adapters";
 
 function AddTaskForm({ loadTasks }) {
   const [title, setTitle] = useState("");
-
   const [priority, setPriority] = useState("medium");
-
   const [isLoading, setIsLoading] = useState(false);
-
   const [errorMessage, setErrorMessage] = useState(null);
 
   const handleSubmit = async (e) => {
@@ -17,56 +13,49 @@ function AddTaskForm({ loadTasks }) {
     if (!title.trim()) return;
 
     setIsLoading(true);
-
     setErrorMessage(null);
 
-    const taskData = {
-      title,
-      priority,
-    };
+    const taskData = { title, priority };
 
     const { error } = await createTask(taskData);
 
     if (error) {
       setErrorMessage("Could not create task.");
-
       setIsLoading(false);
-
       return;
     }
 
-    // 🔥 REFETCH TASKS
     await loadTasks();
 
-    // 🔥 RESET FORM
     setTitle("");
     setPriority("medium");
-
     setIsLoading(false);
   };
 
   return (
-    <div className="glass-card p-6 hover-lift fade-in">
+    <div className="flow-card p-6 space-y-5 hover-lift fade-in">
 
-      <h2 className="heading-flow text-glow mb-4">
-        Create New Task
-      </h2>
+      {/* HEADER */}
+      <div className="space-y-1">
+        <h2 className="text-title text-cyan-300">
+          Create New Task
+        </h2>
 
-      {
-        errorMessage && (
-          <p className="text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4">
-            {errorMessage}
-          </p>
-        )
-      }
+        <p className="text-muted">
+          Add a task to your workflow
+        </p>
+      </div>
 
-      <form
-        id="add-task-form"
-        onSubmit={handleSubmit}
-        className="space-y-4"
-      >
+      {/* ERROR */}
+      {errorMessage && (
+        <div className="flow-card border border-red-500/20 bg-red-500/10 text-red-300 p-3">
+          {errorMessage}
+        </div>
+      )}
 
-        {/* TASK TITLE */}
+      {/* FORM */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+
         <input
           type="text"
           name="title"
@@ -76,7 +65,6 @@ function AddTaskForm({ loadTasks }) {
           className="input-flow"
         />
 
-        {/* PRIORITY */}
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
@@ -87,23 +75,17 @@ function AddTaskForm({ loadTasks }) {
           <option value="high">High Priority</option>
         </select>
 
-        {/* BUTTON */}
         <button
           type="submit"
           disabled={isLoading}
-          className="
-  btn-flow
-  w-full
-  font-semibold
-  hover-scale
-"
+          className={`btn-flow w-full hover-scale ${isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
         >
-          {isLoading
-            ? "Adding Task..."
-            : "Add Task"}
+          {isLoading ? "Adding Task..." : "Add Task"}
         </button>
+
       </form>
-    </div >
+    </div>
   );
 }
 

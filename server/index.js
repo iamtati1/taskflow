@@ -7,6 +7,7 @@ const logRoutes = require('./middleware/logRoutes');
 const checkAuthentication = require('./middleware/checkAuthentication');
 const authControllers = require('./controllers/authControllers');
 const taskControllers = require('./controllers/taskControllers');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -14,7 +15,6 @@ const PORT = process.env.PORT || 8080;
 // ====================================
 // Middleware
 // ====================================
-const cors = require("cors");
 
 app.use(cors({
   origin: "http://localhost:5173",
@@ -23,11 +23,11 @@ app.use(cors({
 
 app.use(cookieSession({
   name: 'session',
-  keys: [process.env.SESSION_SECRET], // IMPORTANT (not "secret")
+  keys: [process.env.SESSION_SECRET],
+  maxAge: 24 * 60 * 60 * 1000,
   httpOnly: true,
   sameSite: 'lax',
-  secure: false, // MUST be false in local dev
-  maxAge: 24 * 60 * 60 * 1000 // 1 day
+  secure: false
 }));
 
 app.use(express.json());

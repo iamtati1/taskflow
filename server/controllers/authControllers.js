@@ -5,7 +5,7 @@ module.exports.register = async (req, res, next) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).send({
+      return res.status(400).json({
         error: 'Username and password are required.'
       });
     }
@@ -13,16 +13,20 @@ module.exports.register = async (req, res, next) => {
     const existingUser = await userModel.findByUsername(username);
 
     if (existingUser) {
-      return res.status(400).send({
+      return res.status(400).json({
         error: 'Username already taken.'
       });
     }
 
     const user = await userModel.create(username, password);
 
-    req.session.userId = user.user_id;
+    // ✅ CONSISTENT SESSION KEY
+    req.session.user_id = user.user_id;
 
-    res.status(201).send(user);
+    return res.status(201).json({
+      user
+    });
+
   } catch (err) {
     next(err);
   }
@@ -32,9 +36,8 @@ module.exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
-    // Missing in your current version
     if (!username || !password) {
-      return res.status(400).send({
+      return res.status(400).json({
         error: 'Username and password are required.'
       });
     }
@@ -42,33 +45,35 @@ module.exports.login = async (req, res, next) => {
     const user = await userModel.validatePassword(username, password);
 
     if (!user) {
-      return res.status(401).send({
+      return res.status(401).json({
         error: 'Invalid credentials.'
       });
     }
 
-    req.session.userId = user.user_id;
+    // ✅ FIXED (was userId before — this breaks everything)
+    req.session.user_id = user.user_id;
 
-    res.send(user);
+    return res.json({
+      user
+    });
+
   } catch (err) {
     next(err);
   }
 };
 
-// Returns the logged-in user object, or null if no session exists.
-// Returning JSON null (200) keeps the response format consistent — the frontend
-// can always call response.json() without hitting a parse error.
 module.exports.getMe = async (req, res, next) => {
   try {
-    if (!req.session.userId) {
-      return res.json(null);
+    if (!req.session.user_id) {
+      return res.json({ user: null });
     }
 
-    const user = await userModel.find(req.session.userId);
+    const user = await userModel.find(req.session.user_id);
 
     return res.json({
       user
     });
+
   } catch (err) {
     next(err);
   }
@@ -77,7 +82,7 @@ module.exports.getMe = async (req, res, next) => {
 module.exports.logout = (req, res) => {
   req.session = null;
 
-  res.send({
-    message: 'Logged out.'
+  return res.json({
+    message: 'Logged out'
   });
 };

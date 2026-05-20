@@ -1,159 +1,153 @@
 import { useState } from "react";
 
-function LoginForm({ handleLogin }) {
+function AuthForm({
+  title,
+  buttonText,
+  onSubmit,
+  isLoading,
+  errorMessage,
+  variant = "primary"
+}) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    const error = await handleLogin(username, password);
-
-    if (error) {
-      setErrorMessage("Invalid username or password.");
-    }
-
-    setIsLoading(false);
+    await onSubmit(username, password);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-2xl font-bold">Log In</h2>
 
-      <input
-        type="text"
-        placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        required
-        className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700"
-      />
+      <h2 className="text-2xl font-bold tracking-tight">
+        {title}
+      </h2>
 
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700"
-      />
+      <div className="space-y-3">
+
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+          className="input-flow"
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="input-flow"
+        />
+
+      </div>
 
       {errorMessage && (
-        <p className="text-red-400 text-sm">
+        <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
           {errorMessage}
-        </p>
+        </div>
       )}
 
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-500 p-3 rounded-lg"
+        className={`
+          btn-flow w-full
+          ${variant === "secondary" ? "opacity-90" : ""}
+        `}
       >
-        {isLoading ? "Loading..." : "Log In"}
+        {isLoading ? "Loading..." : buttonText}
       </button>
-    </form>
-  );
-}
 
-function RegisterForm({ handleRegister }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    const error = await handleRegister(username, password);
-
-    if (error) {
-      setErrorMessage(
-        "Could not register. Username may already be taken."
-      );
-    }
-
-    setIsLoading(false);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-2xl font-bold">Register</h2>
-
-      <input
-        type="text"
-        placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        required
-        className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700"
-      />
-
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700"
-      />
-
-      {errorMessage && (
-        <p className="text-red-400 text-sm">
-          {errorMessage}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-green-600 hover:bg-green-500 p-3 rounded-lg"
-      >
-        {isLoading ? "Loading..." : "Register"}
-      </button>
     </form>
   );
 }
 
 function AuthPage({ handleLogin, handleRegister }) {
   const [isLoginMode, setIsLoginMode] = useState(true);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const submitLogin = async (username, password) => {
+    setIsLoading(true);
+    setError(null);
+
+    const result = await handleLogin(username, password);
+
+    if (result) {
+      setError("Invalid username or password.");
+    }
+
+    setIsLoading(false);
+  };
+
+  const submitRegister = async (username, password) => {
+    setIsLoading(true);
+    setError(null);
+
+    const result = await handleRegister(username, password);
+
+    if (result) {
+      setError("Could not register. Username may already be taken.");
+    }
+
+    setIsLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-4">
 
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-xl">
+      <div className="w-full max-w-md glass-card p-8 space-y-6 hover-lift">
 
-        <h1 className="text-4xl font-bold text-center mb-2">
-          TaskFlow
-        </h1>
+        {/* HEADER */}
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight">
+            TaskFlow
+          </h1>
 
-        <p className="text-zinc-400 text-center mb-8">
-          Organize your goals. Build consistency.
-        </p>
+          <div className="w-12 h-px bg-cyan-400/40 mx-auto" />
 
+          <p className="text-zinc-400 text-sm">
+            Organize your goals. Build consistency.
+          </p>
+        </div>
+
+        {/* FORM */}
         {isLoginMode ? (
-          <LoginForm handleLogin={handleLogin} />
+          <AuthForm
+            title="Log In"
+            buttonText="Log In"
+            onSubmit={submitLogin}
+            isLoading={isLoading}
+            errorMessage={error}
+            variant="primary"
+          />
         ) : (
-          <RegisterForm handleRegister={handleRegister} />
+          <AuthForm
+            title="Create Account"
+            buttonText="Register"
+            onSubmit={submitRegister}
+            isLoading={isLoading}
+            errorMessage={error}
+            variant="primary"
+          />
         )}
 
-        <div className="mt-6 text-center">
+        {/* TOGGLE */}
+        <div className="text-center pt-2 border-t border-white/10">
           <button
             onClick={() => setIsLoginMode(!isLoginMode)}
-            className="text-blue-400 hover:text-blue-300 text-sm"
+            className="text-sm text-cyan-300 hover:text-cyan-200 transition"
           >
             {isLoginMode
               ? "Need an account? Register"
-              : "Already have an account? Log In"}
+              : "Already have an account? Log in"}
           </button>
         </div>
+
       </div>
     </div>
   );

@@ -2,28 +2,163 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   🌌 FLOW DESIGN SYSTEM — MODERNIZED
+   ========================================================= */
 
-/* =========================
-   🌊 FLOW UI DESIGN SYSTEM
-   ========================= */
+:root {
 
-/* 🌌 GLOBAL BACKGROUND */
-body {
-  @apply min-h-screen text-white overflow-x-hidden;
-  background: radial-gradient(circle at top left, #0b1220, #020617 40%, #0f172a 100%);
+  /* =========================
+     🎨 COLORS
+     ========================= */
+
+  --bg-primary: #050816;
+  --bg-secondary: #0b1120;
+  --bg-tertiary: #111827;
+
+  --flow-cyan: #22d3ee;
+  --flow-blue: #3b82f6;
+  --flow-violet: #8b5cf6;
+  --flow-pink: #ec4899;
+
+  --flow-cyan-soft: rgba(34, 211, 238, 0.12);
+  --flow-violet-soft: rgba(139, 92, 246, 0.12);
+  --flow-pink-soft: rgba(236, 72, 153, 0.10);
+
+  /* =========================
+     ✍️ TYPOGRAPHY
+     ========================= */
+
+  --text-primary: rgba(255, 255, 255, 0.96);
+  --text-secondary: rgba(255, 255, 255, 0.68);
+  --text-muted: rgba(255, 255, 255, 0.42);
+
+  /* =========================
+     🧊 GLASS
+     ========================= */
+
+  --glass-bg: rgba(255, 255, 255, 0.045);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* =========================
+     🌑 SHADOWS
+     ========================= */
+
+  --shadow-soft:
+    0 10px 30px rgba(0, 0, 0, 0.25);
+
+  --shadow-hover:
+    0 25px 80px rgba(0, 0, 0, 0.45);
+
+  /* =========================
+     ✨ GRADIENTS
+     ========================= */
+
+  --gradient-flow:
+    linear-gradient(135deg,
+      var(--flow-cyan),
+      var(--flow-blue),
+      var(--flow-violet));
 }
 
-/* =========================
-   🎨 ANIMATED BACKGROUND
-   ========================= */
+/* =========================================================
+   🌍 GLOBAL BASE
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+
+  color: var(--text-primary);
+
+  overflow-x: hidden;
+
+  background-color: var(--bg-primary);
+
+  background-image:
+    radial-gradient(circle at top left,
+      rgba(34, 211, 238, 0.08),
+      transparent 30%),
+
+    radial-gradient(circle at bottom right,
+      rgba(139, 92, 246, 0.08),
+      transparent 35%),
+
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px),
+
+    linear-gradient(90deg,
+      rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px);
+
+  background-size:
+    auto,
+    auto,
+    40px 40px,
+    40px 40px;
+}
+
+/* =========================================================
+   📦 LAYOUT
+   ========================================================= */
+
+.container-flow {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+
+  padding: 4rem 1.5rem;
+}
+
+.dashboard-section {
+  @apply space-y-6;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.section-divider {
+  @apply border-t border-white/10 pt-6;
+}
+
+.subtle-divider {
+  @apply border-t border-white/5;
+}
+
+/* =========================================================
+   🌌 BACKGROUND EFFECTS
+   ========================================================= */
 
 @keyframes slow-drift {
+
   0% {
     transform: translate(0px, 0px);
   }
 
   50% {
-    transform: translate(20px, -30px);
+    transform: translate(25px, -30px);
   }
 
   100% {
@@ -32,83 +167,314 @@ body {
 }
 
 .bg-drift {
-  animation: slow-drift 20s ease-in-out infinite;
+  animation: slow-drift 22s ease-in-out infinite;
 }
 
 .bg-glow {
   position: absolute;
+
   border-radius: 9999px;
-  filter: blur(80px);
+
+  filter: blur(90px);
+
   opacity: 0.35;
+
   animation: slow-drift 18s ease-in-out infinite;
 }
 
-/* =========================
-   🧊 GLASS CARDS
-   ========================= */
+/* =========================================================
+   🧊 CARD SYSTEM
+   ========================================================= */
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.25rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  transition: all 0.3s ease;
+.flow-card {
+  position: relative;
+
+  overflow: hidden;
+
+  border-radius: 1.75rem;
+
+  background:
+    linear-gradient(145deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.03));
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
 }
 
-.glass-card:hover {
-  transform: translateY(-6px) scale(1.01);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+.flow-card:hover {
+  transform: translateY(-6px);
+
+  border-color: rgba(34, 211, 238, 0.25);
+
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.45),
+    0 0 40px rgba(34, 211, 238, 0.08);
 }
 
-/* =========================
-   🔘 FLOW BUTTONS
-   ========================= */
+.flow-card::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    radial-gradient(circle at top left,
+      rgba(34, 211, 238, 0.08),
+      transparent 60%);
+
+  opacity: 0;
+
+  transition: opacity 0.35s ease;
+}
+
+.flow-card:hover::before {
+  opacity: 1;
+}
+
+/* =========================================================
+   🔘 BUTTON SYSTEM
+   ========================================================= */
 
 .btn-flow {
-  background: linear-gradient(135deg, #06b6d4, #2563eb);
-  color: white;
-  padding: 0.6rem 1rem;
-  border-radius: 0.9rem;
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.5rem;
+
+  min-height: 48px;
+
+  padding: 0 1.25rem;
+
   border: none;
+
+  border-radius: 1rem;
+
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+
+  font-weight: 600;
+
+  letter-spacing: -0.02em;
+
+  color: white;
+
+  background:
+    linear-gradient(135deg,
+      #06b6d4,
+      #2563eb);
+
+  box-shadow:
+    0 10px 25px rgba(37, 99, 235, 0.25);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    opacity 0.25s ease;
 }
 
 .btn-flow:hover {
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 20px 40px rgba(124, 58, 237, 0.35);
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 18px 45px rgba(59, 130, 246, 0.35);
+}
+
+.btn-flow:active {
+  transform: scale(0.98);
 }
 
 /* =========================
-   ✨ INPUTS
+   🔘 SECONDARY BUTTON
    ========================= */
+
+.btn-secondary {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  min-height: 48px;
+
+  padding: 0 1.2rem;
+
+  border-radius: 1rem;
+
+  cursor: pointer;
+
+  color: rgba(255, 255, 255, 0.9);
+
+  background: rgba(255, 255, 255, 0.05);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  transition: all 0.25s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+
+  border-color: rgba(255, 255, 255, 0.16);
+
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   ✨ INPUT SYSTEM
+   ========================================================= */
 
 .input-flow {
   width: 100%;
-  padding: 0.7rem 0.85rem;
-  border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: white;
+
+  padding: 0.95rem 1rem;
+
+  border-radius: 1rem;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
   outline: none;
-  transition: all 0.2s ease;
+
+  color: white;
+
+  background:
+    rgba(255, 255, 255, 0.045);
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.input-flow::placeholder {
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .input-flow:focus {
-  border-color: rgba(34, 211, 238, 0.7);
-  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.55);
+
+  background:
+    rgba(255, 255, 255, 0.06);
+
+  box-shadow:
+    0 0 0 4px rgba(34, 211, 238, 0.10);
 }
 
-/* =========================
-   🌬️ MICRO INTERACTIONS
-   ========================= */
+/* =========================================================
+   🧠 TYPOGRAPHY
+   ========================================================= */
+
+.text-hero {
+  font-size: clamp(3rem, 8vw, 5rem);
+
+  line-height: 0.95;
+
+  font-weight: 800;
+
+  letter-spacing: -0.05em;
+}
+
+.text-title {
+  @apply text-2xl md:text-4xl font-semibold tracking-tight;
+}
+
+.text-section {
+  @apply text-lg font-semibold text-white;
+}
+
+.text-body {
+  @apply text-sm md:text-base leading-relaxed;
+
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  @apply text-xs;
+
+  color: var(--text-muted);
+}
+
+.heading-flow {
+  background:
+    linear-gradient(90deg,
+      #22d3ee,
+      #3b82f6,
+      #8b5cf6);
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-glow {
+  text-shadow:
+    0 0 25px rgba(34, 211, 238, 0.25);
+}
+
+.card-title {
+  @apply text-lg font-semibold tracking-tight text-white;
+}
+
+.card-subtitle {
+  @apply text-sm text-zinc-400 mt-1;
+}
+
+.stat-number {
+  @apply text-3xl md:text-4xl font-bold tracking-tight;
+}
+
+.stat-label {
+  @apply text-xs uppercase tracking-wider text-zinc-500;
+}
+
+/* =========================================================
+   ✨ UTILITIES
+   ========================================================= */
+
+.divider {
+  @apply border-t border-white/10 my-6;
+}
+
+.divider-soft {
+  @apply border-t border-zinc-800 my-4;
+}
+
+.accent-line {
+  width: 40px;
+  height: 2px;
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(90deg,
+      #22d3ee,
+      #3b82f6,
+      #8b5cf6);
+}
+
+/* =========================================================
+   🌬️ INTERACTIONS
+   ========================================================= */
+
+button,
+input,
+.flow-card {
+  will-change: transform;
+}
 
 .hover-lift {
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .hover-lift:hover {
@@ -116,83 +482,23 @@ body {
 }
 
 .hover-scale {
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .hover-scale:hover {
   transform: scale(1.03);
 }
 
-/* =========================
-   🌈 TEXT SYSTEM
-   ========================= */
-
-.heading-flow {
-  font-size: 1.85rem;
-  font-weight: 700;
-  background: linear-gradient(90deg, #22d3ee, #3b82f6, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.text-glow {
-  text-shadow: 0 0 25px rgba(34, 211, 238, 0.25);
-}
-
-/* =========================
-   📦 LAYOUT SYSTEM
-   ========================= */
-
-.container-flow {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-/* =========================
-   🧠 TASK CARDS
-   ========================= */
-
-.task-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: all 0.25s ease;
-}
-
-.task-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-}
-
-.task-complete {
-  text-decoration: line-through;
-  opacity: 0.5;
-}
-
-/* =========================
-   🧩 EMPTY STATE
-   ========================= */
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* =========================
-   ⚡ ANIMATIONS
-   ========================= */
+/* =========================================================
+   ✨ ANIMATIONS
+   ========================================================= */
 
 .fade-in {
   animation: fadeIn 0.5s ease-in-out;
 }
 
 @keyframes fadeIn {
+
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -204,17 +510,33 @@ body {
   }
 }
 
-.ripple {
-  position: relative;
-  overflow: hidden;
+/* =========================================================
+   📭 EMPTY STATE
+   ========================================================= */
+
+.empty-state {
+  text-align: center;
+
+  padding: 3rem;
+
+  color: rgba(255, 255, 255, 0.6);
 }
 
-/* =========================
+/* =========================================================
    📱 RESPONSIVE
-   ========================= */
+   ========================================================= */
 
 @media (max-width: 768px) {
+
+  .container-flow {
+    padding: 2rem 1rem;
+  }
+
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .text-hero {
+    line-height: 1;
   }
 }

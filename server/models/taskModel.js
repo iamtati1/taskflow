@@ -22,16 +22,21 @@ module.exports.createTask = async ({ title, priority, due_date, category_id, use
 };
 
 // Updates is_complete for a task. Returns the updated row.
-module.exports.updateTask = async (
-  task_id, { title, is_complete, priority, due_date, category_id }) => {
-  const query = 'UPDATE tasks SET title = $1, is_complete = $2, priority = $3, due_date = $4, category_id = $5 WHERE task_id = $6 RETURNING * ';
-  const { rows } = await pool.query(query, [title,
-    is_complete,
-    priority,
-    due_date,
-    category_id,
-    task_id
-  ]);
+module.exports.updateTask = async (task_id, fields) => {
+  const { title, is_complete, priority, due_date, category_id } = fields;
+
+  const { rows } = await pool.query(
+    `UPDATE tasks
+     SET title = COALESCE($1, title),
+         is_complete = COALESCE($2, is_complete),
+         priority = COALESCE($3, priority),
+         due_date = COALESCE($4, due_date),
+         category_id = COALESCE($5, category_id)
+     WHERE task_id = $6
+     RETURNING *`,
+    [title, is_complete, priority, due_date, category_id, task_id]
+  );
+
   return rows[0];
 };
 

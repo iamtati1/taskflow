@@ -1,50 +1,42 @@
 function AIPlanCard({ task }) {
-
     if (!task) {
         return (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-                <h2 className="text-xl font-bold mb-2">
-                    AI Task Planner
-                </h2>
-
-                <p className="text-zinc-400">
-                    Select a task to generate a plan.
-                </p>
+            <div className="flow-card p-6 text-muted hover-lift">
+                Select a task to generate an AI execution plan ✨
             </div>
         );
     }
 
-    // 🧠 MOCK AI LOGIC (simple but effective)
-    const generateSteps = (title) => [
-        `Understand what "${title}" requires`,
-        `Break "${title}" into small subtasks`,
-        `Start with the easiest step first`,
-        `Complete and review progress`
-    ];
-
-    const steps = generateSteps(task.title);
-
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg">
+        <div className="flow-card p-6 space-y-4 hover-lift fade-in">
 
-            <h2 className="text-xl font-bold mb-4">
-                AI Task Plan
-            </h2>
+            {/* HEADER */}
+            <div className="space-y-1">
+                <h2 className="text-section">
+                    AI Execution Plan
+                </h2>
 
-            <p className="text-zinc-400 mb-3">
-                Task: <span className="text-white">{task.title}</span>
-            </p>
+                <p className="text-muted">
+                    Strategic breakdown for:
+                </p>
+            </div>
 
-            <ul className="space-y-2">
-                {steps.map((step, index) => (
-                    <li
-                        key={index}
-                        className="bg-zinc-800 p-2 rounded"
-                    >
-                        Step {index + 1}: {step}
-                    </li>
-                ))}
-            </ul>
+            {/* TASK BLOCK */}
+            <div className="flow-card p-4 space-y-3">
+
+                <h3 className="text-title text-cyan-300">
+                    {task.title}
+                </h3>
+
+                <div className="space-y-2 text-body">
+                    <p>1. Break the task into smaller milestones.</p>
+                    <p>2. Allocate focused deep-work time.</p>
+                    <p>3. Remove distractions before starting.</p>
+                    <p>4. Complete the highest-impact portion first.</p>
+                </div>
+
+            </div>
+
         </div>
     );
 }
