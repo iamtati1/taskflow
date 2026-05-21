@@ -1,4 +1,4 @@
-import TaskItem from "./TaskItem";
+import TaskItem from "./task/TaskItem";
 
 function TaskList({ tasks, loadTasks, setSelectedTask }) {
 

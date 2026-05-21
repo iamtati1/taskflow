@@ -1,6 +1,3 @@
-import AddTaskForm from "../AddTaskForm";
-import TaskList from "./TaskList";
-
 function ExecutionBlock({
     tasks,
     isLoading,
@@ -11,23 +8,20 @@ function ExecutionBlock({
     return (
         <div className="space-y-6">
 
-            {/* SECTION LABEL ONLY (NO APP-FEEL TITLE) */}
-            <div className="space-y-1">
-                <p className="text-muted uppercase tracking-wider">
-                    Execution Zone
-                </p>
-            </div>
+            {/* SECTION LABEL */}
+            <p className="text-muted uppercase tracking-wider">
+                Execution Zone
+            </p>
 
-            {/* CREATE TASK FORM */}
-            <div className="flow-card p-6 hover-lift">
+            {/* TASK CREATION */}
+            <div className="flow-card p-6">
                 <AddTaskForm loadTasks={loadTasks} />
             </div>
 
             {/* LOADING */}
             {isLoading && (
-                <div className="flex items-center gap-3 text-muted animate-pulse">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400" />
-                    <p>Loading your workflow...</p>
+                <div className="text-muted animate-pulse">
+                    Loading your workflow...
                 </div>
             )}
 
@@ -39,7 +33,7 @@ function ExecutionBlock({
             )}
 
             {/* TASK LIST */}
-            <div className="flow-card p-6 hover-lift">
+            <div className="flow-card p-6">
                 <TaskList
                     tasks={tasks}
                     loadTasks={loadTasks}
@@ -50,5 +44,3 @@ function ExecutionBlock({
         </div>
     );
 }
-
-export default ExecutionBlock;

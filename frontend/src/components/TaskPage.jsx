@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
-import { getTasks } from "../adapters/task-adapters";
-import ExecutionBlock from "./task/ExecutionBlock";
-import InsightBlock from "./task/InsightBlock";
-import { LogOut } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { getTasks } from '../adapters/task-adapters';
+
+import AddTaskForm from './AddTaskForm';
+import TaskList from "./TaskList";
+import AnalyticsPanel from './AnalyticsPanel';
+import MotivationalCard from './MotivationalCard';
+import AIPlanCard from './AIPlanCard';
 
 function TaskPage({ currentUser, handleLogout }) {
   const [tasks, setTasks] = useState([]);
@@ -14,10 +17,13 @@ function TaskPage({ currentUser, handleLogout }) {
     setIsLoading(true);
     setError(null);
 
-    const { data, error } = await getTasks();
+    const { data, error: fetchError } = await getTasks();
 
-    if (error) setError(error.message);
-    else setTasks(data);
+    if (fetchError) {
+      setError(fetchError.message);
+    } else {
+      setTasks(data);
+    }
 
     setIsLoading(false);
   };
@@ -28,72 +34,55 @@ function TaskPage({ currentUser, handleLogout }) {
 
   const completedTasks = tasks.filter(t => t.is_complete).length;
   const totalTasks = tasks.length;
-
-  const completionRate = totalTasks
-    ? Math.round((completedTasks / totalTasks) * 100)
-    : 0;
+  const completionRate =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
-    <section className="dashboard-section space-y-8">
+    <section className="min-h-screen space-y-8">
 
-      {/* TOP BAR (NO BRANDING) */}
+      {/* TOP BAR */}
       <div className="flex items-center justify-between">
+        <h1 className="text-white text-xl font-bold">
+          Welcome {currentUser.username}
+        </h1>
 
-        <div className="space-y-1">
-          <p className="text-muted text-sm">
-            Welcome back, {currentUser.username}
-          </p>
-          <p className="text-body">
-            Focus on execution and momentum
-          </p>
-        </div>
-
-        <button onClick={handleLogout} className="btn-secondary">
-          <LogOut size={16} />
+        <button onClick={handleLogout}>
           Log Out
         </button>
       </div>
 
-      {/* STATS CARD */}
-      <div className="flow-card p-5 flex justify-between">
-        <div>
-          <p className="text-muted">Total Tasks</p>
-          <h2 className="text-section">{totalTasks}</h2>
-        </div>
+      {/* LEFT + RIGHT GRID */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-        <div>
-          <p className="text-muted">Completed</p>
-          <h2 className="text-section">{completedTasks}</h2>
-        </div>
+        {/* LEFT */}
+        <div className="xl:col-span-8 space-y-6">
 
-        <div className="text-right">
-          <p className="text-muted">Completion Rate</p>
-          <h2 className="stat-number text-cyan-400">
-            {completionRate}%
-          </h2>
-        </div>
-      </div>
+          <AddTaskForm loadTasks={loadTasks} />
 
-      {/* MAIN GRID */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+          {isLoading && <p className="text-zinc-400">Loading tasks...</p>}
 
-        <div className="xl:col-span-8">
-          <ExecutionBlock
+          {error && <p className="text-red-400">{error}</p>}
+
+          <TaskList
             tasks={tasks}
-            isLoading={isLoading}
-            error={error}
             loadTasks={loadTasks}
             setSelectedTask={setSelectedTask}
           />
         </div>
 
-        <div className="xl:col-span-4">
-          <InsightBlock
-            tasks={tasks}
+        {/* RIGHT */}
+        <div className="xl:col-span-4 space-y-6">
+
+          <AnalyticsPanel
+            totalTasks={totalTasks}
             completedTasks={completedTasks}
             completionRate={completionRate}
-            selectedTask={selectedTask}
           />
+
+          <MotivationalCard tasks={tasks} />
+
+          <AIPlanCard task={selectedTask} />
+
         </div>
 
       </div>
