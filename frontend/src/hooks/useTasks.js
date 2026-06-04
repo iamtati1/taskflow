@@ -31,11 +31,19 @@ function useTasks() {
 
             const res = await getTasks();
 
-            if (!res.success) {
-                throw new Error(res.error?.message || "Failed to load tasks");
+            if (!res?.success) {
+                throw new Error(res?.error?.message || "Failed to load tasks");
             }
 
-            setTasks(res.data || []);
+            const raw = res.data;
+
+            const normalizedTasks = Array.isArray(raw)
+                ? raw
+                : Array.isArray(raw?.tasks)
+                    ? raw.tasks
+                    : [];
+
+            setTasks(normalizedTasks);
             setLastUpdated(new Date());
 
         } catch (err) {
@@ -61,7 +69,7 @@ function useTasks() {
             }
 
             setTasks((prev) => [res.data, ...prev]);
-
+            console.log("TASKS ARRAY:", tasks);
             return { success: true, data: res.data };
 
         } catch (err) {
@@ -75,18 +83,18 @@ function useTasks() {
     // =====================================================
 
     const editTask = useCallback(async (taskId, updates) => {
-        const previous = tasks;
+        const previous = [...tasks];
 
         setTasks((prev) =>
             prev.map((t) =>
                 t.task_id === taskId ? { ...t, ...updates } : t
+
             )
         );
 
         try {
             const res = await updateTask(taskId, updates);
-
-            if (!res.success) {
+            console.error("BAD TASK AT INDEX:", index, tasks); console.error("TASKS DEBUG:", tasks); if (!res.success) {
                 throw new Error(res.error?.message || "Update failed");
             }
 
@@ -105,7 +113,7 @@ function useTasks() {
     // =====================================================
 
     const removeTask = useCallback(async (taskId) => {
-        const previous = tasks;
+        const previous = [...tasks];
 
         setTasks((prev) =>
             prev.filter((t) => t.task_id !== taskId)
