@@ -14,12 +14,11 @@ const normalizeTasks = (data) => {
 
     if (!Array.isArray(raw)) return [];
 
-    return raw.filter((t) => (
+    return raw.filter((t) =>
         t &&
         typeof t === "object" &&
-        t.task_id &&
-        typeof t.title === "string"
-    ));
+        t.task_id
+    );
 };
 
 // =====================================================
