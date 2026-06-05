@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import TaskCalendar from "../components/TaskCalendar";
+import TaskCalendar from "../components/calendar/TaskCalendar";
 import TaskList from "../components/tasks/TaskList";
 import useTasks from "../hooks/useTasks";
 
@@ -111,7 +111,7 @@ function Tasks() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-1">
                     <TaskCalendar
-                        selectedDate={selectedDate}
+                        tasks={tasks}
                         onDateChange={setSelectedDate}
                     />
                 </div>
