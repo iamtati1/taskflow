@@ -5,17 +5,25 @@ import TaskList from "../components/tasks/TaskList";
 import AddTaskForm from "../components/tasks/AddTaskForm";
 import useTasks from "../hooks/useTasks";
 
+import { CheckCircle2, ListTodo } from "lucide-react";
+
+// =====================================================
+// SHARED CARD SYSTEM (temporary local version)
+// (later we extract this globally)
+// =====================================================
+function Card({ children, className = "" }) {
+    return (
+        <div className={`rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl ${className}`}>
+            {children}
+        </div>
+    );
+}
+
 function Tasks() {
-    // =====================================================
-    // UI STATE (OS CONTROL LAYER)
-    // =====================================================
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
 
-    // =====================================================
-    // TASK ENGINE
-    // =====================================================
     const {
         tasks,
         isLoading,
@@ -28,46 +36,23 @@ function Tasks() {
         removeTask,
     } = useTasks();
 
-    // =====================================================
-    // CREATE
-    // =====================================================
-    const handleCreate = async (data) => {
-        return await addTask(data);
-    };
+    const handleCreate = async (data) => addTask(data);
+    const handleUpdate = async (id, data) => editTask(id, data);
 
-    // =====================================================
-    // EDIT
-    // =====================================================
-    const handleUpdate = async (id, data) => {
-        return await editTask(id, data);
-    };
-
-    // =====================================================
-    // OPEN EDIT MODE
-    // =====================================================
     const handleEdit = (task) => {
         setEditingTask(task);
         setIsModalOpen(true);
     };
 
-    // =====================================================
-    // CLOSE MODAL
-    // =====================================================
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingTask(null);
     };
 
-    // =====================================================
-    // FILTER TASKS BY DATE
-    // =====================================================
     const filteredTasks = tasks.filter((task) => {
         if (!task.due_date) return true;
-
-        const taskDate = new Date(task.due_date);
-
         return (
-            taskDate.toDateString() ===
+            new Date(task.due_date).toDateString() ===
             selectedDate.toDateString()
         );
     });
@@ -76,9 +61,19 @@ function Tasks() {
         (task) => task.is_complete
     ).length;
 
-    // =====================================================
-    // LOADING / ERROR
-    // =====================================================
+    const stats = [
+        {
+            icon: ListTodo,
+            label: "Total",
+            value: tasks.length,
+        },
+        {
+            icon: CheckCircle2,
+            label: "Completed",
+            value: completedTasks,
+        },
+    ];
+
     if (isLoading) {
         return (
             <div className="p-6 text-white/60">
@@ -95,87 +90,90 @@ function Tasks() {
         );
     }
 
-    // =====================================================
-    // UI
-    // =====================================================
     return (
-        <div className="space-y-8">
+        <div className="space-y-10">
 
-            {/* HEADER */}
+            {/* =====================================================
+                HEADER (SYSTEM STANDARD)
+            ===================================================== */}
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
 
-                <div>
-                    <h1 className="text-5xl font-black text-white">
-                        Tasks
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-cyan-300">
+                        <ListTodo size={16} />
+                        Task System
+                    </div>
+
+                    <h1 className="text-3xl font-bold text-white">
+                        Your tasks, structured
                     </h1>
 
-                    <p className="mt-3 text-white/60 max-w-xl">
-                        Plan, organize, and execute your work with clarity and flow.
+                    <p className="text-white/60 max-w-xl">
+                        Plan, organize, and execute your work with clarity and momentum.
                     </p>
                 </div>
 
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="
-                        rounded-2xl
-                        border border-cyan-400/20
-                        bg-cyan-400/10
-                        px-5 py-3
-                        text-white
-                        hover:bg-cyan-400/15
-                        transition
-                    "
+                    className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-white transition hover:bg-cyan-400/15"
                 >
                     + New Task
                 </button>
 
             </div>
 
-            {/* STATS */}
+            {/* =====================================================
+                STATS (UNIFIED SYSTEM)
+            ===================================================== */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flow-card p-4">
-                    <p className="text-white/40 text-xs uppercase">
-                        Total
-                    </p>
-                    <h3 className="mt-2 text-2xl font-bold text-white">
-                        {tasks.length}
-                    </h3>
-                </div>
 
-                <div className="flow-card p-4">
-                    <p className="text-white/40 text-xs uppercase">
-                        Completed
-                    </p>
-                    <h3 className="mt-2 text-2xl font-bold text-emerald-400">
-                        {completedTasks}
-                    </h3>
-                </div>
+                {stats.map((stat) => {
+                    const Icon = stat.icon;
+
+                    return (
+                        <Card key={stat.label}>
+                            <Icon size={18} className="text-cyan-300" />
+
+                            <h3 className="mt-4 text-3xl font-bold text-white">
+                                {stat.value}
+                            </h3>
+
+                            <p className="mt-1 text-sm text-white/50">
+                                {stat.label}
+                            </p>
+                        </Card>
+                    );
+                })}
+
             </div>
 
-            {/* MAIN */}
+            {/* =====================================================
+                MAIN GRID
+            ===================================================== */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-                {/* CALENDAR */}
-                <TaskCalendar
-                    tasks={tasks}
-                    onDateChange={setSelectedDate}
-                />
+                <Card className="xl:col-span-1">
+                    <TaskCalendar
+                        tasks={tasks}
+                        onDateChange={setSelectedDate}
+                    />
+                </Card>
 
-                {/* TASK LIST */}
-                <div className="xl:col-span-2">
+                <Card className="xl:col-span-2">
                     <TaskList
                         tasks={filteredTasks}
                         selectedTaskId={selectedTaskId}
                         onDelete={removeTask}
                         onToggle={toggleTask}
                         onSelect={onSelect}
-                        onEdit={handleEdit}   // 👈 IMPORTANT FIX
+                        onEdit={handleEdit}
                     />
-                </div>
+                </Card>
+
             </div>
 
             {/* =====================================================
-                MODAL (CREATE + EDIT UNIFIED SYSTEM)
+                MODAL
             ===================================================== */}
             <AddTaskForm
                 addTask={handleCreate}

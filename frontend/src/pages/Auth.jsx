@@ -14,9 +14,19 @@ import {
 
 import { useAuth } from "../hooks/useAuth";
 
+// =====================================================
+// SHARED CARD SYSTEM (aligned with app)
+// =====================================================
+function Card({ children, className = "" }) {
+    return (
+        <div className={`rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl ${className}`}>
+            {children}
+        </div>
+    );
+}
+
 function Auth() {
     const navigate = useNavigate();
-
     const { login, register, error } = useAuth();
 
     const [isRegistering, setIsRegistering] = useState(false);
@@ -24,18 +34,11 @@ function Auth() {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
-    // 🧠 upgraded state system
     const [status, setStatus] = useState("idle");
-    // idle | loading | success | error
-
     const isLoading = status === "loading";
 
-    // =====================
-    // SUBMIT
-    // =====================
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         setStatus("loading");
 
         const success = isRegistering
@@ -44,20 +47,13 @@ function Auth() {
 
         if (success) {
             setStatus("success");
-
-            setTimeout(() => {
-                navigate("/tasks");
-            }, 400);
-
+            setTimeout(() => navigate("/tasks"), 400);
         } else {
             setStatus("error");
             setTimeout(() => setStatus("idle"), 1200);
         }
     };
 
-    // =====================
-    // BUTTON STATE SYSTEM
-    // =====================
     const getButtonContent = () => {
         if (status === "loading") {
             return (
@@ -94,17 +90,17 @@ function Auth() {
             {/* MAIN */}
             <div className="relative z-10 min-h-screen grid lg:grid-cols-2">
 
-                {/* LEFT PANEL */}
+                {/* LEFT PANEL (kept, but slightly aligned tone) */}
                 <div className="hidden lg:flex flex-col justify-between p-14">
 
-                    <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 bg-white/5">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5">
                         <Sparkles size={16} className="text-cyan-300" />
                         <span className="text-sm text-white/70">Flow OS</span>
                     </div>
 
                     <div className="max-w-xl space-y-6">
 
-                        <h1 className="text-6xl font-black leading-[0.95]">
+                        <h1 className="text-5xl font-black leading-tight">
                             Build your
                             <span className="block text-cyan-300">
                                 productivity system
@@ -117,17 +113,17 @@ function Auth() {
 
                         <div className="grid grid-cols-2 gap-4">
 
-                            <div className="p-5 rounded-3xl border border-white/10 bg-white/5">
+                            <Card className="p-5">
                                 <BrainCircuit className="text-cyan-300 mb-3" />
                                 <h3 className="font-semibold">AI Planning</h3>
                                 <p className="text-sm text-white/40">Execution guidance</p>
-                            </div>
+                            </Card>
 
-                            <div className="p-5 rounded-3xl border border-white/10 bg-white/5">
+                            <Card className="p-5">
                                 <Layers3 className="text-violet-300 mb-3" />
                                 <h3 className="font-semibold">Task Engine</h3>
                                 <p className="text-sm text-white/40">Structured flow</p>
-                            </div>
+                            </Card>
 
                         </div>
                     </div>
@@ -140,11 +136,7 @@ function Auth() {
                 {/* RIGHT PANEL */}
                 <div className="flex items-center justify-center px-6">
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="w-full max-w-md p-8 rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-2xl"
-                    >
+                    <Card className="w-full max-w-md">
 
                         {/* HEADER */}
                         <div className="mb-8 space-y-3">
@@ -154,15 +146,14 @@ function Auth() {
                                 Authentication
                             </div>
 
-                            <h2 className="text-4xl font-bold">
+                            <h2 className="text-3xl font-bold">
                                 {isRegistering ? "Create System" : "Welcome Back"}
                             </h2>
 
                             <p className="text-white/45">
                                 {isRegistering
                                     ? "Initialize your productivity workspace"
-                                    : "Continue your execution flow"
-                                }
+                                    : "Continue your execution flow"}
                             </p>
 
                         </div>
@@ -174,7 +165,7 @@ function Auth() {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 placeholder="Username"
-                                className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/5 focus:border-cyan-400/40 outline-none"
+                                className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/[0.04] focus:border-cyan-400/40 outline-none"
                             />
 
                             <div className="relative">
@@ -183,7 +174,7 @@ function Auth() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Password"
-                                    className="w-full h-14 px-5 pr-14 rounded-2xl border border-white/10 bg-white/5 focus:border-violet-400/40 outline-none"
+                                    className="w-full h-14 px-5 pr-14 rounded-2xl border border-white/10 bg-white/[0.04] focus:border-violet-400/40 outline-none"
                                 />
 
                                 <button
@@ -207,13 +198,12 @@ function Auth() {
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
                                 disabled={isLoading}
-                                className={`
-                                    w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all
+                                className={`w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-3 transition
                                     ${status === "success"
                                         ? "bg-emerald-500/20 border border-emerald-400/30"
-                                        : "bg-gradient-to-r from-cyan-400 to-violet-500"
+                                        : "bg-cyan-400/10 border border-cyan-400/20 hover:bg-cyan-400/15"
                                     }
-                                    opacity-${isLoading ? "80" : "100"}
+                                    ${isLoading ? "opacity-80" : "opacity-100"}
                                 `}
                             >
                                 {getButtonContent()}
@@ -228,11 +218,10 @@ function Auth() {
                         >
                             {isRegistering
                                 ? "Already have an account? Login"
-                                : "Need an account? Register"
-                            }
+                                : "Need an account? Register"}
                         </button>
 
-                    </motion.div>
+                    </Card>
                 </div>
             </div>
         </div>

@@ -13,13 +13,20 @@ import {
 
 import useTasks from "../hooks/useTasks";
 
+function Card({ children, className = "" }) {
+    return (
+        <div
+            className={`rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl transition-all ${className}`}
+        >
+            {children}
+        </div>
+    );
+}
+
 function Dashboard() {
     const navigate = useNavigate();
     const { tasks = [] } = useTasks();
 
-    // =====================================================
-    // DERIVED STATE (REAL DATA)
-    // =====================================================
     const total = tasks.length;
     const completed = tasks.filter((t) => t.is_complete).length;
     const active = total - completed;
@@ -30,11 +37,8 @@ function Dashboard() {
         .filter((t) => t.due_date && !t.is_complete)
         .slice(0, 3);
 
-    const streak = 4; // placeholder (later we can compute properly)
+    const streak = 4;
 
-    // =====================================================
-    // INSIGHT ENGINE (light logic layer)
-    // =====================================================
     const momentum =
         progress >= 70
             ? "You are in strong execution mode."
@@ -47,48 +51,25 @@ function Dashboard() {
             ? "Focus on reducing active load before adding more tasks."
             : "You are balancing completion well.";
 
-    // =====================================================
-    // STATS (SYSTEM VIEW)
-    // =====================================================
     const stats = [
-        {
-            icon: CheckCircle2,
-            value: completed,
-            label: "Completed",
-        },
-        {
-            icon: Target,
-            value: active,
-            label: "Active",
-        },
-        {
-            icon: Zap,
-            value: `${progress}%`,
-            label: "Progress",
-        },
-        {
-            icon: Clock3,
-            value: streak,
-            label: "Streak",
-        },
+        { icon: CheckCircle2, value: completed, label: "Completed" },
+        { icon: Target, value: active, label: "Active" },
+        { icon: Zap, value: `${progress}%`, label: "Progress" },
+        { icon: Clock3, value: streak, label: "Streak" },
     ];
 
-    // =====================================================
-    // UI
-    // =====================================================
     return (
         <motion.section
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="space-y-10"
         >
-
-            {/* HERO / COMMAND CENTER */}
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl">
+            {/* HERO */}
+            <Card className="relative overflow-hidden">
 
                 <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
 
-                <div className="relative z-10 max-w-3xl space-y-5">
+                <div className="relative space-y-5 max-w-3xl">
 
                     <div className="flex items-center gap-2 text-cyan-300">
                         <Sparkles size={16} />
@@ -108,14 +89,14 @@ function Dashboard() {
 
                     <button
                         onClick={() => navigate("/tasks")}
-                        className="mt-2 flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-white transition hover:bg-cyan-400/15"
+                        className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-white transition hover:bg-cyan-400/15"
                     >
                         Open Tasks
                         <ArrowRight size={16} />
                     </button>
 
                 </div>
-            </div>
+            </Card>
 
             {/* STATS */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -123,10 +104,7 @@ function Dashboard() {
                     const Icon = stat.icon;
 
                     return (
-                        <div
-                            key={stat.label}
-                            className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl"
-                        >
+                        <Card key={stat.label}>
                             <Icon size={18} className="text-cyan-300" />
 
                             <h3 className="mt-4 text-3xl font-bold text-white">
@@ -136,40 +114,36 @@ function Dashboard() {
                             <p className="mt-1 text-sm text-white/50">
                                 {stat.label}
                             </p>
-                        </div>
+                        </Card>
                     );
                 })}
             </div>
 
-            {/* INSIGHTS + UPCOMING */}
+            {/* INSIGHT + UPCOMING */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-                {/* INSIGHT ENGINE */}
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl space-y-4">
-
+                <Card>
                     <div className="flex items-center gap-2 text-violet-300">
                         <BrainCircuit size={18} />
                         System Insight
                     </div>
 
-                    <h3 className="text-xl font-semibold text-white">
+                    <h3 className="mt-4 text-xl font-semibold text-white">
                         {focusSuggestion}
                     </h3>
 
-                    <p className="text-white/60 leading-relaxed">
+                    <p className="mt-2 text-white/60 leading-relaxed">
                         Focus improves when task load is intentional rather than reactive.
                     </p>
-                </div>
+                </Card>
 
-                {/* UPCOMING TASKS */}
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl space-y-4">
-
+                <Card>
                     <div className="flex items-center gap-2 text-cyan-300">
                         <CalendarDays size={18} />
                         Upcoming
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="mt-4 space-y-3">
                         {upcoming.length === 0 ? (
                             <p className="text-white/50 text-sm">
                                 No upcoming tasks scheduled.
@@ -178,7 +152,7 @@ function Dashboard() {
                             upcoming.map((task) => (
                                 <div
                                     key={task.task_id}
-                                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                                    className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
                                 >
                                     <p className="text-white/80">
                                         {task.title}
@@ -187,12 +161,11 @@ function Dashboard() {
                             ))
                         )}
                     </div>
-                </div>
+                </Card>
             </div>
 
             {/* QUICK ACTIONS */}
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
-
+            <Card>
                 <h3 className="text-lg font-semibold text-white">
                     Quick Actions
                 </h3>
@@ -214,8 +187,7 @@ function Dashboard() {
                     </button>
 
                 </div>
-            </div>
-
+            </Card>
         </motion.section>
     );
 }

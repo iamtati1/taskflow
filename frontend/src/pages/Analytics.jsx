@@ -11,14 +11,22 @@ import {
     Clock3,
 } from "lucide-react";
 
+// =====================================================
+// SHARED CARD SYSTEM (same as entire app)
+// =====================================================
+function Card({ children, className = "" }) {
+    return (
+        <div className={`rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl ${className}`}>
+            {children}
+        </div>
+    );
+}
+
 function Analytics() {
-    // =====================================================
-    // DATA ENGINE
-    // =====================================================
     const { tasks = [] } = useTasks();
 
     // =====================================================
-    // DERIVED ENGINE (ONE PASS MENTAL MODEL)
+    // DERIVED ENGINE
     // =====================================================
     const metrics = useMemo(() => {
         const total = tasks.length;
@@ -33,7 +41,6 @@ function Analytics() {
             if (t.is_complete) completed++;
             else active++;
 
-            // created_at safety
             if (t.created_at) {
                 const dateKey = new Date(t.created_at).toDateString();
                 dailyMap[dateKey] = (dailyMap[dateKey] || 0) + 1;
@@ -59,7 +66,7 @@ function Analytics() {
     }, [tasks]);
 
     // =====================================================
-    // AI-READY INSIGHT LAYER (CLEAN SEPARATION)
+    // INSIGHTS
     // =====================================================
     const insights = useMemo(() => {
         const { completionRate, morningCount, total } = metrics;
@@ -90,17 +97,6 @@ function Analytics() {
         return { bestTime, reflection };
     }, [metrics]);
 
-    // =====================================================
-    // SAFE UI DATA
-    // =====================================================
-    const safeChart =
-        metrics.chartData.length > 0 ? metrics.chartData : [];
-
-    const hasData = metrics.total > 0;
-
-    // =====================================================
-    // STATS CONFIG (UI PURE)
-    // =====================================================
     const stats = [
         {
             label: "Completed",
@@ -128,136 +124,145 @@ function Analytics() {
         },
     ];
 
-    // =====================================================
-    // UI
-    // =====================================================
-    return (
-        <section className="space-y-10 fade-in">
+    const hasData = metrics.total > 0;
+    const safeChart = metrics.chartData.length ? metrics.chartData : [];
 
-            {/* HERO */}
-            <div className="flow-card relative overflow-hidden p-10">
+    return (
+        <section className="space-y-10">
+
+            {/* =====================================================
+                HERO
+            ===================================================== */}
+            <Card className="relative overflow-hidden">
+
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-transparent to-violet-500/5" />
 
-                <div className="relative z-10 max-w-4xl">
+                <div className="relative space-y-4 max-w-4xl">
 
                     <div className="flex items-center gap-2 text-cyan-300">
                         <Sparkles size={16} />
                         Reflection Center
                     </div>
 
-                    <h1 className="mt-5 text-5xl font-bold text-white leading-tight">
+                    <h1 className="text-4xl font-bold text-white leading-tight">
                         Understand how your
                         <span className="block text-white/70">
                             effort becomes progress.
                         </span>
                     </h1>
 
-                    <p className="mt-5 max-w-2xl text-lg text-white/55">
-                        Reflection transforms activity into awareness.
-                        Build patterns, refine execution, and grow consistency.
+                    <p className="text-white/55">
+                        Reflection transforms activity into awareness. Build patterns, refine execution, and grow consistency.
                     </p>
-                </div>
-            </div>
 
-            {/* STATS */}
+                </div>
+            </Card>
+
+            {/* =====================================================
+                STATS
+            ===================================================== */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+
                 {stats.map((stat, i) => {
                     const Icon = stat.icon;
 
                     return (
                         <motion.div
                             key={stat.label}
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 15 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.08 }}
-                            whileHover={{ y: -5 }}
-                            className="flow-card p-7"
+                            transition={{ delay: i * 0.06 }}
                         >
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5">
-                                <Icon size={24} className={stat.color} />
-                            </div>
+                            <Card className="h-full">
 
-                            <div className="mt-5">
-                                <p className="text-white/45 text-sm">{stat.label}</p>
-                                <h2 className="text-4xl font-bold mt-2">
+                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5">
+                                    <Icon size={20} className={stat.color} />
+                                </div>
+
+                                <p className="text-white/45 text-sm mt-4">
+                                    {stat.label}
+                                </p>
+
+                                <h2 className="text-3xl font-bold mt-2 text-white">
                                     {stat.value}
                                 </h2>
-                            </div>
+
+                            </Card>
                         </motion.div>
                     );
                 })}
+
             </div>
 
-            {/* VISUAL */}
+            {/* =====================================================
+                MAIN GRID
+            ===================================================== */}
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
 
                 {/* CHART */}
-                <div className="xl:col-span-3 flow-card p-8 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-transparent to-violet-500/5" />
+                <Card className="xl:col-span-3 space-y-6">
 
-                    <div className="relative z-10 space-y-8">
-
-                        <div className="flex items-center gap-3">
-                            <Activity size={22} className="text-cyan-300" />
-                            <div>
-                                <h3 className="text-xl font-semibold">
-                                    Execution Momentum
-                                </h3>
-                                <p className="text-sm text-white/45">
-                                    Real activity from your tasks
-                                </p>
-                            </div>
+                    <div className="flex items-center gap-3">
+                        <Activity size={20} className="text-cyan-300" />
+                        <div>
+                            <h3 className="text-xl font-semibold text-white">
+                                Execution Momentum
+                            </h3>
+                            <p className="text-sm text-white/45">
+                                Real activity from your tasks
+                            </p>
                         </div>
-
-                        {!hasData ? (
-                            <div className="h-[260px] flex items-center justify-center text-white/40">
-                                No activity yet. Start completing tasks to see momentum.
-                            </div>
-                        ) : (
-                            <div className="flex items-end gap-4 h-[260px]">
-                                {safeChart.map((h, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ height: 0 }}
-                                        animate={{ height: h * 10 }}
-                                        transition={{ duration: 0.7, delay: i * 0.05 }}
-                                        className="flex-1 rounded-t-[1.5rem] bg-gradient-to-t from-cyan-400/40 to-violet-500/50 border border-white/10"
-                                    />
-                                ))}
-                            </div>
-                        )}
                     </div>
-                </div>
+
+                    {!hasData ? (
+                        <div className="h-[260px] flex items-center justify-center text-white/40">
+                            No activity yet. Start completing tasks to see momentum.
+                        </div>
+                    ) : (
+                        <div className="flex items-end gap-4 h-[260px]">
+                            {safeChart.map((h, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ height: 0 }}
+                                    animate={{ height: h * 10 }}
+                                    transition={{ duration: 0.6, delay: i * 0.05 }}
+                                    className="flex-1 rounded-t-2xl bg-gradient-to-t from-cyan-400/40 to-violet-500/50 border border-white/10"
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                </Card>
 
                 {/* INSIGHTS */}
                 <div className="xl:col-span-2 space-y-6">
 
-                    <div className="flow-card p-7 space-y-4">
+                    <Card className="space-y-3">
                         <div className="text-xs text-white/45 uppercase">
                             Work Pattern
                         </div>
 
-                        <h3 className="text-2xl font-semibold text-white">
+                        <h3 className="text-xl font-semibold text-white">
                             {insights.bestTime}
                         </h3>
-                    </div>
+                    </Card>
 
-                    <div className="flow-card p-7 space-y-4">
+                    <Card className="space-y-3">
                         <div className="flex items-center gap-2 text-xs text-white/45 uppercase">
                             <Sparkles size={14} className="text-cyan-300" />
                             Reflection
                         </div>
 
-                        <h3 className="text-2xl font-semibold text-white">
+                        <h3 className="text-xl font-semibold text-white">
                             {insights.reflection.title}
                         </h3>
 
-                        <p className="text-white/55 leading-relaxed">
+                        <p className="text-white/55">
                             {insights.reflection.desc}
                         </p>
-                    </div>
+                    </Card>
 
-                    <div className="flow-card p-7 space-y-4">
+                    <Card className="space-y-4">
 
                         <div className="flex items-center justify-between">
 
@@ -266,21 +271,22 @@ function Analytics() {
                                     Focus Rating
                                 </p>
 
-                                <h2 className="text-4xl font-bold mt-2 text-white">
+                                <h2 className="text-3xl font-bold mt-2 text-white">
                                     {metrics.completionRate}%
                                 </h2>
                             </div>
 
-                            <BarChart3 size={34} className="text-cyan-300" />
+                            <BarChart3 size={30} className="text-cyan-300" />
                         </div>
 
-                        <div className="h-3 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-2 rounded-full bg-white/5 overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-cyan-400 to-violet-500 rounded-full"
+                                className="h-full bg-gradient-to-r from-cyan-400 to-violet-500"
                                 style={{ width: `${metrics.completionRate}%` }}
                             />
                         </div>
-                    </div>
+
+                    </Card>
 
                 </div>
             </div>
