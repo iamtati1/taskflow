@@ -2,12 +2,20 @@ import { useState } from "react";
 
 import TaskCalendar from "../components/calendar/TaskCalendar";
 import TaskList from "../components/tasks/TaskList";
+import AddTaskForm from "../components/tasks/AddTaskForm";
 import useTasks from "../hooks/useTasks";
 
 function Tasks() {
+    // =====================================================
+    // UI STATE (OS CONTROL LAYER)
+    // =====================================================
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [newTaskTitle, setNewTaskTitle] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingTask, setEditingTask] = useState(null);
 
+    // =====================================================
+    // TASK ENGINE
+    // =====================================================
     const {
         tasks,
         isLoading,
@@ -20,22 +28,57 @@ function Tasks() {
         removeTask,
     } = useTasks();
 
-    const handleCreateTask = async () => {
-        const title = newTaskTitle.trim();
-
-        if (!title) return;
-
-        const result = await addTask({
-            title,
-            priority: "medium",
-            is_complete: false,
-        });
-
-        if (result?.success) {
-            setNewTaskTitle("");
-        }
+    // =====================================================
+    // CREATE
+    // =====================================================
+    const handleCreate = async (data) => {
+        return await addTask(data);
     };
 
+    // =====================================================
+    // EDIT
+    // =====================================================
+    const handleUpdate = async (id, data) => {
+        return await editTask(id, data);
+    };
+
+    // =====================================================
+    // OPEN EDIT MODE
+    // =====================================================
+    const handleEdit = (task) => {
+        setEditingTask(task);
+        setIsModalOpen(true);
+    };
+
+    // =====================================================
+    // CLOSE MODAL
+    // =====================================================
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setEditingTask(null);
+    };
+
+    // =====================================================
+    // FILTER TASKS BY DATE
+    // =====================================================
+    const filteredTasks = tasks.filter((task) => {
+        if (!task.due_date) return true;
+
+        const taskDate = new Date(task.due_date);
+
+        return (
+            taskDate.toDateString() ===
+            selectedDate.toDateString()
+        );
+    });
+
+    const completedTasks = tasks.filter(
+        (task) => task.is_complete
+    ).length;
+
+    // =====================================================
+    // LOADING / ERROR
+    // =====================================================
     if (isLoading) {
         return (
             <div className="p-6 text-white/60">
@@ -52,81 +95,94 @@ function Tasks() {
         );
     }
 
+    // =====================================================
+    // UI
+    // =====================================================
     return (
         <div className="space-y-8">
 
             {/* HEADER */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+
                 <div>
-                    <h1 className="text-4xl font-bold text-white">
+                    <h1 className="text-5xl font-black text-white">
                         Tasks
                     </h1>
 
-                    <p className="mt-2 text-white/50">
-                        Plan, organize, and execute your work.
+                    <p className="mt-3 text-white/60 max-w-xl">
+                        Plan, organize, and execute your work with clarity and flow.
                     </p>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60">
-                    {tasks.length} Tasks
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="
+                        rounded-2xl
+                        border border-cyan-400/20
+                        bg-cyan-400/10
+                        px-5 py-3
+                        text-white
+                        hover:bg-cyan-400/15
+                        transition
+                    "
+                >
+                    + New Task
+                </button>
+
+            </div>
+
+            {/* STATS */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="flow-card p-4">
+                    <p className="text-white/40 text-xs uppercase">
+                        Total
+                    </p>
+                    <h3 className="mt-2 text-2xl font-bold text-white">
+                        {tasks.length}
+                    </h3>
+                </div>
+
+                <div className="flow-card p-4">
+                    <p className="text-white/40 text-xs uppercase">
+                        Completed
+                    </p>
+                    <h3 className="mt-2 text-2xl font-bold text-emerald-400">
+                        {completedTasks}
+                    </h3>
                 </div>
             </div>
 
-            {/* CREATE TASK */}
-            <div className="flow-card p-5">
-                <div className="flex gap-3">
-                    <input
-                        value={newTaskTitle}
-                        onChange={(e) =>
-                            setNewTaskTitle(e.target.value)
-                        }
-                        placeholder="What needs to get done?"
-                        className="
-                            flex-1
-                            rounded-xl
-                            border
-                            border-white/10
-                            bg-black/20
-                            px-4
-                            py-3
-                            text-white
-                            outline-none
-                        "
-                    />
-
-                    <button
-                        onClick={handleCreateTask}
-                        className="btn-primary"
-                    >
-                        Add Task
-                    </button>
-                </div>
-            </div>
-
-            {/* CONTENT */}
+            {/* MAIN */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
                 {/* CALENDAR */}
-                <div>
-                    <TaskCalendar
-                        tasks={tasks}
-                        onDateChange={setSelectedDate}
-                    />
-                </div>
+                <TaskCalendar
+                    tasks={tasks}
+                    onDateChange={setSelectedDate}
+                />
 
-                {/* TASKS */}
+                {/* TASK LIST */}
                 <div className="xl:col-span-2">
                     <TaskList
-                        tasks={tasks}
+                        tasks={filteredTasks}
                         selectedTaskId={selectedTaskId}
                         onDelete={removeTask}
                         onToggle={toggleTask}
                         onSelect={onSelect}
-                        onEdit={editTask}
+                        onEdit={handleEdit}   // 👈 IMPORTANT FIX
                     />
                 </div>
-
             </div>
+
+            {/* =====================================================
+                MODAL (CREATE + EDIT UNIFIED SYSTEM)
+            ===================================================== */}
+            <AddTaskForm
+                addTask={handleCreate}
+                updateTask={handleUpdate}
+                initialData={editingTask}
+            />
+
         </div>
     );
 }

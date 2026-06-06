@@ -1,3 +1,7 @@
+import { motion } from "framer-motion";
+import { useMemo } from "react";
+import useTasks from "../hooks/useTasks";
+
 import {
     BarChart3,
     TrendingUp,
@@ -7,9 +11,6 @@ import {
     Clock3,
 } from "lucide-react";
 
-import { motion } from "framer-motion";
-import useTasks from "../hooks/useTasks";
-
 function Analytics() {
     // =====================================================
     // DATA ENGINE
@@ -17,76 +18,113 @@ function Analytics() {
     const { tasks = [] } = useTasks();
 
     // =====================================================
-    // CORE STATS
+    // DERIVED ENGINE (ONE PASS MENTAL MODEL)
     // =====================================================
-    const total = tasks.length;
+    const metrics = useMemo(() => {
+        const total = tasks.length;
 
-    const completed = tasks.filter((t) => t.is_complete).length;
+        let completed = 0;
+        let active = 0;
 
-    const active = total - completed;
+        const dailyMap = {};
+        let morningCount = 0;
 
-    const completionRate =
-        total === 0 ? 0 : Math.round((completed / total) * 100);
+        for (const t of tasks) {
+            if (t.is_complete) completed++;
+            else active++;
 
-    // =====================================================
-    // DAILY ACTIVITY (LAST 7 DAYS)
-    // =====================================================
-    const getDailyCounts = () => {
-        const map = {};
+            // created_at safety
+            if (t.created_at) {
+                const dateKey = new Date(t.created_at).toDateString();
+                dailyMap[dateKey] = (dailyMap[dateKey] || 0) + 1;
 
-        tasks.forEach((t) => {
-            if (!t.created_at) return;
+                const hour = new Date(t.created_at).getHours();
+                if (hour >= 8 && hour <= 11) morningCount++;
+            }
+        }
 
-            const date = new Date(t.created_at).toDateString();
-            map[date] = (map[date] || 0) + 1;
-        });
+        const completionRate =
+            total === 0 ? 0 : Math.round((completed / total) * 100);
 
-        return Object.values(map).slice(-7);
-    };
+        const chartData = Object.values(dailyMap).slice(-7);
 
-    const chartData = getDailyCounts();
-
-    // fallback so UI never breaks
-    const safeChart = chartData.length ? chartData : [1, 2, 3, 2, 4, 3, 5];
-
-    // =====================================================
-    // MORNING PRODUCTIVITY INSIGHT
-    // =====================================================
-    const morningTasks = tasks.filter((t) => {
-        if (!t.created_at) return false;
-        const hour = new Date(t.created_at).getHours();
-        return hour >= 8 && hour <= 11;
-    }).length;
-
-    const bestTimeInsight =
-        morningTasks > tasks.length / 2
-            ? "You perform best in morning sessions (8–11 AM)."
-            : "Your productivity is spread throughout the day.";
+        return {
+            total,
+            completed,
+            active,
+            completionRate,
+            chartData,
+            morningCount,
+        };
+    }, [tasks]);
 
     // =====================================================
-    // STATS CARDS
+    // AI-READY INSIGHT LAYER (CLEAN SEPARATION)
+    // =====================================================
+    const insights = useMemo(() => {
+        const { completionRate, morningCount, total } = metrics;
+
+        const bestTime =
+            total === 0
+                ? "Start creating tasks to build patterns."
+                : morningCount > total / 2
+                    ? "You perform best in morning sessions (8–11 AM)."
+                    : "Your productivity is distributed across the day.";
+
+        const reflection =
+            completionRate >= 70
+                ? {
+                    title: "Excellent momentum",
+                    desc: "You are consistently finishing the work you commit to.",
+                }
+                : completionRate >= 40
+                    ? {
+                        title: "Steady progress",
+                        desc: "You're building a healthy rhythm of execution.",
+                    }
+                    : {
+                        title: "Building consistency",
+                        desc: "Small wins compound. Keep focusing on execution.",
+                    };
+
+        return { bestTime, reflection };
+    }, [metrics]);
+
+    // =====================================================
+    // SAFE UI DATA
+    // =====================================================
+    const safeChart =
+        metrics.chartData.length > 0 ? metrics.chartData : [];
+
+    const hasData = metrics.total > 0;
+
+    // =====================================================
+    // STATS CONFIG (UI PURE)
     // =====================================================
     const stats = [
         {
-            label: "Tasks Completed",
-            value: completed,
-            growth: "+live",
+            label: "Completed",
+            value: metrics.completed,
             icon: CheckCircle2,
             color: "text-cyan-300",
         },
         {
-            label: "Active Tasks",
-            value: active,
-            growth: "+live",
+            label: "Active",
+            value: metrics.active,
             icon: Clock3,
             color: "text-violet-300",
         },
         {
-            label: "Completion Rate",
-            value: `${completionRate}%`,
-            growth: "+live",
+            label: "Completion",
+            value: `${metrics.completionRate}%`,
             icon: TrendingUp,
             color: "text-pink-300",
+        },
+        {
+            label: "Total",
+            value: metrics.total,
+            icon: Activity,
+            color: "text-orange-300",
         },
     ];
 
@@ -97,28 +135,32 @@ function Analytics() {
         <section className="space-y-10 fade-in">
 
             {/* HERO */}
-            <div className="flow-card p-8 md:p-10 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-violet-500/5" />
+            <div className="flow-card relative overflow-hidden p-10">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-transparent to-violet-500/5" />
 
-                <div className="relative z-10 max-w-4xl space-y-6">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 text-white/60 text-sm">
-                        <Sparkles size={15} />
-                        Intelligent Productivity Insights
+                <div className="relative z-10 max-w-4xl">
+
+                    <div className="flex items-center gap-2 text-cyan-300">
+                        <Sparkles size={16} />
+                        Reflection Center
                     </div>
 
-                    <h1 className="text-4xl md:text-6xl font-bold text-white">
-                        Understand your workflow{" "}
-                        <span className="heading-flow">at a deeper level.</span>
+                    <h1 className="mt-5 text-5xl font-bold text-white leading-tight">
+                        Understand how your
+                        <span className="block text-white/70">
+                            effort becomes progress.
+                        </span>
                     </h1>
 
-                    <p className="text-lg text-white/55">
-                        Visualize momentum and track real task performance from your backend.
+                    <p className="mt-5 max-w-2xl text-lg text-white/55">
+                        Reflection transforms activity into awareness.
+                        Build patterns, refine execution, and grow consistency.
                     </p>
                 </div>
             </div>
 
             {/* STATS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 {stats.map((stat, i) => {
                     const Icon = stat.icon;
 
@@ -131,14 +173,8 @@ function Analytics() {
                             whileHover={{ y: -5 }}
                             className="flow-card p-7"
                         >
-                            <div className="flex items-center justify-between">
-                                <div className="w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5">
-                                    <Icon size={24} className={stat.color} />
-                                </div>
-
-                                <span className="px-3 py-1.5 rounded-full bg-cyan-400/10 text-cyan-300 text-xs">
-                                    {stat.growth}
-                                </span>
+                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5">
+                                <Icon size={24} className={stat.color} />
                             </div>
 
                             <div className="mt-5">
@@ -160,14 +196,12 @@ function Analytics() {
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-transparent to-violet-500/5" />
 
                     <div className="relative z-10 space-y-8">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-cyan-400/10 border border-cyan-400/10">
-                                <Activity size={22} className="text-cyan-300" />
-                            </div>
 
+                        <div className="flex items-center gap-3">
+                            <Activity size={22} className="text-cyan-300" />
                             <div>
                                 <h3 className="text-xl font-semibold">
-                                    Weekly Momentum
+                                    Execution Momentum
                                 </h3>
                                 <p className="text-sm text-white/45">
                                     Real activity from your tasks
@@ -175,17 +209,23 @@ function Analytics() {
                             </div>
                         </div>
 
-                        <div className="flex items-end gap-4 h-[260px]">
-                            {safeChart.map((h, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ height: 0 }}
-                                    animate={{ height: h * 10 }}
-                                    transition={{ duration: 0.7, delay: i * 0.05 }}
-                                    className="flex-1 rounded-t-[1.5rem] bg-gradient-to-t from-cyan-400/40 to-violet-500/50 border border-white/10"
-                                />
-                            ))}
-                        </div>
+                        {!hasData ? (
+                            <div className="h-[260px] flex items-center justify-center text-white/40">
+                                No activity yet. Start completing tasks to see momentum.
+                            </div>
+                        ) : (
+                            <div className="flex items-end gap-4 h-[260px]">
+                                {safeChart.map((h, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ height: 0 }}
+                                        animate={{ height: h * 10 }}
+                                        transition={{ duration: 0.7, delay: i * 0.05 }}
+                                        className="flex-1 rounded-t-[1.5rem] bg-gradient-to-t from-cyan-400/40 to-violet-500/50 border border-white/10"
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -194,26 +234,40 @@ function Analytics() {
 
                     <div className="flow-card p-7 space-y-4">
                         <div className="text-xs text-white/45 uppercase">
-                            AI Insight
+                            Work Pattern
                         </div>
 
-                        <h3 className="text-2xl font-semibold">
-                            {bestTimeInsight}
+                        <h3 className="text-2xl font-semibold text-white">
+                            {insights.bestTime}
+                        </h3>
+                    </div>
+
+                    <div className="flow-card p-7 space-y-4">
+                        <div className="flex items-center gap-2 text-xs text-white/45 uppercase">
+                            <Sparkles size={14} className="text-cyan-300" />
+                            Reflection
+                        </div>
+
+                        <h3 className="text-2xl font-semibold text-white">
+                            {insights.reflection.title}
                         </h3>
 
-                        <p className="text-white/55">
-                            Based on your task creation times.
+                        <p className="text-white/55 leading-relaxed">
+                            {insights.reflection.desc}
                         </p>
                     </div>
 
                     <div className="flow-card p-7 space-y-4">
+
                         <div className="flex items-center justify-between">
+
                             <div>
                                 <p className="text-sm text-white/45">
                                     Focus Rating
                                 </p>
-                                <h2 className="text-4xl font-bold mt-2">
-                                    {completionRate}
+
+                                <h2 className="text-4xl font-bold mt-2 text-white">
+                                    {metrics.completionRate}%
                                 </h2>
                             </div>
 
@@ -223,7 +277,7 @@ function Analytics() {
                         <div className="h-3 rounded-full bg-white/5 overflow-hidden">
                             <div
                                 className="h-full bg-gradient-to-r from-cyan-400 to-violet-500 rounded-full"
-                                style={{ width: `${completionRate}%` }}
+                                style={{ width: `${metrics.completionRate}%` }}
                             />
                         </div>
                     </div>

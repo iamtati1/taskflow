@@ -1,238 +1,243 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { taskApi } from "../api/tasks";
 
-// =====================================================
-// HELPERS (DATA SAFETY)
-// =====================================================
-
 const normalizeTasks = (data) => {
-    const raw =
-        data?.tasks ||
-        data ||
-        [];
-
+    const raw = data?.tasks || data || [];
     if (!Array.isArray(raw)) return [];
-
-    return raw.filter((t) =>
-        t &&
-        typeof t === "object" &&
-        t.task_id
-    );
+    return raw.filter((t) => t && t.task_id);
 };
-
-// =====================================================
-// HOOK
-// =====================================================
 
 function useTasks() {
 
     // =====================================================
-    // STATE
+    // CORE STATE ENGINE
     // =====================================================
-
     const [tasks, setTasks] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [status, setStatus] = useState("idle");
     const [error, setError] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
 
-    const [selectedTaskId, setSelectedTaskId] = useState(null);
-    const [focusedTaskId, setFocusedTaskId] = useState(null);
+    // =====================================================
+    // UI ACTION ENGINE (UPGRADED)
+    // =====================================================
+    const [activeActions, setActiveActions] = useState({});
+    // { [taskId]: "toggle" | "delete" | "update" }
+
+    const setAction = (id, action) => {
+        setActiveActions((prev) => ({ ...prev, [id]: action }));
+    };
+
+    const clearAction = (id) => {
+        setActiveActions((prev) => {
+            const copy = { ...prev };
+            delete copy[id];
+            return copy;
+        });
+    };
 
     // =====================================================
-    // LOAD TASKS
+    // LOAD
     // =====================================================
-
     const loadTasks = useCallback(async ({ silent = false } = {}) => {
         try {
             setError(null);
-            setIsLoading(!silent);
-            setIsRefreshing(silent);
+            setStatus(silent ? "refreshing" : "loading");
 
             const res = await taskApi.getTasks();
+            if (!res.success) throw new Error(res.error?.message);
 
-            console.log("🔥 RAW API RESPONSE:", res);
-
-            if (!res.success) {
-                throw new Error(res.error?.message || "Failed to load tasks");
-            }
-
-            const cleanTasks = normalizeTasks(res.data);
-
-            setTasks(cleanTasks);
+            setTasks(normalizeTasks(res.data));
             setLastUpdated(new Date());
 
         } catch (err) {
-            setError(err.message || "Failed to load tasks");
+            setError(err.message);
         } finally {
-            setIsLoading(false);
-            setIsRefreshing(false);
+            setStatus("idle");
         }
     }, []);
 
     // =====================================================
-    // CREATE
+    // ADD (OPTIMISTIC)
     // =====================================================
-
     const addTask = useCallback(async (taskData) => {
+        setStatus("mutating");
+
+        const tempId = `temp-${Date.now()}`;
+
+        const optimisticTask = {
+            task_id: tempId,
+            ...taskData,
+            is_complete: false,
+            _optimistic: true,
+        };
+
+        setTasks((prev) => [optimisticTask, ...prev]);
+
         try {
-            setError(null);
-
             const res = await taskApi.createTask(taskData);
+            if (!res.success) throw new Error(res.error?.message);
 
-            if (!res.success) {
-                throw new Error(res.error?.message || "Failed to create task");
-            }
+            setTasks((prev) =>
+                prev.map((t) =>
+                    t.task_id === tempId ? res.data : t
+                )
+            );
 
-            const newTask = res.data;
-
-            if (!newTask?.task_id) return;
-
-            setTasks((prev) => [newTask, ...prev]);
-
-            return { success: true, data: newTask };
+            return { success: true };
 
         } catch (err) {
             setError(err.message);
-            return { success: false, error: err.message };
+
+            setTasks((prev) =>
+                prev.filter((t) => !t._optimistic)
+            );
+
+            return { success: false };
+
+        } finally {
+            setStatus("idle");
         }
     }, []);
 
     // =====================================================
-    // UPDATE (OPTIMISTIC)
+    // TOGGLE (ENGINE SAFE)
     // =====================================================
+    const toggleTask = useCallback(async (taskId) => {
 
+        setAction(taskId, "toggle");
+
+        // snapshot safe
+        let snapshot;
+        setTasks((prev) => {
+            snapshot = prev;
+            return prev.map((t) =>
+                t.task_id === taskId
+                    ? { ...t, is_complete: !t.is_complete }
+                    : t
+            );
+        });
+
+        const task = snapshot.find(t => t.task_id === taskId);
+
+        try {
+            const res = await taskApi.updateTask(taskId, {
+                is_complete: !task.is_complete,
+            });
+
+            if (!res.success) throw new Error();
+
+        } catch (err) {
+            setError(err.message);
+            setTasks(snapshot); // rollback
+        } finally {
+            clearAction(taskId);
+        }
+
+    }, []);
+
+    // =====================================================
+    // UPDATE (REAL CRUD NOW)
+    // =====================================================
     const editTask = useCallback(async (taskId, updates) => {
-        const previous = tasks;
 
-        setTasks((prev) =>
-            prev.map((t) =>
+        setAction(taskId, "update");
+
+        let snapshot;
+
+        setTasks((prev) => {
+            snapshot = prev;
+            return prev.map((t) =>
                 t.task_id === taskId ? { ...t, ...updates } : t
-            )
-        );
+            );
+        });
 
         try {
             const res = await taskApi.updateTask(taskId, updates);
-
-            if (!res.success) {
-                throw new Error(res.error?.message || "Update failed");
-            }
-
-            return { success: true };
+            if (!res.success) throw new Error();
 
         } catch (err) {
-            setTasks(previous);
             setError(err.message);
-
-            return { success: false, error: err.message };
+            setTasks(snapshot);
+        } finally {
+            clearAction(taskId);
         }
-    }, [tasks]);
+
+    }, []);
 
     // =====================================================
-    // TOGGLE
+    // DELETE
     // =====================================================
-
-    const toggleTask = useCallback(async (taskId) => {
-        const task = tasks.find((t) => t.task_id === taskId);
-
-        if (!task) return;
-
-        return editTask(taskId, {
-            is_complete: !task.is_complete,
-        });
-    }, [tasks, editTask]);
-
-    // =====================================================
-    // DELETE (OPTIMISTIC)
-    // =====================================================
-
     const removeTask = useCallback(async (taskId) => {
-        const previous = tasks;
 
-        setTasks((prev) =>
-            prev.filter((t) => t.task_id !== taskId)
-        );
+        setAction(taskId, "delete");
+
+        let snapshot;
+
+        setTasks((prev) => {
+            snapshot = prev;
+            return prev.filter((t) => t.task_id !== taskId);
+        });
 
         try {
             const res = await taskApi.deleteTask(taskId);
-
-            if (!res.success) {
-                throw new Error(res.error?.message || "Delete failed");
-            }
-
-            return { success: true };
+            if (!res.success) throw new Error();
 
         } catch (err) {
-            setTasks(previous);
             setError(err.message);
-
-            return { success: false, error: err.message };
+            setTasks(snapshot);
+        } finally {
+            clearAction(taskId);
         }
-    }, [tasks]);
+
+    }, []);
 
     // =====================================================
-    // SELECTION
+    // SELECTION ENGINE
     // =====================================================
+    const [selectedTaskId, setSelectedTaskId] = useState(null);
 
     const onSelect = useCallback((id) => {
-        setSelectedTaskId((prev) => prev === id ? null : id);
-        setFocusedTaskId(id);
-    }, []);
-
-    const clearSelection = useCallback(() => {
-        setSelectedTaskId(null);
-        setFocusedTaskId(null);
+        setSelectedTaskId((prev) => (prev === id ? null : id));
     }, []);
 
     // =====================================================
-    // DERIVED STATE
+    // DERIVED ENGINE STATE
     // =====================================================
-
     const completedTasks = useMemo(
-        () => tasks.filter((t) => t.is_complete),
+        () => tasks.filter(t => t.is_complete),
         [tasks]
     );
 
     const activeTasks = useMemo(
-        () => tasks.filter((t) => !t.is_complete),
+        () => tasks.filter(t => !t.is_complete),
         [tasks]
     );
 
-    const highPriorityTasks = useMemo(
-        () => tasks.filter((t) => t.priority === "high"),
-        [tasks]
-    );
+    const stats = useMemo(() => ({
+        total: tasks.length,
+        completed: completedTasks.length,
+        active: activeTasks.length,
+    }), [tasks, completedTasks, activeTasks]);
 
     // =====================================================
     // INIT
     // =====================================================
-
     useEffect(() => {
         loadTasks();
     }, [loadTasks]);
 
     // =====================================================
-    // SAFE EXPORT (FINAL PROTECTION LAYER)
-    // =====================================================
-
-    const safeTasks = Array.isArray(tasks) ? tasks : [];
-
-    // =====================================================
     // PUBLIC API
     // =====================================================
-
     return {
-        tasks: safeTasks,
+        tasks,
 
-        isLoading,
-        isRefreshing,
+        status,
         error,
         lastUpdated,
 
         selectedTaskId,
-        focusedTaskId,
         onSelect,
-        clearSelection,
 
         addTask,
         editTask,
@@ -241,9 +246,9 @@ function useTasks() {
 
         completedTasks,
         activeTasks,
-        highPriorityTasks,
+        stats,
 
-        loadTasks,
+        activeActions, // ⭐ FULL UI ENGINE SIGNAL
     };
 }
 

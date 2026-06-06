@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import {
     Bell,
     Shield,
@@ -49,23 +50,55 @@ const quickSettingsList = [
 ];
 
 function Settings() {
-    const { currentUser, logout } = useAuth();
+    const { user, signOut } = useAuth();
     const { tasks = [] } = useTasks();
+    const [theme, setTheme] = useState(
+        () => localStorage.getItem("theme") || "Midnight"
+    );
 
-    const [theme, setTheme] = useState("Midnight");
+    useEffect(() => {
+        localStorage.setItem("theme", theme);
+        document.documentElement.setAttribute("data-theme", theme);
+    }, [theme]);
 
-    const [aiSettings, setAiSettings] = useState({
-        "Smart task prioritization": true,
-        "AI workflow suggestions": true,
-        "Focus session recommendations": true,
-        "Productivity insights": true,
+    const [aiSettings, setAiSettings] = useState(() => {
+        const saved = localStorage.getItem("aiSettings");
+        return saved
+            ? JSON.parse(saved)
+            : {
+                "Smart task prioritization": true,
+                "AI workflow suggestions": true,
+                "Focus session recommendations": true,
+                "Productivity insights": true,
+            };
     });
 
-    const [quickSettings, setQuickSettings] = useState({
-        Notifications: true,
-        "Focus Mode": false,
-        "Desktop Layout": true,
+    useEffect(() => {
+        localStorage.setItem("aiSettings", JSON.stringify(aiSettings));
+    }, [aiSettings]);
+
+    const [quickSettings, setQuickSettings] = useState(() => {
+        const saved = localStorage.getItem("quickSettings");
+        return saved
+            ? JSON.parse(saved)
+            : {
+                Notifications: true,
+                "Focus Mode": false,
+                "Desktop Layout": true,
+            };
     });
+
+    useEffect(() => {
+        localStorage.setItem("quickSettings", JSON.stringify(quickSettings));
+    }, [quickSettings]);
+
+    useEffect(() => {
+        if (quickSettings["Focus Mode"]) {
+            document.body.classList.add("focus-mode");
+        } else {
+            document.body.classList.remove("focus-mode");
+        }
+    }, [quickSettings]);
 
     const toggleAI = (setting) => {
         setAiSettings((prev) => ({
@@ -104,7 +137,7 @@ function Settings() {
                     <p className="mt-4 text-white/50">
                         Logged in as{" "}
                         <span className="text-white font-medium">
-                            {currentUser?.username || "Guest"}
+                            {user?.username || "Guest"}
                         </span>
                         {" • "}
                         {tasks.length} tasks in system
@@ -228,11 +261,11 @@ function Settings() {
                     <div className="flow-card p-7 text-center">
 
                         <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center text-2xl font-bold mb-4">
-                            {currentUser?.username?.[0]?.toUpperCase() || "G"}
+                            {user?.username?.[0]?.toUpperCase() || "G"}
                         </div>
 
                         <h2 className="text-xl font-semibold text-white">
-                            {currentUser?.username || "Guest"}
+                            {user?.username || "Guest"}
                         </h2>
 
                         <p className="text-white/45 text-sm mt-1">
@@ -252,7 +285,7 @@ function Settings() {
                             />
 
                             <button
-                                onClick={logout}
+                                onClick={signOut}
                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/10 text-red-300 border border-red-400/10 hover:bg-red-500/20 transition"
                             >
                                 <LogOut size={18} />

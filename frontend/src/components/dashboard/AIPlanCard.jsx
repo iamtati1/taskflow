@@ -7,13 +7,35 @@ import {
 } from "lucide-react";
 
 function AIPlanCard({ task }) {
-    const steps = [
-        "Break the task into focused milestones.",
-        "Prioritize the highest impact action first.",
-        "Schedule uninterrupted deep-work time.",
-        "Reduce friction and distractions before starting.",
-        "Review progress and refine execution afterward.",
-    ];
+
+    // =====================================================
+    // ENGINE: CONTEXT GENERATION LAYER
+    // =====================================================
+
+    const generateSteps = (task) => {
+        if (!task) return [];
+
+        const baseSteps = [
+            "Break the task into clear actionable steps.",
+            "Identify the highest-impact first action.",
+            "Remove distractions before starting execution.",
+            "Work in a focused deep-work block.",
+            "Review output and refine if needed.",
+        ];
+
+        // lightweight intelligence layer
+        if (task.priority === "high") {
+            baseSteps.unshift("Treat this as a high-priority execution block.");
+        }
+
+        if (task.is_complete) {
+            return ["This task is already completed. Reflect on execution quality."];
+        }
+
+        return baseSteps;
+    };
+
+    const steps = generateSteps(task);
 
     // =====================================================
     // EMPTY STATE
@@ -23,7 +45,6 @@ function AIPlanCard({ task }) {
         return (
             <div className="flow-card relative overflow-hidden p-6 md:p-7">
 
-                {/* background glow */}
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-violet-500/5" />
 
                 <div className="relative z-10 flex flex-col items-center text-center py-10 space-y-5">
@@ -34,15 +55,15 @@ function AIPlanCard({ task }) {
 
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs uppercase tracking-[0.2em] text-white/40">
                         <Sparkles size={12} />
-                        AI Productivity Assistant
+                        AI Execution Engine
                     </div>
 
                     <h2 className="text-2xl font-bold text-white">
-                        Generate an execution strategy
+                        Select a task to generate a plan
                     </h2>
 
-                    <p className="text-sm text-white/50 max-w-sm leading-relaxed">
-                        Select a task to receive an intelligent execution plan for focus and clarity.
+                    <p className="text-sm text-white/50 max-w-sm">
+                        Your AI assistant will generate a structured execution strategy.
                     </p>
                 </div>
             </div>
@@ -56,62 +77,55 @@ function AIPlanCard({ task }) {
     return (
         <div className="flow-card relative overflow-hidden p-6 md:p-7">
 
-            {/* background glow */}
             <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-cyan-400/5" />
 
-            <div className="relative z-10 space-y-7">
+            <div className="relative z-10 space-y-6">
 
                 {/* HEADER */}
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-xs uppercase tracking-[0.2em] text-white/40">
-                    AI Reasoning
-                </div>
                 <div className="flex items-start justify-between gap-5">
 
-                    <div>
+                    <div className="space-y-2">
 
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs uppercase tracking-[0.2em] text-white/40 mb-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-xs uppercase tracking-[0.2em] text-white/40">
                             <Sparkles size={12} />
                             AI Execution Engine
                         </div>
 
-                        <h2 className="text-2xl md:text-3xl font-bold text-white">
-                            Strategic Execution Plan
+                        <h2 className="text-2xl font-bold text-white">
+                            Execution Strategy
                         </h2>
 
-                        <p className="mt-2 text-sm text-white/50">
-                            AI-generated workflow guidance for better execution.
+                        <p className="text-sm text-white/50">
+                            AI-generated guidance for better focus and clarity.
                         </p>
 
                     </div>
 
-                    <div className="hidden md:flex items-center justify-center w-16 h-16 rounded-3xl border border-white/10 bg-white/5">
-                        <Wand2 size={28} className="text-violet-300" />
+                    <div className="hidden md:flex items-center justify-center w-14 h-14 rounded-2xl border border-white/10 bg-white/5">
+                        <Wand2 size={24} className="text-violet-300" />
                     </div>
 
                 </div>
 
                 {/* TASK */}
-                <div className="rounded-3xl border border-cyan-400/10 bg-white/5 p-5">
-
-                    <p className="text-xs uppercase tracking-[0.18em] text-white/35 mb-2">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-wider text-white/40">
                         Selected Task
                     </p>
 
-                    <h3 className="text-xl font-semibold text-cyan-200">
+                    <h3 className="text-lg font-semibold text-cyan-200 mt-1">
                         {task.title}
                     </h3>
-
                 </div>
 
                 {/* STEPS */}
-                <div className="group flex gap-4 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
-
+                <div className="space-y-3">
                     {steps.map((step, i) => (
                         <div
                             key={i}
-                            className="group flex items-start gap-4 p-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+                            className="flex items-start gap-4 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
                         >
-                            <div className="w-10 h-10 flex items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 font-semibold">
+                            <div className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/60 text-sm font-medium">
                                 {i + 1}
                             </div>
 
@@ -125,7 +139,6 @@ function AIPlanCard({ task }) {
                             />
                         </div>
                     ))}
-
                 </div>
 
                 {/* FOOTER */}

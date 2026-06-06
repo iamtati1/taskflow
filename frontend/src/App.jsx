@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import AppLayout from "./components/layouts/AppLayout";
@@ -11,7 +12,48 @@ import Auth from "./pages/Auth";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
+// =====================================================
+// THEME SYSTEM (DOM-driven, no context needed)
+// =====================================================
+
+const THEMES = ["glass", "midnight", "aurora"];
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+
+  THEMES.forEach(t => root.classList.remove(`theme-${t}`));
+  root.classList.add(`theme-${theme}`);
+
+  localStorage.setItem("app-theme", theme);
+}
+
+function initTheme() {
+  const savedTheme = localStorage.getItem("app-theme") || "glass";
+  applyTheme(savedTheme);
+}
+
+// optional global access for Settings UI
+function setTheme(theme) {
+  applyTheme(theme);
+  window.dispatchEvent(
+    new StorageEvent("storage", {
+      key: "app-theme",
+      newValue: theme,
+    })
+  );
+}
+
+window.__setTheme = setTheme;
+
+// =====================================================
+// APP
+// =====================================================
+
 function App() {
+  useEffect(() => {
+    initTheme();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -21,7 +63,7 @@ function App() {
         ===================================================== */}
         <Route path="/auth" element={<Auth />} />
 
-        {/* redirect root → dashboard OR auth handled by ProtectedRoute */}
+        {/* redirect root → tasks */}
         <Route path="/" element={<Navigate to="/tasks" replace />} />
 
         {/* =====================================================
