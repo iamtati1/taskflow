@@ -147,7 +147,23 @@ body {
 }
 
 .flow-card {
-    @apply surface-base;
+    border-radius: 2rem;
+    border: 1px solid var(--glass-border);
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, .06),
+            rgba(255, 255, 255, .03));
+
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+
+    box-shadow:
+        var(--shadow-soft),
+        inset 0 1px 0 rgba(255, 255, 255, .04);
+
+    transition:
+        transform 300ms ease,
+        box-shadow 300ms ease,
+        border-color 300ms ease;
 }
 
 /* =========================================================
@@ -285,6 +301,67 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* =========================================================
+   📅 FLOW CALENDAR
+========================================================= */
+
+.react-calendar {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: inherit;
+}
+
+.react-calendar__navigation {
+    margin-bottom: 1rem;
+}
+
+.react-calendar__navigation button {
+    color: white;
+    background: transparent;
+    border-radius: 12px;
+}
+
+.react-calendar__navigation button:hover {
+    background: rgba(255, 255, 255, .06);
+}
+
+.react-calendar__month-view__weekdays {
+    text-transform: uppercase;
+    font-size: .7rem;
+    color: rgba(255, 255, 255, .45);
+}
+
+.react-calendar__tile {
+    background: transparent;
+    color: white;
+    border-radius: 12px;
+    min-height: 52px;
+    transition: all .2s ease;
+}
+
+.react-calendar__tile:hover {
+    background: rgba(255, 255, 255, .05);
+}
+
+.react-calendar__tile--active {
+    background: rgba(34, 211, 238, .15) !important;
+    color: white !important;
+}
+
+.react-calendar__tile--now {
+    background: rgba(139, 92, 246, .15);
+}
+
+.has-task {
+    position: relative;
+}
+
+.selected-day {
+    background: rgba(34, 211, 238, .18) !important;
 }
 
 /* =========================================================

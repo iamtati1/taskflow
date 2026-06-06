@@ -34,7 +34,7 @@ function AnalyticsPanel({
                 <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-violet-500/10 blur-[140px]" />
             </div>
 
-            {/* HEADER */}
+            {/* HEADER (FIXED: single clean hierarchy) */}
             <div className="relative z-10 flex items-start justify-between gap-6 mb-8">
 
                 <div className="space-y-2">
@@ -51,7 +51,6 @@ function AnalyticsPanel({
                     <p className="text-sm text-white/45 max-w-md">
                         A snapshot of progress, completion trends, and task momentum.
                     </p>
-
                 </div>
 
                 <div className="hidden md:flex w-14 h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
@@ -71,7 +70,7 @@ function AnalyticsPanel({
                         </p>
 
                         <div className="flex items-end gap-2">
-                            <h3 className="text-5xl font-bold text-white">
+                            <h3 className="text-6xl font-bold text-white tracking-tight">
                                 {completionRate}
                             </h3>
                             <span className="text-2xl text-cyan-300 mb-1">%</span>
@@ -84,14 +83,11 @@ function AnalyticsPanel({
 
                 </div>
 
-                {/* progress bar */}
                 <div className="h-4 w-full rounded-full border border-white/10 bg-white/5 overflow-hidden">
-
                     <div
                         className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 transition-all duration-700"
                         style={{ width: `${completionRate}%` }}
                     />
-
                 </div>
 
             </div>
@@ -126,7 +122,7 @@ function AnalyticsPanel({
 }
 
 /* =========================================================
-   METRIC CARD (SIMPLIFIED)
+   METRIC CARD (FIXED)
 ========================================================= */
 
 function MetricCard({ icon, label, value, tone }) {
@@ -137,17 +133,20 @@ function MetricCard({ icon, label, value, tone }) {
     };
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border p-4 bg-white/5 hover:bg-white/10 transition">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition">
 
-            <div className="flex items-center justify-between mb-4">
+            {/* subtle glow layer */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+
+            <div className="relative z-10 flex items-center justify-between mb-4">
                 <div className={`w-10 h-10 flex items-center justify-center rounded-xl border ${tones[tone]}`}>
                     {icon}
                 </div>
             </div>
 
-            <p className="text-sm text-white/45">{label}</p>
+            <p className="text-sm text-white/45 relative z-10">{label}</p>
 
-            <h3 className="text-3xl font-bold text-white">
+            <h3 className="text-3xl font-bold text-white relative z-10">
                 {value}
             </h3>
 

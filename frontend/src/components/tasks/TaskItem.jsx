@@ -1,79 +1,22 @@
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+import {
+  CheckCircle2,
+  Circle,
+  Calendar,
+  Flag,
+  GripVertical,
+} from "lucide-react";
+
 function TaskItem({
   task,
-  onDelete = () => { },
-  onToggle = () => { },
-  onSelect = () => { },
-  onEdit = async () => { },
   isSelected = false,
+  onSelect = () => { },
+  onToggle = () => { },
 }) {
-  // =====================================================
-  // SAFETY
-  // =====================================================
-
-  const safeTask = task ?? {};
-
-  if (!safeTask.task_id) {
-    console.warn("Task missing task_id:", safeTask);
-    return null;
-  }
-
-  const id = safeTask.task_id;
-
-  // =====================================================
-  // EDIT STATE
-  // =====================================================
-
-  const [isEditing, setIsEditing] = useState(false);
-
-  const [editedTitle, setEditedTitle] = useState(
-    safeTask.title || ""
-  );
-
-  const [editedPriority, setEditedPriority] = useState(
-    safeTask.priority || "medium"
-  );
-
-  const [editedDueDate, setEditedDueDate] = useState(
-    safeTask.due_date
-      ? safeTask.due_date.slice(0, 10)
-      : ""
-  );
-
-  useEffect(() => {
-    setEditedTitle(safeTask.title || "");
-    setEditedPriority(safeTask.priority || "medium");
-
-    setEditedDueDate(
-      safeTask.due_date
-        ? safeTask.due_date.slice(0, 10)
-        : ""
-    );
-  }, [safeTask]);
-
-  // =====================================================
-  // SAVE
-  // =====================================================
-
-  const handleSave = async () => {
-    const result = await onEdit(id, {
-      title: editedTitle,
-      priority: editedPriority,
-      due_date: editedDueDate || null,
-    });
-
-    if (result?.success !== false) {
-      setIsEditing(false);
-    }
-  };
-
-  // =====================================================
-  // DRAG + DROP
-  // =====================================================
+  if (!task?.task_id) return null;
 
   const {
     setNodeRef,
@@ -82,8 +25,7 @@ function TaskItem({
     attributes,
     listeners,
   } = useSortable({
-    id,
-    disabled: isEditing,
+    id: task.task_id,
   });
 
   const style = {
@@ -91,144 +33,111 @@ function TaskItem({
     transition,
   };
 
-  // =====================================================
-  // UI
-  // =====================================================
+  const priorityColors = {
+    low: "text-green-400",
+    medium: "text-yellow-400",
+    high: "text-red-400",
+  };
 
   return (
-    <motion.li
+    <motion.div
       ref={setNodeRef}
       style={style}
       layout
       whileHover={{ y: -2 }}
+      onClick={() => onSelect(task.task_id)}
       className={`
-        rounded-2xl
-        border
-        p-4
-        cursor-pointer
-        transition-all
+                group
+                rounded-2xl
+                border
+                cursor-pointer
+                transition-all
+                p-4
 
-        ${isSelected
-          ? "border-cyan-400 bg-cyan-500/10"
-          : "border-white/10 bg-white/5"
+                ${isSelected
+          ? "border-cyan-400/40 bg-cyan-500/10"
+          : "border-white/10 bg-white/[0.03]"
         }
-      `}
+            `}
     >
-      <div
-        className="space-y-3"
-        onClick={() => onSelect(id)}
-      >
-        {isEditing ? (
-          <div className="space-y-2">
-            <input
-              value={editedTitle}
-              onChange={(e) =>
-                setEditedTitle(e.target.value)
-              }
-              className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2"
-              placeholder="Task title"
+      <div className="flex items-start gap-3">
+
+        {/* COMPLETE */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle(task.task_id);
+          }}
+          className="mt-0.5"
+        >
+          {task.is_complete ? (
+            <CheckCircle2
+              size={18}
+              className="text-green-400"
             />
-
-            <select
-              value={editedPriority}
-              onChange={(e) =>
-                setEditedPriority(e.target.value)
-              }
-              className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-
-            <input
-              type="date"
-              value={editedDueDate}
-              onChange={(e) =>
-                setEditedDueDate(e.target.value)
-              }
-              className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2"
+          ) : (
+            <Circle
+              size={18}
+              className="text-white/40"
             />
+          )}
+        </button>
 
-            <div className="flex gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSave();
-                }}
-                className="rounded-lg px-3 py-2 border border-cyan-400"
-              >
-                Save
-              </button>
+        {/* CONTENT */}
+        <div className="flex-1 min-w-0">
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditing(false);
-                }}
-                className="rounded-lg px-3 py-2 border border-white/10"
-              >
-                Cancel
-              </button>
+          <h3
+            className={`
+                            font-medium
+                            truncate
+
+                            ${task.is_complete
+                ? "line-through text-white/40"
+                : "text-white"
+              }
+                        `}
+          >
+            {task.title}
+          </h3>
+
+          <div className="flex flex-wrap gap-4 mt-2 text-xs">
+
+            <div className="flex items-center gap-1 text-white/50">
+              <Flag
+                size={12}
+                className={
+                  priorityColors[
+                  task.priority
+                  ]
+                }
+              />
+              {task.priority}
             </div>
+
+            {task.due_date && (
+              <div className="flex items-center gap-1 text-white/50">
+                <Calendar size={12} />
+                {task.due_date.slice(0, 10)}
+              </div>
+            )}
           </div>
-        ) : (
-          <>
-            <div>
-              <h3 className="font-medium">
-                {safeTask.title || "Untitled Task"}
-              </h3>
+        </div>
 
-              {safeTask.priority && (
-                <p className="text-sm opacity-70">
-                  Priority: {safeTask.priority}
-                </p>
-              )}
-
-              {safeTask.due_date && (
-                <p className="text-sm opacity-70">
-                  Due: {safeTask.due_date.slice(0, 10)}
-                </p>
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggle(id);
-                }}
-                className="rounded-lg border border-white/10 px-3 py-2"
-              >
-                {safeTask.is_complete
-                  ? "Completed"
-                  : "Complete"}
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditing(true);
-                }}
-                className="rounded-lg border border-white/10 px-3 py-2"
-              >
-                Edit
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(id);
-                }}
-                className="rounded-lg border border-red-400/40 px-3 py-2"
-              >
-                Delete
-              </button>
-            </div>
-          </>
-        )}
+        {/* DRAG HANDLE */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="
+                        opacity-0
+                        group-hover:opacity-100
+                        transition-opacity
+                        text-white/30
+                    "
+        >
+          <GripVertical size={16} />
+        </div>
       </div>
-    </motion.li>
+    </motion.div>
   );
 }
 

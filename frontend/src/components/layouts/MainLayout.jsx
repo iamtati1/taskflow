@@ -3,80 +3,117 @@ import Topbar from "../components/layout/Topbar";
 
 function MainLayout({ children }) {
     return (
-        <div className="relative min-h-screen bg-[#060816] text-white overflow-hidden">
+        <div className="min-h-screen bg-[#050816] text-white">
 
             {/* =====================================================
-                BACKGROUND (NON-INTERACTIVE LAYER)
+                GLOBAL BACKGROUND
             ===================================================== */}
-            <div className="absolute inset-0 pointer-events-none">
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
 
-                <div className="
-                    absolute top-[-20rem] left-1/2 -translate-x-1/2
-                    w-[70rem] h-[40rem]
-                    rounded-full
-                    bg-cyan-500/[0.08]
-                    blur-[180px]
-                " />
+                {/* GRID */}
+                <div className="app-grid" />
 
-                <div className="
-                    absolute top-[20%] right-[-15rem]
-                    w-[35rem] h-[35rem]
-                    rounded-full
-                    bg-violet-500/[0.10]
-                    blur-[180px]
-                " />
+                {/* NOISE */}
+                <div className="app-noise" />
 
-                <div className="
-                    absolute bottom-[-12rem] left-[-10rem]
-                    w-[40rem] h-[40rem]
-                    rounded-full
-                    bg-cyan-400/[0.06]
-                    blur-[180px]
-                " />
+                {/* CYAN GLOW */}
+                <div
+                    className="
+                        absolute
+                        top-[-15rem]
+                        right-[-10rem]
+                        h-[40rem]
+                        w-[40rem]
+                        rounded-full
+                        bg-cyan-400/10
+                        blur-[160px]
+                    "
+                />
 
-                {/* decorative overlays */}
-                <div className="dashboard-grid" />
-                <div className="dashboard-noise" />
+                {/* VIOLET GLOW */}
+                <div
+                    className="
+                        absolute
+                        bottom-[-15rem]
+                        left-[-10rem]
+                        h-[42rem]
+                        w-[42rem]
+                        rounded-full
+                        bg-violet-500/10
+                        blur-[180px]
+                    "
+                />
+
             </div>
 
             {/* =====================================================
-                APP LAYOUT
+                APPLICATION
             ===================================================== */}
             <div className="relative z-10 flex min-h-screen">
 
-                {/* SIDEBAR */}
-                <aside className="
-                    hidden lg:block
-                    w-[290px]
-                    shrink-0
-                    border-r border-white/10
-                    bg-black/20
-                    backdrop-blur-2xl
-                ">
+                {/* =====================================================
+                    SIDEBAR
+                ===================================================== */}
+                <aside
+                    className="
+                        hidden
+                        lg:flex
+                        lg:w-[280px]
+                        xl:w-[300px]
+                        shrink-0
+
+                        border-r
+                        border-white/10
+
+                        bg-black/20
+                        backdrop-blur-2xl
+                    "
+                >
                     <Sidebar />
                 </aside>
 
-                {/* MAIN */}
-                <div className="flex-1 min-w-0 flex flex-col">
+                {/* =====================================================
+                    CONTENT
+                ===================================================== */}
+                <div className="flex min-w-0 flex-1 flex-col">
 
                     {/* TOPBAR */}
-                    <header className="sticky top-0 z-40">
-                        <Topbar />
-                    </header>
+                    <div
+                        className="
+                            sticky
+                            top-0
+                            z-50
 
-                    {/* CONTENT */}
-                    <main className="
-                        flex-1
-                        overflow-y-auto
-                        px-6 md:px-8 xl:px-10
-                        py-8 xl:py-10
-                    ">
+                            border-b
+                            border-white/10
+
+                            bg-[#050816]/70
+                            backdrop-blur-2xl
+                        "
+                    >
+                        <Topbar />
+                    </div>
+
+                    {/* PAGE */}
+                    <main
+                        className="
+                            flex-1
+                            overflow-y-auto
+
+                            px-6
+                            py-8
+
+                            md:px-8
+                            xl:px-10
+                        "
+                    >
                         <div className="mx-auto w-full max-w-[1600px]">
                             {children}
                         </div>
                     </main>
 
                 </div>
+
             </div>
         </div>
     );

@@ -62,6 +62,9 @@ function AIPlanCard({ task }) {
             <div className="relative z-10 space-y-7">
 
                 {/* HEADER */}
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-xs uppercase tracking-[0.2em] text-white/40">
+                    AI Reasoning
+                </div>
                 <div className="flex items-start justify-between gap-5">
 
                     <div>
@@ -101,7 +104,7 @@ function AIPlanCard({ task }) {
                 </div>
 
                 {/* STEPS */}
-                <div className="space-y-4">
+                <div className="group flex gap-4 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
 
                     {steps.map((step, i) => (
                         <div

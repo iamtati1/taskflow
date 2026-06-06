@@ -84,6 +84,9 @@ function MotivationalCard({ tasks = [] }) {
             <div className={`
                 absolute inset-0 opacity-60 pointer-events-none
                 bg-gradient-to-br ${accentMap[accent]}
+                <div className="flow-card relative overflow-hidden p-6">
+                // inside background
+<div className="absolute inset-0 opacity-70 bg-gradient-to-br from-white/5 via-transparent to-cyan-400/5" />
             `} />
 
             <div className="absolute -top-24 -right-24 w-72 h-72 bg-cyan-400/5 blur-[120px] pointer-events-none" />
@@ -93,7 +96,9 @@ function MotivationalCard({ tasks = [] }) {
 
                 {/* HEADER */}
                 <div className="flex items-start justify-between gap-4">
-
+                    <h3 className="text-sm uppercase tracking-[0.2em] text-white/40">
+                        Daily State
+                    </h3>
                     <div className="space-y-3">
 
                         <div className="
@@ -127,7 +132,7 @@ function MotivationalCard({ tasks = [] }) {
 
                 {/* MESSAGE */}
                 <div className="space-y-2">
-                    <p className="text-base md:text-lg font-medium text-white">
+                    <p className="text-lg font-semibold text-white leading-snug">
                         {message}
                     </p>
 
@@ -164,6 +169,16 @@ function MotivationalCard({ tasks = [] }) {
                 </div>
 
                 {/* FOOTER */}
+                <div className="flex items-center justify-between pt-4 border-t border-white/10 text-xs text-white/35">
+                    <span>
+                        {completed} / {total} completed
+                    </span>
+
+                    <span className="text-cyan-300">
+                        {completionRate}% flow state
+                    </span>
+                </div>
+
                 <div className="
                     flex items-center justify-between
                     pt-3 border-t border-white/10

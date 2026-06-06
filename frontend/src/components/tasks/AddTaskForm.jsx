@@ -1,20 +1,18 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Sparkles, Flag, PencilLine, CheckCircle2 } from "lucide-react";
+import { Sparkles, Flag, CheckCircle2 } from "lucide-react";
+
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import Card from "../ui/Card";
 
 function AddTaskForm({ addTask }) {
-    // =====================
-    // STATE
-    // =====================
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState("medium");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
 
-    // =====================
-    // SUBMIT
-    // =====================
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -36,135 +34,109 @@ function AddTaskForm({ addTask }) {
                 setPriority("medium");
                 setSuccess(true);
 
-                setTimeout(() => setSuccess(false), 1500);
+                setTimeout(() => setSuccess(false), 1200);
             }
-        } catch (err) {
-            console.error("CREATE TASK ERROR:", err);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const priorityStyles = {
-        low: "text-white/40",
-        medium: "text-cyan-300",
-        high: "text-violet-300",
-    };
-
     return (
-        <motion.section layout className="surface-base p-6 md:p-8 space-y-8">
+        <motion.div layout>
+            <Card className="space-y-6">
 
-            {/* HEADER */}
-            <div className="flex items-start justify-between gap-4">
-                <div className="space-y-4">
-                    <div className="eyebrow">
-                        <Sparkles size={12} />
-                        Task Builder
-                    </div>
+                {/* HEADER */}
+                <div className="space-y-1">
+                    <h2 className="text-lg font-semibold text-white">
+                        Create Task
+                    </h2>
 
-                    <div className="space-y-2">
-                        <h2 className="text-2xl font-semibold text-white">
-                            Create Task
-                        </h2>
-
-                        <p className="text-sm text-white/45 max-w-lg">
-                            Add meaningful work to your workflow and keep momentum moving forward.
-                        </p>
-                    </div>
+                    <p className="text-sm text-white/50">
+                        Add something you want to accomplish.
+                    </p>
                 </div>
 
-                <div className="icon-tile">
-                    <PencilLine size={20} className="text-cyan-300" />
-                </div>
-            </div>
+                {/* FORM */}
+                <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* FORM */}
-            <form onSubmit={handleSubmit} className="space-y-7">
-
-                {/* TITLE */}
-                <div className="space-y-3">
-                    <label className="input-label">Task</label>
-
-                    <div className="flex items-center gap-3 px-4 py-4 rounded-2xl border border-white/10 bg-black/20">
-                        <Plus size={16} className="text-white/30" />
-
-                        <input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Design landing page..."
-                            className="w-full bg-transparent text-white outline-none"
-                        />
-                    </div>
-                </div>
-
-                {/* DESCRIPTION */}
-                <div className="space-y-3">
-                    <label className="input-label">Description</label>
+                    <Input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Task title..."
+                    />
 
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        rows={4}
-                        placeholder="Add context..."
-                        className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-white outline-none resize-none"
+                        placeholder="Description (optional)"
+                        rows={3}
+                        className="
+                            w-full
+                            rounded-xl
+                            border border-white/10
+                            bg-black/20
+                            px-4 py-3
+                            text-white
+                            outline-none
+                            resize-none
+                            focus:border-cyan-400/40
+                        "
                     />
-                </div>
 
-                {/* PRIORITY */}
-                <div className="space-y-3">
-                    <label className="input-label">Priority</label>
-
-                    <div className="grid grid-cols-3 gap-3">
-                        {["low", "medium", "high"].map((level) => {
-                            const active = priority === level;
-
-                            return (
-                                <button
-                                    key={level}
-                                    type="button"
-                                    onClick={() => setPriority(level)}
-                                    className={`priority-pill ${active ? "priority-pill-active" : "priority-pill-idle"}`}
-                                >
-                                    <Flag size={14} className={priorityStyles[level]} />
-                                    {level}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* FOOTER */}
-                <div className="flex items-center justify-between pt-2">
-
-                    {/* SUCCESS */}
-                    <div className="min-h-[20px] text-sm">
-                        <AnimatePresence mode="wait">
-                            {success && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 4 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -4 }}
-                                    className="flex items-center gap-2 text-cyan-300"
-                                >
-                                    <CheckCircle2 size={15} />
-                                    Task created
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                    {/* PRIORITY */}
+                    <div className="flex gap-2">
+                        {["low", "medium", "high"].map((level) => (
+                            <button
+                                key={level}
+                                type="button"
+                                onClick={() => setPriority(level)}
+                                className={`
+                                    flex items-center gap-2 px-3 py-2 rounded-xl text-sm border
+                                    ${priority === level
+                                        ? "border-cyan-400/40 bg-cyan-500/10 text-white"
+                                        : "border-white/10 text-white/60"
+                                    }
+                                `}
+                            >
+                                <Flag size={14} />
+                                {level}
+                            </button>
+                        ))}
                     </div>
 
-                    {/* SUBMIT */}
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-sm text-white disabled:opacity-50"
-                    >
-                        <Sparkles size={16} />
-                        {isSubmitting ? "Creating..." : "Create Task"}
-                    </button>
-                </div>
-            </form>
-        </motion.section>
+                    {/* FOOTER */}
+                    <div className="flex items-center justify-between pt-2">
+
+                        {/* SUCCESS */}
+                        <div className="text-sm text-cyan-300 min-h-[20px]">
+                            <AnimatePresence>
+                                {success && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0 }}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <CheckCircle2 size={14} />
+                                        Task created
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* SUBMIT */}
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            disabled={isSubmitting}
+                        >
+                            <Sparkles size={14} className="inline mr-1" />
+                            {isSubmitting ? "Creating..." : "Add Task"}
+                        </Button>
+                    </div>
+                </form>
+            </Card>
+        </motion.div>
     );
 }
 

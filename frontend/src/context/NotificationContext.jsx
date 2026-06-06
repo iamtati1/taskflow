@@ -2,32 +2,38 @@ import {
     createContext,
     useContext,
     useState,
+    useCallback,
 } from "react";
 
 const NotificationContext = createContext(null);
-
-// =====================================================
-// PROVIDER
-// =====================================================
 
 export function NotificationProvider({ children }) {
     const [notifications, setNotifications] = useState([]);
 
     // =========================
-    // ADD NOTIFICATION
+    // ADD TOAST
     // =========================
-    const addNotification = (message, type = "info") => {
+    const addNotification = useCallback((message, type = "info") => {
+        const id = crypto?.randomUUID?.() ?? Date.now();
+
         const newNotification = {
-            id: crypto?.randomUUID?.() ?? Date.now(),
+            id,
             message,
-            type,
+            type, // success | error | info | warning
         };
 
         setNotifications((prev) => [...prev, newNotification]);
-    };
+
+        // auto remove after 4s
+        setTimeout(() => {
+            setNotifications((prev) =>
+                prev.filter((n) => n.id !== id)
+            );
+        }, 4000);
+    }, []);
 
     // =========================
-    // REMOVE NOTIFICATION
+    // REMOVE
     // =========================
     const removeNotification = (id) => {
         setNotifications((prev) =>
@@ -35,12 +41,18 @@ export function NotificationProvider({ children }) {
         );
     };
 
+    // =========================
+    // CLEAR ALL
+    // =========================
+    const clearAll = () => setNotifications([]);
+
     return (
         <NotificationContext.Provider
             value={{
                 notifications,
                 addNotification,
                 removeNotification,
+                clearAll,
             }}
         >
             {children}
@@ -48,16 +60,15 @@ export function NotificationProvider({ children }) {
     );
 }
 
-// =====================================================
+// =========================
 // HOOK
-// =====================================================
-
+// =========================
 export function useNotifications() {
     const context = useContext(NotificationContext);
 
     if (!context) {
         throw new Error(
-            "useNotifications must be used within a NotificationProvider"
+            "useNotifications must be used within NotificationProvider"
         );
     }
 
