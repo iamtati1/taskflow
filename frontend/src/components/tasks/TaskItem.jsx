@@ -13,9 +13,11 @@ import {
 
 function TaskItem({
   task,
-  isSelected = false,
   onSelect = () => { },
   onToggle = () => { },
+  onEdit = () => { },
+  onDelete = () => { },
+  isSelected = false,
   isActiveActionId,
 }) {
   if (!task?.task_id) return null;
@@ -134,12 +136,37 @@ function TaskItem({
         <div className="min-w-0 flex-1">
           <h3
             className={`text-sm font-medium transition-all ${isCompleted
-                ? "line-through text-white/30"
-                : "text-white"
+              ? "line-through text-white/30"
+              : "text-white"
               }`}
           >
             {task.title}
           </h3>
+
+          {/* ACTIONS */}
+          <div className="flex items-center gap-2"></div>
+          {/* EDIT BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(task);
+            }}
+            className="text-xs text-cyan-300 hover:text-cyan-200"
+          >
+            Edit
+          </button>
+
+          {/* DELETE BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task.task_id);
+            }}
+            className="text-xs text-red-400 hover:text-red-300"
+          >
+            Delete
+          </button>
+
 
           {/* META ROW */}
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -166,6 +193,7 @@ function TaskItem({
             )}
           </div>
         </div>
+
 
         {/* DRAG HANDLE */}
         <div

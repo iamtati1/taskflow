@@ -7,6 +7,7 @@ const logRoutes = require('./middleware/logRoutes');
 const authControllers = require('./controllers/authControllers');
 const taskRoutes = require("./routes/taskRoutes");
 const cors = require('cors');
+const pool = require("./db/pool");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -14,19 +15,30 @@ const PORT = process.env.PORT || 8080;
 // ====================================
 // Middleware
 // ====================================
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.CLIENT_URL,
+];
 
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 app.use(cookieSession({
-  name: 'session',
+  name: "session",
   keys: [process.env.SESSION_SECRET],
   maxAge: 24 * 60 * 60 * 1000,
   httpOnly: true,
-  sameSite: 'lax',
-  secure: false
+
+  secure: process.env.NODE_ENV === "production",
+
+  sameSite:
+    process.env.NODE_ENV === "production"
+      ? "none"
+      : "lax",
 }));
 
 app.use((req, res, next) => {
@@ -86,7 +98,6 @@ app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`)
 //   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 // });
 
-const pool = require("./db/pool");
 
 app.get("/db-check", async (req, res) => {
   const result = await pool.query(

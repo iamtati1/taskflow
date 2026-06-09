@@ -1,6 +1,7 @@
 import Card from "../components/ui/Card";
 import useUISettings from "../hooks/useUISettings";
 
+
 import {
     Bell,
     Shield,
@@ -64,7 +65,7 @@ const quickSettingsList = [
 // =====================================================
 
 function Settings() {
-    const { user, signOut } = useAuth();
+    const { currentUser, logout } = useAuth();
     const { tasks = [] } = useTasks();
 
     const {
@@ -101,7 +102,7 @@ function Settings() {
                     <p className="text-white/60">
                         Logged in as{" "}
                         <span className="text-white font-medium">
-                            {user?.username || "Guest"}
+                            {currentUser?.username || "Guest"}
                         </span>
                         {" • "}
                         {tasks.length} tasks in system
@@ -161,6 +162,7 @@ function Settings() {
                         </div>
                     </Card>
 
+
                     {/* AI SETTINGS */}
                     <Card>
                         <div className="flex items-center gap-3 mb-6">
@@ -200,11 +202,11 @@ function Settings() {
                     {/* PROFILE */}
                     <Card className="text-center">
                         <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center text-2xl font-bold mb-4">
-                            {user?.username?.[0]?.toUpperCase() || "G"}
+                            {currentUser?.username?.[0]?.toUpperCase() || "G"}
                         </div>
 
                         <h2 className="text-xl font-semibold text-white">
-                            {user?.username || "Guest"}
+                            {currentUser?.username || "Guest"}
                         </h2>
 
                         <p className="text-white/45 text-sm mt-1">
@@ -223,7 +225,7 @@ function Settings() {
                             </button>
 
                             <button
-                                onClick={signOut}
+                                onClick={logout}
                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/10 text-red-300 border border-red-400/10"
                             >
                                 <LogOut size={16} />

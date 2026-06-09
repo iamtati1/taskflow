@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import TaskCalendar from "../components/calendar/TaskCalendar";
 import TaskList from "../components/tasks/TaskList";
@@ -8,12 +8,13 @@ import useTasks from "../hooks/useTasks";
 import { CheckCircle2, ListTodo } from "lucide-react";
 
 // =====================================================
-// SHARED CARD SYSTEM (temporary local version)
-// (later we extract this globally)
+// CARD
 // =====================================================
 function Card({ children, className = "" }) {
     return (
-        <div className={`rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl ${className}`}>
+        <div
+            className={`rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl ${className}`}
+        >
             {children}
         </div>
     );
@@ -26,7 +27,7 @@ function Tasks() {
 
     const {
         tasks,
-        isLoading,
+        status,
         error,
         selectedTaskId,
         onSelect,
@@ -37,44 +38,91 @@ function Tasks() {
         reorderTasks,
     } = useTasks();
 
-    const handleCreate = async (data) => addTask(data);
-    const handleUpdate = async (id, data) => editTask(id, data);
+    // ===============================
+    // FIX: safe loading state
+    // ===============================
+    const isLoading = status === "loading";
 
+    // ===============================
+    // CREATE
+    // ===============================
+    const handleCreate = async (data) => {
+        await addTask(data);
+        closeModal();
+    };
+
+    // ===============================
+    // UPDATE
+    // ===============================
+    const handleUpdate = async (id, data) => {
+        await editTask(id, data);
+        closeModal();
+    };
+
+    // ===============================
+    // EDIT
+    // ===============================
     const handleEdit = (task) => {
         setEditingTask(task);
         setIsModalOpen(true);
     };
 
+    // ===============================
+    // CLOSE MODAL
+    // ===============================
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingTask(null);
     };
 
-    const filteredTasks = tasks.filter((task) => {
-        if (!task.due_date) return true;
-        return (
-            new Date(task.due_date).toDateString() ===
-            selectedDate.toDateString()
-        );
-    });
+    // ===============================
+    // OPEN NEW TASK (IMPORTANT FIX)
+    // ===============================
+    const openNewTask = () => {
+        setEditingTask(null);
+        setIsModalOpen(true);
+    };
 
+    // ===============================
+    // FILTER TASKS BY DATE (optimized)
+    // ===============================
+    const filteredTasks = useMemo(() => {
+        return tasks.filter((task) => {
+            if (!task.due_date) return true;
+
+            return (
+                new Date(task.due_date).toDateString() ===
+                selectedDate.toDateString()
+            );
+        });
+    }, [tasks, selectedDate]);
+
+    // ===============================
+    // STATS
+    // ===============================
     const completedTasks = tasks.filter(
         (task) => task.is_complete
     ).length;
 
-    const stats = [
-        {
-            icon: ListTodo,
-            label: "Total",
-            value: tasks.length,
-        },
-        {
-            icon: CheckCircle2,
-            label: "Completed",
-            value: completedTasks,
-        },
-    ];
+    const stats = useMemo(
+        () => [
+            {
+                icon: ListTodo,
+                label: "Total",
+                value: tasks.length,
+            },
+            {
+                icon: CheckCircle2,
+                label: "Completed",
+                value: completedTasks,
+            },
+        ],
+        [tasks, completedTasks]
+    );
 
+    // ===============================
+    // LOADING / ERROR STATES
+    // ===============================
     if (isLoading) {
         return (
             <div className="p-6 text-white/60">
@@ -84,19 +132,13 @@ function Tasks() {
     }
 
     if (error) {
-        return (
-            <div className="p-6 text-red-400">
-                {error}
-            </div>
-        );
+        return <div className="p-6 text-red-400">{error}</div>;
     }
 
     return (
         <div className="space-y-10">
 
-            {/* =====================================================
-                HEADER (SYSTEM STANDARD)
-            ===================================================== */}
+            {/* HEADER */}
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
 
                 <div className="space-y-2">
@@ -115,19 +157,15 @@ function Tasks() {
                 </div>
 
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={openNewTask}
                     className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-white transition hover:bg-cyan-400/15"
                 >
                     + New Task
                 </button>
-
             </div>
 
-            {/* =====================================================
-                STATS (UNIFIED SYSTEM)
-            ===================================================== */}
+            {/* STATS */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
                 {stats.map((stat) => {
                     const Icon = stat.icon;
 
@@ -145,12 +183,9 @@ function Tasks() {
                         </Card>
                     );
                 })}
-
             </div>
 
-            {/* =====================================================
-                MAIN GRID
-            ===================================================== */}
+            {/* MAIN GRID */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
                 <Card className="xl:col-span-1">
@@ -171,17 +206,16 @@ function Tasks() {
                         reorderTasks={reorderTasks}
                     />
                 </Card>
-
             </div>
 
-            {/* =====================================================
-                MODAL
-            ===================================================== */}
-            <AddTaskForm
-                addTask={handleCreate}
-                updateTask={handleUpdate}
-                initialData={editingTask}
-            />
+            {/* MODAL */}
+            {isModalOpen && (
+                <AddTaskForm
+                    addTask={handleCreate}
+                    updateTask={handleUpdate}
+                    initialData={editingTask}
+                />
+            )}
 
         </div>
     );
