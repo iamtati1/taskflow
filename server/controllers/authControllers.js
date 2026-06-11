@@ -54,7 +54,7 @@ module.exports.logout = (req, res) => {
 
 module.exports.login = async (req, res, next) => {
   try {
-    console.log("LOGIN CONTROLLER HIT");
+    console.log("LOGIN BODY:", req.body);
 
     const { username, password } = req.body;
 
@@ -74,9 +74,7 @@ module.exports.login = async (req, res, next) => {
 
     req.session.user_id = user.id;
 
-    return res.json({
-      user
-    });
+    return res.json({ user });
 
   } catch (err) {
     next(err);

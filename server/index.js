@@ -84,6 +84,7 @@ app.use("/api/tasks", taskRoutes);
 // ====================================
 // Global Error Handler
 // ====================================
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
 
 const handleError = (err, req, res, next) => {
   console.error(err);

@@ -33,19 +33,19 @@ module.exports.createTask = async ({ title, priority, due_date, category_id, use
 
   const query = `
     INSERT INTO tasks (
-  title,
-  priority,
-  due_date,
-  category_id,
-  user_id
-)
-VALUES ($1,$2,$3,$4,$5)
-RETURNING *
-`;
+      title,
+      priority,
+      due_date,
+      category_id,
+      user_id
+    )
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *
+  `;
 
   const { rows } = await pool.query(query, [
     title,
-    priority,
+    priority || null,
     due_date,
     category_id,
     user_id,

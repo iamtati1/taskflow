@@ -12,14 +12,31 @@ module.exports.listTasks = async (req, res, next) => {
 
 module.exports.createTask = async (req, res, next) => {
   try {
+    console.log("CREATE TASK BODY:", req.body);
+    console.log("SESSION:", req.session);
+
     const { title, priority, due_date, category_id } = req.body;
-    if (!title) return res.status(400).send({ error: 'Title is required.' });
-    const task = await taskModel.createTask({ title, priority, due_date, category_id, user_id: req.session.user_id });
-    res.status(201).send(task);
+
+    const user_id = req.session.user_id;
+    console.log("SESSION USER ID:", user_id);
+
+    if (!user_id) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    console.log("SESSION USER ID:", req.session.user_id);
+    const task = await taskModel.createTask({
+      title,
+      priority,
+      due_date,
+      category_id,
+      user_id,
+    });
+
+    return res.status(201).json(task);
   } catch (err) {
     next(err);
   }
-}; //
+};
 
 module.exports.updateTask = async (req, res, next) => {
   try {
