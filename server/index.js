@@ -23,10 +23,19 @@ const PORT = process.env.PORT || 8080;
 const allowedOrigins = [
   "http://localhost:5173",
   process.env.CLIENT_URL,
-];
+].filter(Boolean);
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log("Blocked by CORS:", origin);
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
 }));
 
@@ -34,20 +43,12 @@ app.use(express.json());
 
 app.use(cookieSession({
   name: "session",
-  keys: ["dev_key"],
+  keys: [process.env.SESSION_SECRET],
   maxAge: 24 * 60 * 60 * 1000,
 }));
 
-app.use((req, res, next) => {
-  next();
-});
-
-
 app.use(logRoutes);
-app.use((req, res, next) => {
 
-  next();
-});
 
 // ====================================
 // Health Check / Root Route
@@ -76,36 +77,36 @@ app.delete('/api/auth/logout', authControllers.logout);
 // ====================================
 // Task Routes
 // ====================================
-
 app.use("/api/tasks", taskRoutes);
 
+// ====================================
+// DB Check (debug route)
+// ====================================
+app.get("/db-check", async (req, res) => {
+  const result = await pool.query("SELECT current_database()");
+  res.send(result.rows);
+});
 
 // ====================================
 // Global Error Handler
 // ====================================
-console.log("DATABASE_URL:", process.env.DATABASE_URL);
-
 const handleError = (err, req, res, next) => {
   console.error(err);
   res.status(500).send({ message: 'Internal Server Error' });
 };
+
 app.use(handleError);
 
 // ====================================
-// Listen
+// Serve frontend (MUST be after API routes)
 // ====================================
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
+
+// ====================================
+// Listen (ALWAYS LAST)
+// ====================================
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-
-
-
-app.get("/db-check", async (req, res) => {
-  const result = await pool.query(
-    "SELECT current_database()"
-  );
-
-  res.send(result.rows);
-});

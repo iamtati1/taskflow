@@ -68,13 +68,7 @@ export function useAuth() {
     // =====================================================
     // SAFE ACTION WRAPPERS
     // =====================================================
-    const handleSignOut = useCallback(async () => {
-        try {
-            await signOut?.();
-        } catch (err) {
-            console.error("Sign out failed:", err);
-        }
-    }, [signOut]);
+
 
     const handleRefresh = useCallback(async () => {
         try {
@@ -103,8 +97,7 @@ export function useAuth() {
 
         // actions
         signIn,
-        signOut: handleSignOut,
-        refreshSession: handleRefresh,
+        signOut,
 
         // helpers
         hasRole,
