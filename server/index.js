@@ -13,12 +13,10 @@ try {
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
-const cors = require("cors");
 const cookieSession = require("cookie-session");
 
 // DB + MIGRATION
 const migrate = require("./db/migrate");
-const pool = require("./db/pool");
 
 // ROUTES / CONTROLLERS
 const logRoutes = require("./middleware/logRoutes");
@@ -38,33 +36,7 @@ const isProduction = process.env.NODE_ENV === "production";
 // ====================================
 app.set("trust proxy", 1);
 
-// ====================================
-// CORS (SAFE VERSION)
-// ====================================
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:8080",
-  process.env.CLIENT_URL || ""
-];
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // allow non-browser requests (Postman, server-to-server)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      console.log("🚫 Blocked by CORS:", origin);
-
-      // IMPORTANT: do NOT crash frontend in production
-      return callback(null, true);
-    },
-    credentials: true,
-  })
-);
+// No CORS: the frontend is served from this same origin (and proxied by Vite in dev)
 
 // ====================================
 // MIDDLEWARE
@@ -78,7 +50,7 @@ app.use(
     maxAge: 24 * 60 * 60 * 1000,
     secure: isProduction,
     httpOnly: true,
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: "lax",
   })
 );
 
@@ -121,38 +93,15 @@ app.delete("/api/auth/logout", authControllers.logout);
 app.use("/api/tasks", taskRoutes);
 
 // ====================================
-// DEBUG ROUTES
-// ====================================
-app.get("/db-check", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT current_database()");
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get("/debug-dist", (req, res) => {
-  res.json({
-    distPath,
-    exists: fs.existsSync(distPath),
-    files: fs.existsSync(distPath) ? fs.readdirSync(distPath) : [],
-  });
-});
-
-// ====================================
 // FRONTEND FALLBACK (MUST BE LAST)
 // ====================================
 app.get("*", (req, res) => {
-  if (req.path.startsWith("/api") || req.path.startsWith("/debug")) {
+  if (req.path.startsWith("/api")) {
     return res.status(404).json({ message: "Not found" });
   }
 
   if (!fs.existsSync(indexPath)) {
-    return res.status(500).json({
-      error: "Frontend not built",
-      indexPath,
-    });
+    return res.status(500).json({ error: "Frontend not built" });
   }
 
   res.sendFile(indexPath);
@@ -166,7 +115,7 @@ app.use((err, req, res, next) => {
   console.error(err);
 
   res.status(500).json({
-    message: err.message,
+    message: isProduction ? "Internal Server Error" : err.message,
     stack: isProduction ? undefined : err.stack,
   });
 });

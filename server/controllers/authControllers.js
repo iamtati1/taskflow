@@ -27,12 +27,10 @@ module.exports.register = async (req, res, next) => {
     });
 
   } catch (err) {
-    console.error("LOGIN ERROR:");
-    console.error(err);
-    console.error(err.stack);
+    console.error("REGISTER ERROR:", err);
 
     return res.status(500).json({
-      error: err.message,
+      error: "Registration failed. Please try again.",
     });
   }
 }
@@ -67,14 +65,7 @@ module.exports.logout = (req, res) => {
 
 module.exports.login = async (req, res, next) => {
   try {
-    console.log("LOGIN BODY:", req.body);
-
     const { username, password } = req.body;
-
-    console.log("🔥 LOGIN HIT");
-    console.log("BODY:", req.body);
-    console.log("USERNAME:", username);
-    console.log("PASSWORD EXISTS:", !!password);
 
     if (!username || !password) {
       return res.status(400).json({
@@ -96,13 +87,10 @@ module.exports.login = async (req, res, next) => {
     return res.json({ user });
 
   } catch (err) {
-    console.error("LOGIN ERROR FULL:");
-    console.dir(err, { depth: null });
+    console.error("LOGIN ERROR:", err);
 
     return res.status(500).json({
-      error: err.message || "Unknown error",
-      name: err.name,
-      code: err.code,
+      error: "Login failed. Please try again.",
     });
   }
 }
