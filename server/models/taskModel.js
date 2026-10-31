@@ -2,13 +2,6 @@ const pool = require('../db/pool');
 
 // Returns all tasks for a specific user, ordered by creation time
 module.exports.getTasksByUser = async (user_id) => {
-
-  const dbCheck = await pool.query(
-    "SELECT current_database(), current_user"
-  );
-
-  console.log("DATABASE:", dbCheck.rows[0]);
-
   const query = `
   SELECT *
   FROM tasks
@@ -17,7 +10,6 @@ module.exports.getTasksByUser = async (user_id) => {
 `;
 
   const { rows } = await pool.query(query, [user_id]);
-  console.log("ROWS:", rows);
   return rows;
 };
 

@@ -33,10 +33,6 @@ module.exports.findByUsername = async (username) => {
 module.exports.validatePassword = async (username, password) => {
   const query = 'SELECT * FROM users WHERE username = $1';
   const { rows } = await pool.query(query, [username]);
-
-  console.log("🔥 LOOKING UP USER:", username);
-  console.log("DB RESULT:", rows);
-
   const user = rows[0];
   if (!user) return null;
   const isValid = await bcrypt.compare(password, user.password_hash);

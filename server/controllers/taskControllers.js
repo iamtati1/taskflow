@@ -3,7 +3,6 @@ const taskModel = require('../models/taskModel');
 module.exports.listTasks = async (req, res, next) => {
   try {
     const tasks = await taskModel.getTasksByUser(req.session.user_id);
-    console.log("TASKS FROM DB:", tasks);
     res.send(tasks);
   } catch (err) {
     next(err);
@@ -12,18 +11,13 @@ module.exports.listTasks = async (req, res, next) => {
 
 module.exports.createTask = async (req, res, next) => {
   try {
-    console.log("CREATE TASK BODY:", req.body);
-    console.log("SESSION:", req.session);
-
     const { title, priority, due_date, category_id } = req.body;
 
     const user_id = req.session.user_id;
-    console.log("SESSION USER ID:", user_id);
 
     if (!user_id) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    console.log("SESSION USER ID:", req.session.user_id);
     const task = await taskModel.createTask({
       title,
       priority,
@@ -40,11 +34,6 @@ module.exports.createTask = async (req, res, next) => {
 
 module.exports.updateTask = async (req, res, next) => {
   try {
-
-    console.log("UPDATE BODY:", req.body);
-    console.log("TASK ID:", req.params.task_id);
-    console.log("SESSION USER:", req.session.user_id);
-
     const { task_id } = req.params;
 
     const task = await taskModel.getTaskById(task_id);
@@ -62,8 +51,6 @@ module.exports.updateTask = async (req, res, next) => {
     const updatedTask = await taskModel.updateTask(task_id, {
       title, is_complete, priority, due_date, category_id
     });
-
-    console.log("UPDATED TASK:", updatedTask);
 
     res.send(updatedTask);
 
