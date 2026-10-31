@@ -17,6 +17,10 @@ const cookieSession = require("cookie-session");
 
 // DB + MIGRATION
 const migrate = require("./db/migrate");
+const pool = require("./db/pool");
+const { diagnoseOnStartup } = require("./db/diagnose");
+const runStartupMigration = require("./db/startup");
+const { logError } = require("./utils/safeError");
 
 // ROUTES / CONTROLLERS
 const logRoutes = require("./middleware/logRoutes");
@@ -111,8 +115,7 @@ app.get("*", (req, res) => {
 // GLOBAL ERROR HANDLER
 // ====================================
 app.use((err, req, res, next) => {
-  console.error("🔥 SERVER ERROR:");
-  console.error(err);
+  logError("🔥 SERVER ERROR:", err);
 
   res.status(500).json({
     message: isProduction ? "Internal Server Error" : err.message,
@@ -128,8 +131,4 @@ app.listen(PORT, () => {
 });
 
 // Run migrations AFTER server starts (prevents Render crash loops)
-migrate()
-  .then(() => console.log("✅ DB migration complete"))
-  .catch((err) => {
-    console.log("⚠️ Migration skipped/failed:", err.message);
-  });
+runStartupMigration({ migrate, diagnose: () => diagnoseOnStartup(pool) });

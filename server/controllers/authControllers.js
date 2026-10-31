@@ -1,4 +1,5 @@
 const userModel = require('../models/userModel');
+const { logError } = require('../utils/safeError');
 
 module.exports.register = async (req, res, next) => {
   try {
@@ -27,7 +28,7 @@ module.exports.register = async (req, res, next) => {
     });
 
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
+    logError("REGISTER ERROR:", err);
 
     return res.status(500).json({
       error: "Registration failed. Please try again.",
@@ -87,7 +88,7 @@ module.exports.login = async (req, res, next) => {
     return res.json({ user });
 
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
+    logError("LOGIN ERROR:", err);
 
     return res.status(500).json({
       error: "Login failed. Please try again.",

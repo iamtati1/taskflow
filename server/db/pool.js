@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+const { logError } = require("../utils/safeError");
 
 try {
   require("dotenv").config();
@@ -15,9 +16,6 @@ const pool = new Pool({
     : false,
 });
 
-pool.on("error", (err) => {
-  console.error("PG POOL ERROR:");
-  console.dir(err, { depth: null });
-});
+pool.on("error", (err) => logError("PG POOL ERROR:", err));
 
 module.exports = pool;
