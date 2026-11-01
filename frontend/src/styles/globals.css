@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* =========================================================
    🌌 FLOW DESIGN SYSTEM (CLEAN CORE)
@@ -223,7 +221,12 @@ body {
 ========================================================= */
 
 .btn-primary {
-    @apply inline-flex items-center justify-center gap-2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    /* replaces gap-2 */
+
     min-height: 48px;
     padding: 0.85rem 1.35rem;
     border-radius: 1rem;
@@ -243,7 +246,11 @@ body {
 }
 
 .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
     min-height: 48px;
     padding: 0.85rem 1.35rem;
 
