@@ -28,7 +28,7 @@ module.exports.register = async (req, res, next) => {
     });
 
   } catch (err) {
-    logError("REGISTER ERROR:", err);
+    logError("REGISTER ERROR:", err, [req.body && req.body.password]);
 
     return res.status(500).json({
       error: "Registration failed. Please try again.",
@@ -88,7 +88,7 @@ module.exports.login = async (req, res, next) => {
     return res.json({ user });
 
   } catch (err) {
-    logError("LOGIN ERROR:", err);
+    logError("LOGIN ERROR:", err, [req.body && req.body.password]);
 
     return res.status(500).json({
       error: "Login failed. Please try again.",

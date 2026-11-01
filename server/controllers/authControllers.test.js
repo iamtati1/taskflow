@@ -74,3 +74,61 @@ for (const [label, handler, method, message] of [
     assert.match(terminated, /"category":"connection_terminated".*"message":"Connection terminated unexpectedly"/);
   });
 }
+
+// Captures every console method while a controller runs, with DATABASE_URL set
+const captureAll = async (fn) => {
+  const methods = ["log", "error", "warn", "info", "debug", "dir"];
+  const originals = Object.fromEntries(methods.map((m) => [m, console[m]]));
+  const originalUrl = process.env.DATABASE_URL;
+  const lines = [];
+  for (const m of methods) console[m] = (...args) => lines.push(args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" "));
+  process.env.DATABASE_URL = SECRET_URL;
+  try {
+    await fn();
+  } finally {
+    for (const m of methods) console[m] = originals[m];
+    if (originalUrl === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = originalUrl;
+  }
+  return lines.join("\n");
+};
+
+const PASSWORD = "hunter2-user-password";
+const loginReq = () => ({ body: { username: "new_person", password: PASSWORD }, session: {} });
+
+test("login never logs the submitted password, on success, bad credentials or a DB failure", async () => {
+  const outcomes = [
+    () => Promise.resolve({ user_id: 1, username: "new_person" }),
+    () => Promise.resolve(null),
+    () => Promise.reject(Object.assign(new Error("Connection terminated unexpectedly"), {})),
+    () => Promise.reject(Object.assign(new Error(`login failed for ${PASSWORD} via ${SECRET_URL}`), { code: "28P01" })),
+  ];
+  for (const outcome of outcomes) {
+    userModel.validatePassword = outcome;
+    const out = await captureAll(() => authControllers.login(loginReq(), fakeRes(), () => {}));
+    assert(!out.includes("hunter2"), `logged the password: ${out}`);
+    assert(!out.includes("LOGIN BODY"), out);
+    assertNoSecrets(out);
+  }
+});
+
+test("register never logs the submitted password, on success or a DB failure", async () => {
+  userModel.findByUsername = () => Promise.resolve(null);
+  for (const create of [
+    () => Promise.resolve({ user_id: 1, username: "new_person" }),
+    () => Promise.reject(new Error("Connection terminated unexpectedly")),
+  ]) {
+    userModel.create = create;
+    const out = await captureAll(() => authControllers.register(loginReq(), fakeRes(), () => {}));
+    assert(!out.includes("hunter2"), `logged the password: ${out}`);
+    assertNoSecrets(out);
+  }
+});
+
+test("a login DB failure is logged in the safe format, not as a raw stack", async () => {
+  userModel.validatePassword = () => Promise.reject(new Error("Connection terminated unexpectedly"));
+  const out = await captureAll(() => authControllers.login(loginReq(), fakeRes(), () => {}));
+  assert.match(out, /^LOGIN ERROR: \{"category":"connection_terminated","name":"Error","message":"Connection terminated unexpectedly","at":\[/);
+  assert(!/^Error: /m.test(out), "printed a raw error stack");
+  assert.strictEqual(out.split("\n").length, 1);
+});

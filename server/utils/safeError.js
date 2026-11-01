@@ -26,14 +26,21 @@ const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // The exact sensitive parts of a connection string, in raw and decoded form
 const connectionSecrets = (raw = process.env.DATABASE_URL) => {
-  if (!raw) return [];
-  const values = [raw.trim()];
+  // pg also connects from these when DATABASE_URL is empty (see .env.template)
+  const values = ["PGUSER", "PGPASSWORD", "PGHOST", "PGDATABASE"].map((k) => (process.env[k] || "").trim());
+  if (!raw) return finishSecrets(values);
+  values.push(raw.trim());
   try {
     const url = new URL(raw.trim().replace(/^['"]|['"]$/g, ""));
     values.push(url.username, url.password, url.hostname, url.pathname.slice(1));
   } catch (e) {
     // Unparseable: only the whole value is known to be sensitive
   }
+  return finishSecrets(values);
+};
+
+// Adds decoded forms, drops values too short to redact safely, longest first
+const finishSecrets = (values) => {
   const decoded = values.map((v) => {
     try {
       return decodeURIComponent(v);
@@ -45,20 +52,24 @@ const connectionSecrets = (raw = process.env.DATABASE_URL) => {
   return [...new Set([...values, ...decoded])].filter((v) => v.length >= 4).sort((a, b) => b.length - a.length);
 };
 
-// Replaces the exact DATABASE_URL parts wherever they appear
-const redactConnectionSecrets = (text) => {
+// Replaces the exact DATABASE_URL parts, plus any caller-supplied values
+// (e.g. the password from the request being handled), wherever they appear
+const redactConnectionSecrets = (text, extraSecrets = []) => {
   let out = String(text);
-  for (const secret of connectionSecrets()) {
+  // Tolerates non-arrays (e.g. the index Array.map passes as a second argument)
+  const extras = Array.isArray(extraSecrets) ? extraSecrets.filter((v) => typeof v === "string" && v.length > 0) : [];
+  for (const secret of [...extras, ...connectionSecrets()].sort((a, b) => b.length - a.length)) {
     out = out.replace(new RegExp(escapeRegExp(secret), "gi"), "<redacted>");
   }
   return out;
 };
 
 // Keeps the error's shape but strips connection details, quoted values, hosts and IPs
-const sanitizeMessage = (message = "") =>
-  redactConnectionSecrets(message)
+const sanitizeMessage = (message = "", extraSecrets = []) =>
+  redactConnectionSecrets(message, extraSecrets)
     .replace(/\b[a-z][a-z0-9+.-]*:\/\/\S+/gi, "<url>")
     .replace(/\bpassword\s*[=:]\s*\S+/gi, "password=<redacted>")
+    .replace(/([?&][^=&\s"]+)=[^&\s"]*/g, "$1=<redacted>")
     .replace(/"[^"]*"/g, '"<redacted>"')
     .replace(/\b\d{1,3}(\.\d{1,3}){3}(:\d+)?\b/g, "<ip>")
     .replace(/\bdpg-[a-z0-9-]+(\.[a-z0-9.-]+)?/gi, "<host>")
@@ -68,17 +79,17 @@ const sanitizeMessage = (message = "") =>
 
 // First few code locations from the stack; never the stack's message line.
 // Frames are file paths, so only exact secrets are redacted (the host pattern would eat file names).
-const stackFrames = (err) =>
+const stackFrames = (err, extraSecrets) =>
   String(err.stack || "")
     .split("\n")
     .filter((line) => /^\s+at /.test(line))
     .slice(0, 3)
-    .map((line) => redactConnectionSecrets(line.trim()).slice(0, 200));
+    .map((line) => redactConnectionSecrets(line.trim(), extraSecrets).slice(0, 200));
 
 // A log-safe summary: category, name, codes, a sanitized message and where it was thrown
-const describeError = (err) => {
+const describeError = (err, extraSecrets = []) => {
   if (!err || typeof err !== "object") {
-    return { category: "unknown", message: sanitizeMessage(String(err)) };
+    return { category: "unknown", message: sanitizeMessage(String(err), extraSecrets) };
   }
   // Node can wrap several connection attempts in an AggregateError with an empty message
   const inner = Array.isArray(err.errors) && err.errors[0] ? err.errors[0] : {};
@@ -87,15 +98,16 @@ const describeError = (err) => {
     name: err.name,
     code: err.code || inner.code,
     severity: err.severity,
-    message: sanitizeMessage(err.message || inner.message),
-    at: stackFrames(err),
+    message: sanitizeMessage(err.message || inner.message, extraSecrets),
+    at: stackFrames(err, extraSecrets),
   };
 };
 
-// Logs a label plus the safe summary; never throws
-const logError = (label, err) => {
+// Logs a label plus the safe summary; never throws.
+// extraSecrets: request values (like a submitted password) to redact as well
+const logError = (label, err, extraSecrets = []) => {
   try {
-    console.error(label, JSON.stringify(describeError(err)));
+    console.error(label, JSON.stringify(describeError(err, extraSecrets)));
   } catch (e) {
     console.error(label, "(error could not be described)");
   }

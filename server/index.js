@@ -21,6 +21,7 @@ const pool = require("./db/pool");
 const { diagnoseOnStartup } = require("./db/diagnose");
 const runStartupMigration = require("./db/startup");
 const { logError } = require("./utils/safeError");
+const sessionKeys = require("./utils/sessionKeys");
 
 // ROUTES / CONTROLLERS
 const logRoutes = require("./middleware/logRoutes");
@@ -50,7 +51,7 @@ app.use(express.json());
 app.use(
   cookieSession({
     name: "session",
-    keys: [process.env.SESSION_SECRET || "dev-fallback-secret"],
+    keys: sessionKeys(), // throws in production without a real SESSION_SECRET
     maxAge: 24 * 60 * 60 * 1000,
     secure: isProduction,
     httpOnly: true,

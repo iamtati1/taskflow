@@ -116,3 +116,39 @@ test("logError writes one sanitized line for every leaky error and never throws"
     assertNoSecrets(out);
     assert.strictEqual(out.split("\n").length, LEAKY_ERRORS.length + 1);
   }));
+
+// Runs fn with the given PG* variables set and DATABASE_URL unset (the local fallback)
+const withPgEnv = (vars, fn) => {
+  const keys = ["DATABASE_URL", ...Object.keys(vars)];
+  const original = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
+  delete process.env.DATABASE_URL;
+  Object.assign(process.env, vars);
+  try {
+    return fn();
+  } finally {
+    for (const k of keys) {
+      if (original[k] === undefined) delete process.env[k];
+      else process.env[k] = original[k];
+    }
+  }
+};
+
+test("sanitizeMessage removes PG* values when pg connects without DATABASE_URL", () =>
+  withPgEnv({ PGUSER: "alice_admin", PGPASSWORD: "Zx9longsecretPw", PGHOST: "db.internal-corp", PGDATABASE: "payroll_db" }, () => {
+    const out = [
+      "connect failed as alice_admin to payroll_db",
+      "auth failed using Zx9longsecretPw",
+      "getaddrinfo ENOTFOUND db.internal-corp",
+    ]
+      .map((m) => JSON.stringify(describeError(new Error(m))))
+      .join("\n");
+    for (const secret of ["alice_admin", "Zx9longsecretPw", "db.internal-corp", "payroll_db"]) {
+      assert(!out.includes(secret), `leaked ${secret}: ${out}`);
+    }
+  }));
+
+test("sanitizeMessage removes every query parameter value", () => {
+  const out = sanitizeMessage("GET /api/tasks?token=abc123&page=2&password=hunter2 failed");
+  for (const secret of ["abc123", "hunter2"]) assert(!out.includes(secret), out);
+  assert.match(out, /\?token=<redacted>&page=<redacted>&password=<redacted> failed$/);
+});

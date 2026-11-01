@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
+const { logError } = require('../utils/safeError');
 
 const SALT_ROUNDS = 8;
 
@@ -165,7 +166,7 @@ seed()
     );
   })
   .catch((err) => {
-    console.error('Error seeding database:', err);
+    logError('Error seeding database:', err);
     process.exit(1);
   })
   .finally(() => pool.end());
