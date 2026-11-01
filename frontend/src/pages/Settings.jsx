@@ -65,7 +65,7 @@ const quickSettingsList = [
 // =====================================================
 
 function Settings() {
-    const { currentUser, logout } = useAuth();
+    const { currentUser, signOut: logout } = useAuth();
     const { tasks = [] } = useTasks();
 
     const {

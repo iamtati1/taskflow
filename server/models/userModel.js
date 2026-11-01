@@ -23,7 +23,7 @@ module.exports.find = async (user_id) => {
 
 // Returns { user_id, username } or null — used to check if a username is taken
 module.exports.findByUsername = async (username) => {
-  const query = 'SELECT id, username FROM users WHERE username = $1';
+  const query = 'SELECT user_id, username FROM users WHERE username = $1';
   const { rows } = await pool.query(query, [username]);
   return rows[0] || null;
 };

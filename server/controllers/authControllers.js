@@ -70,8 +70,6 @@ module.exports.logout = (req, res) => {
 
 module.exports.login = async (req, res, next) => {
   try {
-    console.log("LOGIN BODY:", req.body);
-
     const { username, password } = req.body;
 
     if (!username || !password) {
