@@ -99,12 +99,14 @@ export function AuthProvider({ children }) {
         <AuthContext.Provider
             value={{
                 user: currentUser,
+                currentUser, // name used by Topbar and Settings
                 loading: isLoading,
                 authReady,
                 error,
 
                 signIn: handleLogin,
                 signOut: handleLogout,
+                logout: handleLogout,
                 register: handleRegister,
             }}
         >

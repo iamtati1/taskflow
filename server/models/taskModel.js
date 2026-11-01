@@ -1,12 +1,18 @@
 const pool = require('../db/pool');
 
+// Only the tasks columns confirmed in production: id, user_id, title,
+// is_complete, due_date. `id` is aliased as `task_id`, the name the API and
+// frontend use. (priority, category_id and created_at are not stored.)
+const TASK_COLUMNS = 'id AS task_id, user_id, title, is_complete, due_date';
+
 // Returns all tasks for a specific user, ordered by creation time
 module.exports.getTasksByUser = async (user_id) => {
+  // Newest first; ids increase as tasks are created
   const query = `
-  SELECT *
+  SELECT ${TASK_COLUMNS}
   FROM tasks
   WHERE user_id = $1
-  ORDER BY created_at DESC
+  ORDER BY id DESC
 `;
 
   const { rows } = await pool.query(query, [user_id]);
@@ -15,51 +21,46 @@ module.exports.getTasksByUser = async (user_id) => {
 
 // Returns a single task row (used for ownership checks before update/delete)
 module.exports.getTaskById = async (task_id) => {
-  const query = 'SELECT * FROM tasks WHERE task_id = $1';
+  const query = `SELECT ${TASK_COLUMNS} FROM tasks WHERE id = $1`;
   const { rows } = await pool.query(query, [task_id]);
   return rows[0] || null;
 };
 
 // Creates a new task. Returns the full task row.
-module.exports.createTask = async ({ title, priority, due_date, category_id, user_id }) => {
+module.exports.createTask = async ({ title, due_date, user_id }) => {
 
   const query = `
     INSERT INTO tasks (
       title,
-      priority,
+      is_complete,
       due_date,
-      category_id,
       user_id
     )
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING *
+    VALUES ($1, FALSE, $2, $3)
+    RETURNING ${TASK_COLUMNS}
   `;
 
   const { rows } = await pool.query(query, [
     title,
-    priority || null,
-    due_date,
-    category_id,
+    due_date || null,
     user_id,
   ]);
 
   return rows[0];
 };
 
-// Updates is_complete for a task. Returns the updated row.
+// Updates title, is_complete and/or due_date (null leaves a field unchanged). Returns the updated row.
 module.exports.updateTask = async (task_id, fields) => {
-  const { title, is_complete, priority, due_date, category_id } = fields;
+  const { title, is_complete, due_date } = fields;
 
   const { rows } = await pool.query(
     `UPDATE tasks
      SET title = COALESCE($1, title),
          is_complete = COALESCE($2, is_complete),
-         priority = COALESCE($3, priority),
-         due_date = COALESCE($4, due_date),
-         category_id = COALESCE($5, category_id)
-     WHERE task_id = $6
-     RETURNING *`,
-    [title, is_complete, priority, due_date, category_id, task_id]
+         due_date = COALESCE($3, due_date)
+     WHERE id = $4
+     RETURNING ${TASK_COLUMNS}`,
+    [title ?? null, is_complete ?? null, due_date ?? null, task_id]
   );
 
   return rows[0];
@@ -94,7 +95,7 @@ module.exports.updateTaskOrder = async (tasks, user_id) => {
 
 // Deletes a task by id
 module.exports.deleteTask = async (task_id, user_id) => {
-  const query = 'DELETE FROM tasks WHERE task_id = $1 AND user_id = $2 RETURNING *';
+  const query = `DELETE FROM tasks WHERE id = $1 AND user_id = $2 RETURNING ${TASK_COLUMNS}`;
   const { rows } = await pool.query(query, [task_id, user_id]);
   return rows[0] || null;
 };

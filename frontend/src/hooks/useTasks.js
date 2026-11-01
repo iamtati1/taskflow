@@ -4,12 +4,16 @@ import { taskApi } from "../api/tasks";
 // =====================================================
 // HELPERS
 // =====================================================
+// The database doesn't store priority, so server tasks default to "medium",
+// matching the fallback the task components already use
+const withDefaults = (task) => ({ priority: "medium", ...task });
+
 const normalizeTasks = (data) => {
     const raw = data?.tasks || data || [];
 
     if (!Array.isArray(raw)) return [];
 
-    return raw.filter((task) => task && task.task_id);
+    return raw.filter((task) => task && task.task_id).map(withDefaults);
 };
 
 // =====================================================
@@ -125,7 +129,7 @@ function useTasks() {
             setTasks((prev) =>
                 prev.map((task) =>
                     task.task_id === tempId
-                        ? res.data
+                        ? withDefaults(res.data)
                         : task
                 )
             );

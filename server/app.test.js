@@ -1,0 +1,224 @@
+// End-to-end API tests against an in-memory Postgres (pg-mem) shaped exactly like
+// the production schema: users(id, username, password_hash) and
+// tasks(id, user_id, title, is_complete, due_date). A query naming any other
+// column fails here as it would in production.
+const { test, before, after } = require("node:test");
+const assert = require("node:assert");
+const bcrypt = require("bcrypt");
+const { newDb } = require("pg-mem");
+
+const db = newDb();
+db.public.none(`
+  CREATE TABLE users (id SERIAL PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL);
+  CREATE TABLE tasks (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    title TEXT NOT NULL,
+    is_complete BOOLEAN,
+    due_date TIMESTAMP
+  );
+`);
+const { Pool } = db.adapters.createPg();
+require.cache[require.resolve("./db/pool")] = { exports: new Pool() };
+
+const app = require("./app");
+
+let server;
+let base;
+let legacy; // records that existed before the app touched the database
+let snapshotBefore;
+
+const snapshot = () => ({
+  users: db.public.many("SELECT * FROM users WHERE username IN ('legacy', 'other') ORDER BY id"),
+  tasks: db.public.many("SELECT * FROM tasks WHERE user_id IN (1, 2) ORDER BY id"),
+});
+
+before(async () => {
+  const hash = await bcrypt.hash("legacy-password", 4);
+  db.public.none(`
+    INSERT INTO users (username, password_hash) VALUES ('legacy', '${hash}'), ('other', '${hash}');
+    INSERT INTO tasks (user_id, title, is_complete, due_date) VALUES
+      (1, 'Old task one', false, '2026-01-10'),
+      (1, 'Old task two', true, NULL),
+      (2, 'Someone else''s task', false, NULL);
+  `);
+  legacy = { user_id: 1, otherTaskId: 3 };
+  snapshotBefore = snapshot();
+
+  await new Promise((resolve) => {
+    server = app.listen(0, resolve);
+  });
+  base = `http://127.0.0.1:${server.address().port}`;
+});
+
+after(() => server.close());
+
+// A tiny cookie-keeping client, like a browser tab
+const client = () => {
+  let cookies = {};
+  return async (method, path, body) => {
+    const res = await fetch(base + path, {
+      method,
+      headers: {
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        Cookie: Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join("; "),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    for (const c of res.headers.getSetCookie()) {
+      const [pair] = c.split(";");
+      const eq = pair.indexOf("="); // values are base64 and may contain "="
+      cookies[pair.slice(0, eq)] = pair.slice(eq + 1);
+    }
+    const text = await res.text();
+    let data = null;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      data = text;
+    }
+    return { status: res.status, data, headers: res.headers };
+  };
+};
+
+test("GET /api/auth/me is 401 when logged out", async () => {
+  const res = await client()("GET", "/api/auth/me");
+  assert.strictEqual(res.status, 401);
+});
+
+test("register creates a user, starts a session, and rejects duplicates", async () => {
+  const api = client();
+  const reg = await api("POST", "/api/auth/register", { username: "newbie", password: "newbie-pass" });
+  assert.strictEqual(reg.status, 201);
+  assert.deepStrictEqual(Object.keys(reg.data.user).sort(), ["user_id", "username"]);
+  assert.strictEqual(reg.data.user.username, "newbie");
+
+  // The session cookie restores the user on the next request (a page refresh)
+  const me = await api("GET", "/api/auth/me");
+  assert.strictEqual(me.status, 200);
+  assert.deepStrictEqual(me.data.user, reg.data.user);
+
+  const dup = await client()("POST", "/api/auth/register", { username: "newbie", password: "x" });
+  assert.strictEqual(dup.status, 400);
+});
+
+test("register rejects missing fields", async () => {
+  const res = await client()("POST", "/api/auth/register", { username: "nopass" });
+  assert.strictEqual(res.status, 400);
+});
+
+test("an existing user logs in with their existing password hash", async () => {
+  const api = client();
+  const login = await api("POST", "/api/auth/login", { username: "legacy", password: "legacy-password" });
+  assert.strictEqual(login.status, 200);
+  assert.deepStrictEqual(login.data.user, { user_id: legacy.user_id, username: "legacy" });
+
+  const me = await api("GET", "/api/auth/me");
+  assert.deepStrictEqual(me.data.user, login.data.user);
+});
+
+test("login rejects a wrong password or unknown user without a session", async () => {
+  const api = client();
+  assert.strictEqual((await api("POST", "/api/auth/login", { username: "legacy", password: "nope" })).status, 401);
+  assert.strictEqual((await api("POST", "/api/auth/login", { username: "ghost", password: "nope" })).status, 401);
+  assert.strictEqual((await api("GET", "/api/auth/me")).status, 401);
+});
+
+test("an existing user's existing tasks are listed with task_id, newest first, and only theirs", async () => {
+  const api = client();
+  await api("POST", "/api/auth/login", { username: "legacy", password: "legacy-password" });
+  const res = await api("GET", "/api/tasks");
+  assert.strictEqual(res.status, 200);
+  const titles = res.data.filter((t) => t.title.startsWith("Old")).map((t) => t.title);
+  assert.deepStrictEqual(titles, ["Old task two", "Old task one"]);
+  for (const t of res.data) {
+    assert.deepStrictEqual(Object.keys(t).sort(), ["due_date", "is_complete", "task_id", "title", "user_id"]);
+    assert.strictEqual(t.user_id, legacy.user_id);
+  }
+});
+
+test("task CRUD: create, update, toggle, and delete", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "crud", password: "crud-pass" });
+
+  // Extra fields the UI sends (priority, description) are accepted and ignored
+  const created = await api("POST", "/api/tasks", { title: "Write tests", priority: "high", description: "x", due_date: "2026-12-01" });
+  assert.strictEqual(created.status, 201);
+  assert.strictEqual(created.data.title, "Write tests");
+  assert.strictEqual(created.data.is_complete, false);
+  assert.ok(created.data.task_id);
+  const id = created.data.task_id;
+
+  const toggled = await api("PATCH", `/api/tasks/${id}`, { is_complete: true });
+  assert.strictEqual(toggled.status, 200);
+  assert.strictEqual(toggled.data.is_complete, true);
+  assert.strictEqual(toggled.data.title, "Write tests");
+
+  const renamed = await api("PATCH", `/api/tasks/${id}`, { title: "Write more tests", priority: "low" });
+  assert.strictEqual(renamed.data.title, "Write more tests");
+  assert.strictEqual(renamed.data.is_complete, true, "fields not sent stay unchanged");
+
+  const list = await api("GET", "/api/tasks");
+  assert.deepStrictEqual(list.data.map((t) => t.task_id), [id]);
+
+  const removed = await api("DELETE", `/api/tasks/${id}`);
+  assert.strictEqual(removed.status, 200);
+  assert.strictEqual(removed.data.task_id, id);
+  assert.deepStrictEqual((await api("GET", "/api/tasks")).data, []);
+});
+
+test("task create requires a title", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "notitle", password: "notitle-pass" });
+  assert.strictEqual((await api("POST", "/api/tasks", { title: "  " })).status, 400);
+});
+
+test("users cannot change or delete another user's task", async () => {
+  const api = client();
+  await api("POST", "/api/auth/login", { username: "legacy", password: "legacy-password" });
+  assert.strictEqual((await api("PATCH", `/api/tasks/${legacy.otherTaskId}`, { title: "hijacked" })).status, 403);
+  assert.strictEqual((await api("DELETE", `/api/tasks/${legacy.otherTaskId}`)).status, 403);
+});
+
+test("unknown and non-numeric task ids are 404, not 500", async () => {
+  const api = client();
+  await api("POST", "/api/auth/login", { username: "legacy", password: "legacy-password" });
+  assert.strictEqual((await api("PATCH", "/api/tasks/9999", { title: "x" })).status, 404);
+  assert.strictEqual((await api("PATCH", "/api/tasks/temp-123", { title: "x" })).status, 404);
+  assert.strictEqual((await api("DELETE", "/api/tasks/abc")).status, 404);
+});
+
+test("task routes require a session", async () => {
+  const api = client();
+  assert.strictEqual((await api("GET", "/api/tasks")).status, 401);
+  assert.strictEqual((await api("POST", "/api/tasks", { title: "x" })).status, 401);
+  assert.strictEqual((await api("PATCH", "/api/tasks/1", { title: "x" })).status, 401);
+  assert.strictEqual((await api("DELETE", "/api/tasks/1")).status, 401);
+});
+
+test("logout ends the session", async () => {
+  const api = client();
+  await api("POST", "/api/auth/login", { username: "legacy", password: "legacy-password" });
+  assert.strictEqual((await api("DELETE", "/api/auth/logout")).status, 200);
+  assert.strictEqual((await api("GET", "/api/auth/me")).status, 401);
+});
+
+test("session cookies are httpOnly and SameSite=Lax", async () => {
+  const res = await client()("POST", "/api/auth/login", { username: "legacy", password: "legacy-password" });
+  const cookies = res.headers.getSetCookie();
+  assert.ok(cookies.length > 0);
+  for (const c of cookies) {
+    assert.match(c, /httponly/i);
+    assert.match(c, /samesite=lax/i);
+  }
+});
+
+test("unknown API routes return JSON 404", async () => {
+  const res = await client()("GET", "/api/nope");
+  assert.strictEqual(res.status, 404);
+  assert.deepStrictEqual(res.data, { message: "Not found" });
+});
+
+test("existing user and task records are never modified", () => {
+  assert.deepStrictEqual(snapshot(), snapshotBefore);
+});

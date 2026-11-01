@@ -3,10 +3,13 @@ const pool = require('../db/pool');
 
 const SALT_ROUNDS = 8;
 
+// The users table's primary key is `id`; queries alias it as `user_id`,
+// the name the controllers, session and frontend use.
+
 // Creates a new user. Returns { user_id, username } — never exposes password_hash.
 module.exports.create = async (username, password) => {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-  const query = 'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING user_id, username';
+  const query = 'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id AS user_id, username';
   const { rows } = await pool.query(query, [username, passwordHash]);
   return rows[0];
 };
@@ -14,7 +17,7 @@ module.exports.create = async (username, password) => {
 // Returns { user_id, username } or null
 module.exports.find = async (user_id) => {
   const query =
-    'SELECT user_id, username FROM users WHERE user_id = $1';
+    'SELECT id AS user_id, username FROM users WHERE id = $1';
 
   const { rows } = await pool.query(query, [user_id]);
 
@@ -23,7 +26,7 @@ module.exports.find = async (user_id) => {
 
 // Returns { user_id, username } or null — used to check if a username is taken
 module.exports.findByUsername = async (username) => {
-  const query = 'SELECT user_id, username FROM users WHERE username = $1';
+  const query = 'SELECT id AS user_id, username FROM users WHERE username = $1';
   const { rows } = await pool.query(query, [username]);
   return rows[0] || null;
 };
@@ -31,7 +34,7 @@ module.exports.findByUsername = async (username) => {
 // Verifies a password against the stored hash. Returns { user_id, username } if
 // valid, or null if the username doesn't exist or the password is wrong.
 module.exports.validatePassword = async (username, password) => {
-  const query = 'SELECT * FROM users WHERE username = $1';
+  const query = 'SELECT id AS user_id, username, password_hash FROM users WHERE username = $1';
   const { rows } = await pool.query(query, [username]);
   const user = rows[0];
   if (!user) return null;

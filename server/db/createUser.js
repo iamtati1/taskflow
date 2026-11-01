@@ -1,9 +1,15 @@
-import bcrypt from "bcrypt";
-import pkg from "pg";
-const { Pool } = pkg;
+const bcrypt = require("bcrypt");
+const { Pool } = require("pg");
+require("dotenv").config();
+
+// The connection string comes from the environment (server/.env locally).
+// Never hardcode it: this repository is public.
+if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is not set. Add it to server/.env or the environment.");
+}
 
 const pool = new Pool({
-    connectionString: "postgresql://neondb_owner:npg_Qy9pjkzBOU4d@ep-wispy-mouse-ajr82d66-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false,
     },

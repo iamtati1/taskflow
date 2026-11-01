@@ -1,5 +1,11 @@
 const taskModel = require('../models/taskModel');
 
+// Task ids are positive integers; anything else (e.g. a client-side temp id) can't exist
+const isTaskId = (value) => /^\d+$/.test(String(value));
+
+// pg may return ids as numbers or strings depending on the column type
+const sameUser = (a, b) => String(a) === String(b);
+
 module.exports.listTasks = async (req, res, next) => {
   try {
     const tasks = await taskModel.getTasksByUser(req.session.user_id);
@@ -17,6 +23,10 @@ module.exports.createTask = async (req, res, next) => {
 
     if (!user_id) {
       return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    if (typeof title !== "string" || !title.trim()) {
+      return res.status(400).json({ error: "Title is required." });
     }
     const task = await taskModel.createTask({
       title,
@@ -37,13 +47,17 @@ module.exports.updateTask = async (req, res, next) => {
 
     const { task_id } = req.params;
 
+    if (!isTaskId(task_id)) {
+      return res.status(404).send({ error: 'Task not found.' });
+    }
+
     const task = await taskModel.getTaskById(task_id);
 
     if (!task) {
       return res.status(404).send({ error: 'Task not found.' });
     }
 
-    if (task.user_id !== req.session.user_id) {
+    if (!sameUser(task.user_id, req.session.user_id)) {
       return res.status(403).send({ error: 'Not authorized.' });
     }
 
@@ -64,10 +78,14 @@ module.exports.deleteTask = async (req, res, next) => {
   try {
     const { task_id } = req.params;
 
+    if (!isTaskId(task_id)) {
+      return res.status(404).send({ error: 'Task not found.' });
+    }
+
     // First find the task to verify ownership
     const task = await taskModel.getTaskById(task_id);
     if (!task) return res.status(404).send({ error: 'Task not found.' });
-    if (task.user_id !== req.session.user_id) {
+    if (!sameUser(task.user_id, req.session.user_id)) {
       return res.status(403).send({ error: 'Not authorized.' });
     }
 
