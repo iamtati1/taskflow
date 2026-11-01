@@ -143,29 +143,32 @@ function TaskItem({
             {task.title}
           </h3>
 
-          {/* ACTIONS */}
-          <div className="flex items-center gap-2"></div>
-          {/* EDIT BUTTON */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(task);
-            }}
-            className="text-xs text-cyan-300 hover:text-cyan-200"
-          >
-            Edit
-          </button>
+          {/* ACTIONS (spaced apart so a click on Edit can't land on Delete) */}
+          <div className="flex items-center gap-2">
+            {/* EDIT BUTTON */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(task);
+              }}
+              className="text-xs text-cyan-300 hover:text-cyan-200"
+            >
+              Edit
+            </button>
 
-          {/* DELETE BUTTON */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(task.task_id);
-            }}
-            className="text-xs text-red-400 hover:text-red-300"
-          >
-            Delete
-          </button>
+            {/* DELETE BUTTON */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(task.task_id);
+              }}
+              className="text-xs text-red-400 hover:text-red-300"
+            >
+              Delete
+            </button>
+          </div>
 
 
           {/* META ROW */}
