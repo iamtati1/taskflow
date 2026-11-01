@@ -219,6 +219,78 @@ test("unknown API routes return JSON 404", async () => {
   assert.deepStrictEqual(res.data, { message: "Not found" });
 });
 
+// ---------- Editing a task ----------
+
+const signedInWithTasks = async (username, titles) => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username, password: `${username}-pass` });
+  const ids = [];
+  for (const title of titles) ids.push((await api("POST", "/api/tasks", { title })).data.task_id);
+  return { api, ids };
+};
+
+test("edit: updating a title saves it and returns the task in the API shape", async () => {
+  const { api, ids } = await signedInWithTasks("editor1", ["Draft"]);
+  const res = await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Final draft" });
+  assert.strictEqual(res.status, 200);
+  assert.deepStrictEqual(Object.keys(res.data).sort(), ["due_date", "is_complete", "task_id", "title", "user_id"]);
+  assert.strictEqual(res.data.task_id, ids[0]);
+  assert.strictEqual(res.data.title, "Final draft");
+
+  // Persists: a fresh read (as after a page refresh) shows the new title
+  const list = await api("GET", "/api/tasks");
+  assert.strictEqual(list.data.find((t) => t.task_id === ids[0]).title, "Final draft");
+});
+
+test("edit: only the task with the given id changes", async () => {
+  const { api, ids } = await signedInWithTasks("editor2", ["One", "Two", "Three"]);
+  await api("PATCH", `/api/tasks/${ids[1]}`, { title: "Two (edited)" });
+  const titles = Object.fromEntries((await api("GET", "/api/tasks")).data.map((t) => [t.task_id, t.title]));
+  assert.deepStrictEqual(titles, { [ids[0]]: "One", [ids[1]]: "Two (edited)", [ids[2]]: "Three" });
+});
+
+test("edit: the form's extra fields (description, priority) are accepted and don't break the save", async () => {
+  const { api, ids } = await signedInWithTasks("editor3", ["Task"]);
+  const res = await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Task v2", description: "notes", priority: "high" });
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.title, "Task v2");
+});
+
+test("edit: another user's task is rejected and left unchanged", async () => {
+  const owner = await signedInWithTasks("owner4", ["Mine"]);
+  const intruder = await signedInWithTasks("intruder4", []);
+  const res = await intruder.api("PATCH", `/api/tasks/${owner.ids[0]}`, { title: "Stolen" });
+  assert.strictEqual(res.status, 403);
+  const mine = (await owner.api("GET", "/api/tasks")).data;
+  assert.strictEqual(mine[0].title, "Mine");
+});
+
+test("edit: a nonexistent task id is 404", async () => {
+  const { api } = await signedInWithTasks("editor5", []);
+  assert.strictEqual((await api("PATCH", "/api/tasks/987654", { title: "x" })).status, 404);
+});
+
+test("edit: an empty title is rejected and the old title kept", async () => {
+  const { api, ids } = await signedInWithTasks("editor6", ["Keep me"]);
+  assert.strictEqual((await api("PATCH", `/api/tasks/${ids[0]}`, { title: "   " })).status, 400);
+  assert.strictEqual((await api("GET", "/api/tasks")).data[0].title, "Keep me");
+});
+
+test("edit: unauthenticated updates are rejected and change nothing", async () => {
+  const { api, ids } = await signedInWithTasks("editor7", ["Untouched"]);
+  assert.strictEqual((await client()("PATCH", `/api/tasks/${ids[0]}`, { title: "Anon" })).status, 401);
+  assert.strictEqual((await api("GET", "/api/tasks")).data[0].title, "Untouched");
+});
+
+test("edit: the UPDATE itself is limited to the owner's rows", async () => {
+  const taskModel = require("./models/taskModel");
+  const owner = await signedInWithTasks("owner8", ["Owned"]);
+  const other = await signedInWithTasks("other8", []);
+  const otherId = (await other.api("GET", "/api/auth/me")).data.user.user_id;
+  assert.strictEqual(await taskModel.updateTask(owner.ids[0], otherId, { title: "Bypass" }), null);
+  assert.strictEqual((await owner.api("GET", "/api/tasks")).data[0].title, "Owned");
+});
+
 test("existing user and task records are never modified", () => {
   assert.deepStrictEqual(snapshot(), snapshotBefore);
 });

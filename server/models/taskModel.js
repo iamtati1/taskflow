@@ -49,8 +49,9 @@ module.exports.createTask = async ({ title, due_date, user_id }) => {
   return rows[0];
 };
 
-// Updates title, is_complete and/or due_date (null leaves a field unchanged). Returns the updated row.
-module.exports.updateTask = async (task_id, fields) => {
+// Updates title, is_complete and/or due_date (null leaves a field unchanged).
+// Only touches the task if it belongs to user_id. Returns the updated row or null.
+module.exports.updateTask = async (task_id, user_id, fields) => {
   const { title, is_complete, due_date } = fields;
 
   const { rows } = await pool.query(
@@ -58,12 +59,12 @@ module.exports.updateTask = async (task_id, fields) => {
      SET title = COALESCE($1, title),
          is_complete = COALESCE($2, is_complete),
          due_date = COALESCE($3, due_date)
-     WHERE id = $4
+     WHERE id = $4 AND user_id = $5
      RETURNING ${TASK_COLUMNS}`,
-    [title ?? null, is_complete ?? null, due_date ?? null, task_id]
+    [title ?? null, is_complete ?? null, due_date ?? null, task_id, user_id]
   );
 
-  return rows[0];
+  return rows[0] || null;
 };
 
 module.exports.updateTaskOrder = async (tasks, user_id) => {

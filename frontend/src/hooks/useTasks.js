@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { taskApi } from "../api/tasks";
+import { storedFields, replaceTask } from "../utils/taskUpdates";
 
 // =====================================================
 // HELPERS
@@ -238,26 +239,21 @@ function useTasks() {
 
             setAction(taskId, "update");
 
-            let snapshot;
+            // Only fields the server saves are applied; the rest would
+            // vanish on the next reload
+            const changes = storedFields(updates);
+            let previous;
 
             setTasks((prev) => {
-                snapshot = prev;
-
-                return prev.map((task) =>
-                    task.task_id === taskId
-                        ? {
-                            ...task,
-                            ...updates,
-                        }
-                        : task
-                );
+                previous = prev.find((task) => task.task_id === taskId);
+                return replaceTask(prev, taskId, changes);
             });
 
             try {
                 const res =
                     await taskApi.updateTask(
                         taskId,
-                        updates
+                        changes
                     );
 
                 if (!res.success) {
@@ -267,14 +263,21 @@ function useTasks() {
                     );
                 }
 
+                // Show exactly what the server saved
+                setTasks((prev) => replaceTask(prev, taskId, res.data));
+
                 return {
                     success: true,
+                    data: res.data,
                 };
 
             } catch (err) {
 
-                setError(err.message);
-                setTasks(snapshot);
+                // Roll back this task only; the form shows the error, so the
+                // page-level error (which replaces the whole list) isn't set
+                setTasks((prev) =>
+                    previous ? replaceTask(prev, taskId, previous) : prev
+                );
 
                 return {
                     success: false,

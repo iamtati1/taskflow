@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Flag, CheckCircle2 } from "lucide-react";
 
@@ -18,6 +18,8 @@ function AddTaskForm({
     const [priority, setPriority] = useState("medium");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+    const formRef = useRef(null);
 
     // =========================
     // PREFILL FOR EDIT MODE
@@ -32,6 +34,16 @@ function AddTaskForm({
             setDescription("");
             setPriority("medium");
         }
+        setSubmitError(null);
+    }, [initialData]);
+
+    // =========================
+    // BRING THE FORM INTO VIEW
+    // =========================
+    // It renders below the task list, so without this Edit looks like it did nothing
+    useEffect(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        formRef.current?.querySelector("input")?.focus({ preventScroll: true });
     }, [initialData]);
 
     const handleSubmit = async (e) => {
@@ -41,6 +53,7 @@ function AddTaskForm({
 
         setIsSubmitting(true);
         setSuccess(false);
+        setSubmitError(null);
 
         try {
             let result;
@@ -68,6 +81,8 @@ function AddTaskForm({
 
                 setSuccess(true);
                 setTimeout(() => setSuccess(false), 1200);
+            } else if (result) {
+                setSubmitError(result.error || "Couldn't save the task. Please try again.");
             }
         } finally {
             setIsSubmitting(false);
@@ -75,7 +90,7 @@ function AddTaskForm({
     };
 
     return (
-        <motion.div layout>
+        <motion.div layout ref={formRef}>
             <Card className="space-y-6">
 
                 {/* HEADER */}
@@ -142,8 +157,13 @@ function AddTaskForm({
                     {/* FOOTER */}
                     <div className="flex items-center justify-between pt-2">
 
-                        {/* SUCCESS */}
+                        {/* SUCCESS / ERROR */}
                         <div className="text-sm text-cyan-300 min-h-[20px]">
+                            {submitError && (
+                                <div role="alert" className="text-red-300">
+                                    {submitError}
+                                </div>
+                            )}
                             <AnimatePresence>
                                 {success && (
                                     <motion.div

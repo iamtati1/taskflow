@@ -55,8 +55,10 @@ function Tasks() {
     // UPDATE
     // ===============================
     const handleUpdate = async (id, data) => {
-        await editTask(id, data);
-        closeModal();
+        const result = await editTask(id, data);
+        // Keep the form open on failure so the error is visible and the edit isn't lost
+        if (result?.success) closeModal();
+        return result;
     };
 
     // ===============================

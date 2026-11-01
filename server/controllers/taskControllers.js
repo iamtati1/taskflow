@@ -61,11 +61,19 @@ module.exports.updateTask = async (req, res, next) => {
       return res.status(403).send({ error: 'Not authorized.' });
     }
 
-    const { title, is_complete, priority, due_date, category_id } = req.body;
+    const { title, is_complete, due_date } = req.body;
 
-    const updatedTask = await taskModel.updateTask(task_id, {
-      title, is_complete, priority, due_date, category_id
+    if (title !== undefined && (typeof title !== "string" || !title.trim())) {
+      return res.status(400).send({ error: 'Title cannot be empty.' });
+    }
+
+    const updatedTask = await taskModel.updateTask(task_id, req.session.user_id, {
+      title, is_complete, due_date
     });
+
+    if (!updatedTask) {
+      return res.status(404).send({ error: 'Task not found.' });
+    }
 
     res.send(updatedTask);
 
