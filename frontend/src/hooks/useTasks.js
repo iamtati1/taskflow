@@ -263,6 +263,12 @@ function useTasks() {
                     );
                 }
 
+                // The server must have saved the title that was sent;
+                // otherwise the edit would silently revert
+                if (changes.title !== undefined && res.data?.title !== changes.title) {
+                    throw new Error("The new title wasn't saved. Please try again.");
+                }
+
                 // Show exactly what the server saved
                 setTasks((prev) => replaceTask(prev, taskId, res.data));
 

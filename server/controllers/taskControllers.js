@@ -61,7 +61,15 @@ module.exports.updateTask = async (req, res, next) => {
       return res.status(403).send({ error: 'Not authorized.' });
     }
 
-    const { title, is_complete, due_date } = req.body;
+    const { title, is_complete, due_date } = req.body || {};
+
+    // Nothing recognisable to save (e.g. the JSON body didn't arrive). Saying so
+    // beats returning the unchanged task, which looks like a silent revert.
+    if (title === undefined && is_complete === undefined && due_date === undefined) {
+      const receivedFields = Object.keys(req.body || {});
+      console.warn("TASK UPDATE: no updatable fields; received field names:", JSON.stringify(receivedFields), "content-type:", req.get("content-type") || "(none)");
+      return res.status(400).send({ error: 'No changes were received. Please try again.' });
+    }
 
     if (title !== undefined && (typeof title !== "string" || !title.trim())) {
       return res.status(400).send({ error: 'Title cannot be empty.' });

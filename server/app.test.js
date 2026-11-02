@@ -77,7 +77,8 @@ const client = () => {
     } catch (e) {
       data = text;
     }
-    return { status: res.status, data, headers: res.headers };
+    const cookieHeader = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join("; ");
+    return { status: res.status, data, headers: res.headers, cookieHeader };
   };
 };
 
@@ -289,6 +290,48 @@ test("edit: the UPDATE itself is limited to the owner's rows", async () => {
   const otherId = (await other.api("GET", "/api/auth/me")).data.user.user_id;
   assert.strictEqual(await taskModel.updateTask(owner.ids[0], otherId, { title: "Bypass" }), null);
   assert.strictEqual((await owner.api("GET", "/api/tasks")).data[0].title, "Owned");
+});
+
+test("edit: the UPDATE query is sent the new title as its first parameter", async () => {
+  const pool = require("./db/pool");
+  const { api, ids } = await signedInWithTasks("editor9", ["Before"]);
+  const seen = [];
+  const original = pool.query;
+  pool.query = function (sql, params) {
+    if (/^\s*UPDATE tasks/i.test(sql)) seen.push({ sql, params });
+    return original.apply(this, arguments);
+  };
+  try {
+    await api("PATCH", `/api/tasks/${ids[0]}`, { title: "After" });
+  } finally {
+    pool.query = original;
+  }
+  assert.strictEqual(seen.length, 1);
+  assert.match(seen[0].sql, /SET title = COALESCE\(\$1, title\)/);
+  assert.match(seen[0].sql, /WHERE id = \$4 AND user_id = \$5/);
+  assert.strictEqual(seen[0].params[0], "After");
+  assert.strictEqual(String(seen[0].params[3]), String(ids[0]));
+});
+
+test("edit: a request whose JSON body wasn't parsed is rejected, not silently ignored", async () => {
+  const { api, ids } = await signedInWithTasks("editor10", ["Keep"]);
+  // Sent as text/plain, so express.json() leaves the body unparsed
+  const res = await fetch(`${base}/api/tasks/${ids[0]}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "text/plain", Cookie: (await api("GET", "/api/auth/me")).cookieHeader || "" },
+    body: JSON.stringify({ title: "Lost" }),
+  });
+  assert.strictEqual(res.status, 400);
+  assert.match((await res.json()).error, /No changes were received/);
+  assert.strictEqual((await api("GET", "/api/tasks")).data[0].title, "Keep");
+});
+
+test("edit: an empty update is rejected with a clear message and changes nothing", async () => {
+  const { api, ids } = await signedInWithTasks("editor11", ["Keep too"]);
+  const res = await api("PATCH", `/api/tasks/${ids[0]}`, {});
+  assert.strictEqual(res.status, 400);
+  assert.match(res.data.error, /No changes were received/);
+  assert.strictEqual((await api("GET", "/api/tasks")).data[0].title, "Keep too");
 });
 
 test("existing user and task records are never modified", () => {

@@ -78,3 +78,40 @@ test("a failed save keeps the form open with the error and restores the list", a
     expect(screen.getByText("Write report")).toBeTruthy();
     expect(screen.getByText("Buy milk")).toBeTruthy();
 });
+
+test("a save the server didn't apply (old title returned) is reported, not shown as success", async () => {
+    taskApi.updateTask.mockImplementation(async (id) => ({
+        success: true,
+        data: serverTasks().find((t) => t.task_id === id), // unchanged title
+        error: null,
+    }));
+
+    await openEditFor("Write report");
+    fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "Write final report" } });
+    fireEvent.click(screen.getByRole("button", { name: /Update Task/ }));
+
+    expect((await screen.findByRole("alert")).textContent).toMatch(/new title wasn't saved/);
+    expect(screen.getByPlaceholderText("Task title...").value).toBe("Write final report");
+    expect(screen.getByRole("heading", { name: "Edit Task" })).toBeTruthy();
+});
+
+test("double-clicking Update sends one request", async () => {
+    let finish;
+    taskApi.updateTask.mockImplementation(
+        (id, changes) =>
+            new Promise((resolve) => {
+                finish = () => resolve({ success: true, data: { ...serverTasks().find((t) => t.task_id === id), ...changes }, error: null });
+            })
+    );
+
+    await openEditFor("Write report");
+    fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "Once" } });
+    const save = screen.getByRole("button", { name: /Update Task/ });
+    fireEvent.click(save);
+    fireEvent.click(screen.getByRole("button", { name: /Saving/ }));
+    fireEvent.submit(save.closest("form"));
+
+    expect(taskApi.updateTask).toHaveBeenCalledTimes(1);
+    finish();
+    expect(await screen.findByText("Once")).toBeTruthy();
+});
