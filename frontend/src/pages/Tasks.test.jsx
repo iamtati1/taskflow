@@ -115,3 +115,18 @@ test("double-clicking Update sends one request", async () => {
     finish();
     expect(await screen.findByText("Once")).toBeTruthy();
 });
+
+test("ticking a task's checkbox sends the completion to the server and moves it to Completed", async () => {
+    taskApi.updateTask.mockImplementation(async (id, changes) => ({
+        success: true,
+        data: { ...serverTasks().find((t) => t.task_id === id), ...changes },
+        error: null,
+    }));
+
+    render(<Tasks />);
+    const card = (await screen.findByText("Buy milk")).closest("div.group");
+    fireEvent.click(within(card).getAllByRole("button")[0]); // the checkbox
+
+    await waitFor(() => expect(taskApi.updateTask).toHaveBeenCalledWith(1, { is_complete: true }));
+    expect(await screen.findByRole("heading", { name: "Completed" })).toBeTruthy();
+});

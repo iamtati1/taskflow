@@ -6,7 +6,6 @@ import AppLayout from "./components/layouts/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Analytics from "./pages/Analytics";
-import AI from "./pages/AI";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 
@@ -79,7 +78,6 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/analytics" element={<Analytics />} />
-          <Route path="/ai" element={<AI />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
 

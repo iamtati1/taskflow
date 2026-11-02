@@ -1,20 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { taskApi } from "../api/tasks";
 import { storedFields, replaceTask } from "../utils/taskUpdates";
 
 // =====================================================
 // HELPERS
 // =====================================================
-// The database doesn't store priority, so server tasks default to "medium",
-// matching the fallback the task components already use
-const withDefaults = (task) => ({ priority: "medium", ...task });
-
 const normalizeTasks = (data) => {
     const raw = data?.tasks || data || [];
 
     if (!Array.isArray(raw)) return [];
 
-    return raw.filter((task) => task && task.task_id).map(withDefaults);
+    return raw.filter((task) => task && task.task_id);
 };
 
 // =====================================================
@@ -26,6 +22,12 @@ function useTasks() {
     // CORE STATE
     // =====================================================
     const [tasks, setTasks] = useState([]);
+
+    // The latest list, readable synchronously inside callbacks
+    const tasksRef = useRef(tasks);
+    useEffect(() => {
+        tasksRef.current = tasks;
+    }, [tasks]);
     const [status, setStatus] = useState("idle");
     const [error, setError] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
@@ -130,7 +132,7 @@ function useTasks() {
             setTasks((prev) =>
                 prev.map((task) =>
                     task.task_id === tempId
-                        ? withDefaults(res.data)
+                        ? res.data
                         : task
                 )
             );
@@ -166,45 +168,27 @@ function useTasks() {
     // =====================================================
     const toggleTask = useCallback(async (taskId) => {
 
-        setAction(taskId, "toggle");
-
-        let snapshot;
-
-        setTasks((prev) => {
-            snapshot = prev;
-
-            return prev.map((task) =>
-                task.task_id === taskId
-                    ? {
-                        ...task,
-                        is_complete:
-                            !task.is_complete,
-                    }
-                    : task
-            );
-        });
-
-        const task = snapshot?.find(
-            (t) => t.task_id === taskId
-        );
+        // Read the task from the ref: a state updater may not have run yet
+        // here, so values captured inside one can still be undefined
+        const task = tasksRef.current.find((t) => t.task_id === taskId);
 
         if (!task) {
-            clearAction(taskId);
-
             return {
                 success: false,
                 error: "Task not found",
             };
         }
 
+        const is_complete = !task.is_complete;
+
+        setAction(taskId, "toggle");
+        setTasks((prev) => replaceTask(prev, taskId, { is_complete }));
+
         try {
             const res =
                 await taskApi.updateTask(
                     taskId,
-                    {
-                        is_complete:
-                            !task.is_complete,
-                    }
+                    { is_complete }
                 );
 
             if (!res.success) {
@@ -214,12 +198,17 @@ function useTasks() {
                 );
             }
 
+            // Show what the server saved
+            setTasks((prev) => replaceTask(prev, taskId, res.data));
+
             return { success: true };
 
         } catch (err) {
 
             setError(err.message);
-            setTasks(snapshot);
+            setTasks((prev) =>
+                replaceTask(prev, taskId, { is_complete: task.is_complete })
+            );
 
             return {
                 success: false,

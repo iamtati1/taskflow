@@ -5,8 +5,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "db:seed": "node db/seed.js",
-    "test": "node --test"
+    "test": "node --test",
+    "db:setup": "node db/setup.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

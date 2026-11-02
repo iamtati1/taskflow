@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Circle,
   Calendar,
-  Flag,
   GripVertical,
   Loader2,
 } from "lucide-react";
@@ -46,17 +45,6 @@ function TaskItem({
   const isCompleted = task.is_complete;
 
   const isLocked = isUpdating || isDragging;
-
-  // =====================================================
-  // PRIORITY SYSTEM (visual tokens)
-  // =====================================================
-  const priorityStyles = {
-    low: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
-    medium: "text-amber-400 bg-amber-400/10 border-amber-400/20",
-    high: "text-rose-400 bg-rose-400/10 border-rose-400/20",
-  };
-
-  const priorityClass = priorityStyles[task.priority] || priorityStyles.medium;
 
   // =====================================================
   // DATE FORMAT
@@ -172,13 +160,8 @@ function TaskItem({
 
 
           {/* META ROW */}
+          {(dueDateLabel || isUpdating) && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
-
-            {/* PRIORITY */}
-            <div className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs ${priorityClass}`}>
-              <Flag size={12} />
-              <span className="capitalize">{task.priority}</span>
-            </div>
 
             {/* DUE DATE */}
             {dueDateLabel && (
@@ -195,6 +178,7 @@ function TaskItem({
               </div>
             )}
           </div>
+          )}
         </div>
 
 

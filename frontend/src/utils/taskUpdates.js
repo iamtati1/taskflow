@@ -1,5 +1,5 @@
-// Task fields the database stores. Others the form collects (priority,
-// description) are not saved, so they are never shown as changed.
+// Task fields the database stores; anything else in an update is not saved,
+// so it is never shown as changed.
 export const STORED_TASK_FIELDS = ["title", "is_complete", "due_date"];
 
 // The subset of an edit that the server will save
