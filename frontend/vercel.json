@@ -1,0 +1,7 @@
+{
+  "installCommand": "npm install && npm ci --prefix ../server --omit=dev",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

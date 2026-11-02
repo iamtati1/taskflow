@@ -79,7 +79,6 @@ function LoadingScreen() {
 
 export default function ProtectedRoute({ children }) {
     const { user, loading } = useAuth();
-    console.log(useAuth());
     // =====================================================
     // AUTH RESOLUTION (single source of truth)
     // =====================================================

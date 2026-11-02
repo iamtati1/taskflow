@@ -34,34 +34,19 @@ function Analytics() {
         let completed = 0;
         let active = 0;
 
-        const dailyMap = {};
-        let morningCount = 0;
-
         for (const t of tasks) {
             if (t.is_complete) completed++;
             else active++;
-
-            if (t.created_at) {
-                const dateKey = new Date(t.created_at).toDateString();
-                dailyMap[dateKey] = (dailyMap[dateKey] || 0) + 1;
-
-                const hour = new Date(t.created_at).getHours();
-                if (hour >= 8 && hour <= 11) morningCount++;
-            }
         }
 
         const completionRate =
             total === 0 ? 0 : Math.round((completed / total) * 100);
-
-        const chartData = Object.values(dailyMap).slice(-7);
 
         return {
             total,
             completed,
             active,
             completionRate,
-            chartData,
-            morningCount,
         };
     }, [tasks]);
 
@@ -69,14 +54,7 @@ function Analytics() {
     // INSIGHTS
     // =====================================================
     const insights = useMemo(() => {
-        const { completionRate, morningCount, total } = metrics;
-
-        const bestTime =
-            total === 0
-                ? "Start creating tasks to build patterns."
-                : morningCount > total / 2
-                    ? "You perform best in morning sessions (8–11 AM)."
-                    : "Your productivity is distributed across the day.";
+        const { completionRate } = metrics;
 
         const reflection =
             completionRate >= 70
@@ -94,7 +72,7 @@ function Analytics() {
                         desc: "Small wins compound. Keep focusing on execution.",
                     };
 
-        return { bestTime, reflection };
+        return { reflection };
     }, [metrics]);
 
     const stats = [
@@ -123,9 +101,6 @@ function Analytics() {
             color: "text-orange-300",
         },
     ];
-
-    const hasData = metrics.total > 0;
-    const safeChart = metrics.chartData.length ? metrics.chartData : [];
 
     return (
         <section className="space-y-10">
@@ -197,55 +172,8 @@ function Analytics() {
             {/* =====================================================
                 MAIN GRID
             ===================================================== */}
-            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-
-                {/* CHART */}
-                <Card className="xl:col-span-3 space-y-6">
-
-                    <div className="flex items-center gap-3">
-                        <Activity size={20} className="text-cyan-300" />
-                        <div>
-                            <h3 className="text-xl font-semibold text-white">
-                                Execution Momentum
-                            </h3>
-                            <p className="text-sm text-white/45">
-                                Real activity from your tasks
-                            </p>
-                        </div>
-                    </div>
-
-                    {!hasData ? (
-                        <div className="h-[260px] flex items-center justify-center text-white/40">
-                            No activity yet. Start completing tasks to see momentum.
-                        </div>
-                    ) : (
-                        <div className="flex items-end gap-4 h-[260px]">
-                            {safeChart.map((h, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ height: 0 }}
-                                    animate={{ height: h * 10 }}
-                                    transition={{ duration: 0.6, delay: i * 0.05 }}
-                                    className="flex-1 rounded-t-2xl bg-gradient-to-t from-cyan-400/40 to-violet-500/50 border border-white/10"
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                </Card>
-
-                {/* INSIGHTS */}
-                <div className="xl:col-span-2 space-y-6">
-
-                    <Card className="space-y-3">
-                        <div className="text-xs text-white/45 uppercase">
-                            Work Pattern
-                        </div>
-
-                        <h3 className="text-xl font-semibold text-white">
-                            {insights.bestTime}
-                        </h3>
-                    </Card>
+            {/* Insights from completion data (the only activity the database stores) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     <Card className="space-y-3">
                         <div className="flex items-center gap-2 text-xs text-white/45 uppercase">
@@ -288,7 +216,6 @@ function Analytics() {
 
                     </Card>
 
-                </div>
             </div>
         </section>
     );

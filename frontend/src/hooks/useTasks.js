@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { taskApi } from "../api/tasks";
+import { storedFields, replaceTask } from "../utils/taskUpdates";
 
 // =====================================================
 // HELPERS
@@ -21,6 +22,12 @@ function useTasks() {
     // CORE STATE
     // =====================================================
     const [tasks, setTasks] = useState([]);
+
+    // The latest list, readable synchronously inside callbacks
+    const tasksRef = useRef(tasks);
+    useEffect(() => {
+        tasksRef.current = tasks;
+    }, [tasks]);
     const [status, setStatus] = useState("idle");
     const [error, setError] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
@@ -161,45 +168,27 @@ function useTasks() {
     // =====================================================
     const toggleTask = useCallback(async (taskId) => {
 
-        setAction(taskId, "toggle");
-
-        let snapshot;
-
-        setTasks((prev) => {
-            snapshot = prev;
-
-            return prev.map((task) =>
-                task.task_id === taskId
-                    ? {
-                        ...task,
-                        is_complete:
-                            !task.is_complete,
-                    }
-                    : task
-            );
-        });
-
-        const task = snapshot?.find(
-            (t) => t.task_id === taskId
-        );
+        // Read the task from the ref: a state updater may not have run yet
+        // here, so values captured inside one can still be undefined
+        const task = tasksRef.current.find((t) => t.task_id === taskId);
 
         if (!task) {
-            clearAction(taskId);
-
             return {
                 success: false,
                 error: "Task not found",
             };
         }
 
+        const is_complete = !task.is_complete;
+
+        setAction(taskId, "toggle");
+        setTasks((prev) => replaceTask(prev, taskId, { is_complete }));
+
         try {
             const res =
                 await taskApi.updateTask(
                     taskId,
-                    {
-                        is_complete:
-                            !task.is_complete,
-                    }
+                    { is_complete }
                 );
 
             if (!res.success) {
@@ -209,12 +198,17 @@ function useTasks() {
                 );
             }
 
+            // Show what the server saved
+            setTasks((prev) => replaceTask(prev, taskId, res.data));
+
             return { success: true };
 
         } catch (err) {
 
             setError(err.message);
-            setTasks(snapshot);
+            setTasks((prev) =>
+                replaceTask(prev, taskId, { is_complete: task.is_complete })
+            );
 
             return {
                 success: false,
@@ -234,26 +228,21 @@ function useTasks() {
 
             setAction(taskId, "update");
 
-            let snapshot;
+            // Only fields the server saves are applied; the rest would
+            // vanish on the next reload
+            const changes = storedFields(updates);
+            let previous;
 
             setTasks((prev) => {
-                snapshot = prev;
-
-                return prev.map((task) =>
-                    task.task_id === taskId
-                        ? {
-                            ...task,
-                            ...updates,
-                        }
-                        : task
-                );
+                previous = prev.find((task) => task.task_id === taskId);
+                return replaceTask(prev, taskId, changes);
             });
 
             try {
                 const res =
                     await taskApi.updateTask(
                         taskId,
-                        updates
+                        changes
                     );
 
                 if (!res.success) {
@@ -263,14 +252,27 @@ function useTasks() {
                     );
                 }
 
+                // The server must have saved the title that was sent;
+                // otherwise the edit would silently revert
+                if (changes.title !== undefined && res.data?.title !== changes.title) {
+                    throw new Error("The new title wasn't saved. Please try again.");
+                }
+
+                // Show exactly what the server saved
+                setTasks((prev) => replaceTask(prev, taskId, res.data));
+
                 return {
                     success: true,
+                    data: res.data,
                 };
 
             } catch (err) {
 
-                setError(err.message);
-                setTasks(snapshot);
+                // Roll back this task only; the form shows the error, so the
+                // page-level error (which replaces the whole list) isn't set
+                setTasks((prev) =>
+                    previous ? replaceTask(prev, taskId, previous) : prev
+                );
 
                 return {
                     success: false,

@@ -1,272 +1,249 @@
-# TaskFlow 
-## A full-stack task management app built with React, Express, and PostgreSQL. 
+# TaskFlow
 
-`TaskFlow` is a full-stack productivity application that allows users to create, manage, update, and delete personal tasks through a responsive and interactive interface. 
+**PLAN. FOCUS. FINISH.** TaskFlow is a full-stack task manager with a calm, focused workspace. Create an account, capture what you need to do, check it off, and see your progress at a glance, with every task saved to PostgreSQL and tied to your own session.
 
-The application was built to practice core full-stack development concepts including authentication, `CRUD` operations, session management, API communication, and persistent database storage. Users can register for an account, securely log in, and manage personalized task data stored in `PostgreSQL`. 
+<p align="center">
+  <a href="https://taskflow-zeta-ivory.vercel.app/"><strong>▶ Try the live demo</strong></a>
+  &nbsp; · &nbsp;
+  <a href="#getting-started">Run locally</a>
+</p>
 
-The frontend was developed using `React` and `Vite`, while the backend server was built with `Express` and `Node.js`. The application demonstrates session based authentication, session rehydration, auth dependent data fetching, and conditional rendering to create a secure and dynamic user experience. 
+> **Project focus:** A small, dependable full-stack app: secure sessions, ownership-checked task APIs, and a polished React interface, deployed as one Vercel project.
 
-## Tech Stack
- + Frontend: React + Vite 
- + Backend: Node.js + Express 
- + Database: PostgreSQL 
- + Authentication: cookie-session 
- + Version Control: Git + GitHub 
- + API Testing: Postman 
+## Product Screenshots
 
-## Features 
-- Secure session-based authentication 
-- Persistent PostgreSQL storage 
-- CRUD task management 
-- Task priorities and due dates 
-- Category organization 
-- Activity logging 
-- Session rehydration 
-## User Stories 
-**Auth** 
-- A user can register for an account with a username and password 
-- A user can log in to an existing account 
-- A user can log out 
-- A returning user who has an active session is automatically logged in when they revisit the app 
+![TaskFlow Tasks page with total and completed counts, a Planning Horizon calendar, and the task list split into Active and Completed sections](screenshots/taskflow-tasks.png)
 
-**Tasks** 
-- A logged-in user can view all of their tasks 
-- A logged-in user can create a new task by entering a title 
-- A logged-in user can update a task - A logged-in user can mark a task as complete or incomplete 
-- A logged-in user can delete a task - A logged-in user can organize tasks into categories 
-- A logged-in user can assign priorities to tasks 
-- A logged-in user can assign due dates to tasks 
-- A logged-in user can view task activity history 
+*Tasks: your active and completed work side by side with a calendar of the month.*
 
-## Schema
-```
-users
-─────────────────────────────
-user_id       SERIAL PRIMARY KEY
-username      TEXT UNIQUE NOT NULL
-password_hash TEXT NOT NULL
+![TaskFlow Edit Task form, prefilled with the title "Draft the Q3 roadmap" and an Update Task button, below the task list](screenshots/taskflow-edit-task.png)
 
-categories
-─────────────────────────────
-category_id SERIAL PRIMARY KEY
-name        TEXT NOT NULL
-user_id     INTEGER REFERENCES users(user_id) ON DELETE CASCADE
+*Editing: Edit opens the task's title in place, and the change is saved straight to the database.*
 
-tasks
-─────────────────────────────
-task_id     SERIAL PRIMARY KEY
-title       TEXT NOT NULL
-due_date    TIMESTAMP
-created_at  TIMESTAMP DEFAULT NOW()
-is_complete BOOLEAN DEFAULT FALSE
+![TaskFlow Dashboard showing 2 completed and 2 active tasks, 50% progress, today's focus, a workflow insight, upcoming tasks and workspace status](screenshots/taskflow-dashboard.png)
 
-priority    TEXT CHECK (priority IN ('low', 'medium', 'high')) DEFAULT 'medium'
+*Dashboard: a summary of where your work stands, computed from your tasks.*
 
-user_id     INTEGER REFERENCES users(user_id) ON DELETE CASCADE
+![TaskFlow Analytics page showing completed, active, completion rate and total counts, a reflection message and a focus rating bar](screenshots/taskflow-analytics.png)
 
-category_id INTEGER REFERENCES categories(category_id) ON DELETE SET NULL
+*Analytics: completion stats and a short reflection based on how much you've finished.*
 
-activity_log
-─────────────────────────────
-log_id      SERIAL PRIMARY KEY
-user_id     INTEGER REFERENCES users(user_id) ON DELETE CASCADE
-task_id     INTEGER REFERENCES tasks(task_id) ON DELETE CASCADE
+![TaskFlow sign-in page with username and password fields, an Enter Workspace button and a link to register](screenshots/taskflow-login.png)
 
-action      TEXT CHECK (
-    action IN (
-        'TASK_CREATED',
-        'TASK_UPDATED',
-        'TASK_COMPLETED',
-        'TASK_DELETED'
-    )
-) NOT NULL
+*Sign in: create an account or return to your workspace.*
 
-meta        JSONB
-created_at  TIMESTAMP DEFAULT NOW()
-```
-A user has many tasks. Deleting a user cascades to delete all of their tasks. 
+## What you can do
 
+- **Create an account and stay signed in:** Register with a username and password; your session survives page refreshes until you log out.
+- **Capture tasks:** Add a task with a title and it appears at the top of your list.
+- **Edit task titles:** Fix or refine a task's title; the update is saved and shown immediately.
+- **Complete and reopen tasks:** Tick a task to move it to Completed, or untick it to bring it back.
+- **Delete tasks:** Remove tasks you no longer need.
+- **See your progress:** The Dashboard and Analytics pages summarise completed and active tasks, your completion rate, and overdue tasks.
+- **Browse by date:** The calendar shows tasks that have a due date on the day you select; tasks without a date are always listed.
+- **Focus Mode:** Dim the navigation from Settings; the preference is saved in your browser.
 
-## Schema Entity Relationship Diagram
-```
-┌──────────────┐
-│    users     │
-├──────────────┤
-│ user_id (PK) │
-│ username     │
-│ password_hash│
-└──────┬───────┘
-       │
-       │ 1-to-many
-       │
-┌──────▼───────┐
-│    tasks     │
-├──────────────┤
-│ task_id (PK) │
-│ title        │
-│ due_date     │
-│ priority     │
-│ is_complete  │
-│ user_id (FK) │
-│ category_id  │
-└──────┬───────┘
-       │
-       │ many-to-1
-       │
-┌──────▼──────────┐
-│   categories    │
-├─────────────────┤
-│ category_id (PK)│
-│ name            │
-│ user_id (FK)    │
-└─────────────────┘
+## Built with
 
+| Area | Technologies |
+| --- | --- |
+| Frontend | React 18, Vite, React Router, Tailwind CSS, Framer Motion, lucide-react, react-calendar |
+| Backend | Node.js, Express |
+| Database | PostgreSQL (Neon in production), node-postgres (`pg`) |
+| Authentication & sessions | bcrypt password hashing, cookie-session (signed, HTTP-only cookies) |
+| Testing | Node's built-in test runner, pg-mem, Vitest, Testing Library, jsdom |
+| Deployment | Vercel (static frontend + serverless API in one project) |
 
-┌─────────────────┐
-│  activity_log   │
-├─────────────────┤
-│ log_id (PK)     │
-│ task_id (FK)    │
-│ user_id (FK)    │
-│ action          │
-│ meta            │
-└─────────────────┘
+## How it fits together
+
+TaskFlow is two applications in one repository. The React client lives in `frontend/`; the Express API lives in `server/`. The API is defined once in `server/app.js` and runs in two ways:
+
+- **Locally:** `server/index.js` starts the Express app on port 8080, and Vite's dev server proxies `/api` requests to it.
+- **On Vercel:** `frontend/api/index.js` exports the same Express app as a serverless function. `frontend/vercel.json` routes `/api/*` to that function and every other path to the React app, so the browser and API share one origin and no CORS or cross-site cookie setup is needed.
+
+```text
+TaskFlow
+├── frontend/              React + Vite client (the Vercel project root)
+│   ├── src/               pages, components, hooks, API client
+│   ├── api/index.js       Vercel serverless entry: exports server/app.js
+│   └── vercel.json        /api/* → function, everything else → index.html
+└── server/                Express API
+    ├── app.js             middleware, routes, error handling (no listen())
+    ├── index.js           local server: app.js + built frontend + listen()
+    ├── controllers/       auth and task request handlers
+    ├── models/            SQL for users and tasks
+    ├── middleware/        authentication check, request logging
+    └── db/                connection pool, schema.sql, setup script
 ```
 
-## API Contract
+### API
 
-### Auth endpoints 
+All task routes require a signed-in session. Users can only read and change their own tasks.
 
-| Method | Endpoint | Request Body | Response |
-| ------ | -------- | ------------ | -------- |
-| POST   | `/api/auth/register` | { username, password } | { user_id, username } |
-| POST   | `/api/auth/login`    | { username, password } | { user_id, username } |
-| DELETE | `/api/auth/logout`   | — | { message } |
-| GET    | `/api/auth/me`       | — | { user_id, username } or null |
+| Method | Endpoint | Body | Response |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/register` | `{ username, password }` | `201 { user: { user_id, username } }` |
+| `POST` | `/api/auth/login` | `{ username, password }` | `{ user: { user_id, username } }` |
+| `GET` | `/api/auth/me` | — | `{ user }`, or `401` when signed out |
+| `DELETE` | `/api/auth/logout` | — | `{ message }` |
+| `GET` | `/api/tasks` | — | `[task]`, newest first |
+| `POST` | `/api/tasks` | `{ title, due_date? }` | `201 task` |
+| `PATCH` | `/api/tasks/:task_id` | `{ title?, is_complete?, due_date? }` | the updated `task` |
+| `DELETE` | `/api/tasks/:task_id` | — | the deleted `task` |
 
- ### Task endpoints (all require authentication) 
+A `task` looks like:
 
-
-| Method | Endpoint | Request Body | Response |
-| ------ | -------- | ------------ | -------- |
-| GET    | `/api/tasks` | — | [{ task_id, title, due_date, created_at, is_complete, priority, user_id, category_id }] |
-| POST   | `/api/tasks` | { title, priority, due_date, category_id } | { task_id, title, due_date, created_at, is_complete, priority, user_id, category_id } |
-| PATCH  | `/api/tasks/:task_id` | { title, is_complete, priority, due_date, category_id } | { task_id, title, due_date, created_at, is_complete, priority, user_id, category_id } |
-| DELETE | `/api/tasks/:task_id` | — | { task_id, title, due_date, created_at, is_complete, priority, user_id, category_id } |
-
-
-#### Example Task Response
-```
-json
+```json
 {
-  "task_id": 1,
-  "title": "Finish backend",
-  "due_date": "2026-05-20T00:00:00Z",
-  "created_at": "2026-05-13T12:00:00Z",
-  "is_complete": true,
-  "priority": "high",
-  "user_id": 1,
-  "category_id": 2
+  "task_id": 12,
+  "user_id": 3,
+  "title": "Draft and share the Q3 roadmap",
+  "is_complete": false,
+  "due_date": null
 }
 ```
-## Setup 
-### 1. Database Create a local Postgres database:
-1. `sh`
 
-2. `createdb taskflow`
+Errors return a JSON `{ error }` or `{ message }` with `400` (invalid input), `401` (not signed in), `403` (another user's task), `404` (no such task) or `500`. Server errors are logged without request bodies, passwords or connection details.
 
-### 2. Server
-1. `sh`
+### Authentication
 
-2. `cd server`
+- Passwords are hashed with bcrypt; the hash is never returned by the API.
+- The session is a signed cookie (`cookie-session`) that is HTTP-only, `SameSite=Lax`, and `Secure` in production. The server refuses to start in production without a real `SESSION_SECRET`.
+- Updates and deletes check task ownership, and the SQL itself is scoped to the signed-in user.
 
-3. `npm install`
+### Database
 
-4. `cp .env.template .env`
+Two tables, defined in [`server/db/schema.sql`](server/db/schema.sql). A user has many tasks; deleting a user deletes their tasks.
 
-Open .env and fill in your Postgres credentials and a session secret. Then seed the database:
+| Table | Columns |
+| --- | --- |
+| `users` | `id`, `username` (unique), `password_hash` |
+| `tasks` | `id`, `user_id` → `users.id`, `title`, `is_complete`, `due_date` |
 
-1. `sh`
-2. `npm run db:seed`
+The API returns these ids as `user_id` and `task_id`.
 
-Start the server:
+## Getting started
 
-1. `sh`
-2. `npm run dev`
+### Prerequisites
 
-The server runs on http://localhost:8080. 
+- Node.js 20 or later
+- PostgreSQL
+- npm
 
-### 3. Frontend 
-In a second terminal:
+### 1. Clone the repository
 
-1. `sh`
-2. `cd frontend`
-3. `npm install`
-4. `npm run dev`
-
-
-The frontend runs on http://localhost:5173. The Vite dev proxy forwards all /api requests to the Express server so session cookies work correctly. 
-
-## Seed Users 
-
-After running `npm run db:seed`, these accounts are available: 
-
-```
-| Username | Password | | -------- | ----------- | | alice | password123 | | bob | password123 | 
+```bash
+git clone https://github.com/iamtati1/taskflow.git
+cd taskflow
 ```
 
-## Application Structure
+### 2. Create a database and configure the server
 
-```
-swe-casestudy-7-task-app/
-├── frontend/               # React app (Vite)
-│   ├── src/
-│   │   ├── App.jsx         # Root component: currentUser state, session rehydration, auth handlers
-│   │   ├── adapters/
-│   │   │   ├── auth-adapters.js  # Fetch adapters for /api/auth/* endpoints
-│   │   │   └── task-adapters.js  # Fetch adapters for /api/tasks/* endpoints
-│   │   └── components/
-│   │       ├── AuthPage.jsx    # Login + Register forms (shown when logged out)
-│   │       ├── TaskPage.jsx    # Main app container (shown when logged in)
-│   │       ├── AddTaskForm.jsx # Form to create a new task
-│   │       ├── TaskList.jsx    # Renders a list of TaskItems
-│   │       └── TaskItem.jsx    # Single task: checkbox, title, delete button
-│   └── vite.config.js      # Proxies /api requests to Express in development
-└── server/                 # Express + Postgres API
-    ├── index.js            # App entry point, route definitions
-    ├── controllers/
-    │   ├── authControllers.js  # register, login, logout, getMe
-    │   └── taskControllers.js  # list, create, update, delete tasks
-    ├── models/
-    │   ├── userModel.js    # SQL queries for the users table
-    │   └── taskModel.js    # SQL queries for the tasks table
-    ├── middleware/
-    │   ├── checkAuthentication.js  # Blocks unauthenticated requests
-    │   └── logRoutes.js            # Logs each incoming request
-    └── db/
-        ├── pool.js         # Postgres connection pool
-        └── seed.js         # Creates tables and inserts sample data
+Create a local PostgreSQL database:
+
+```bash
+createdb taskflow
 ```
 
-## Future Improvements 
-### UX Improvements 
-- Drag and drop task reordering
-- Task filters and sorting 
-### Authentication 
-- Password reset flow 
-- Email verification 
+Copy the environment template:
 
-### Productivity Features
- - Recurring tasks 
- - Notifications/reminders 
- - Shared team workspaces 
+```bash
+cp server/.env.template server/.env
+```
 
- ## API Testing API endpoints were tested using Thunder Client to verify: 
- - authentication flow 
- - session persistence 
- - CRUD functionality 
- - category ownership validation 
- - protected route behavior 
- - activity log creation 
- - relational database integrity
+In `server/.env`, set either `DATABASE_URL` or the `PG*` variables for your local database, plus a session secret:
+
+```env
+DATABASE_URL=postgresql://YOUR_USER@localhost:5432/taskflow
+SESSION_SECRET=replace-with-a-long-random-string
+```
+
+Generate a secret with `openssl rand -hex 32`.
+
+### 3. Install dependencies
+
+The client and server have separate package files:
+
+```bash
+cd server && npm install
+cd ../frontend && npm install
+```
+
+### 4. Create the tables
+
+```bash
+cd server
+npm run db:setup
+```
+
+This runs `schema.sql`, which only creates tables that don't exist yet. It never drops or changes existing tables or rows.
+
+### 5. Run the app
+
+Open two terminals from the repository root.
+
+**Terminal 1 — API server** (http://localhost:8080)
+
+```bash
+cd server
+npm run dev
+```
+
+**Terminal 2 — Vite client**
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open http://localhost:5173 and register an account. The Vite dev server proxies `/api` requests to the Express server.
+
+## Run tests
+
+```bash
+cd server && npm test
+cd ../frontend && npm test
+```
+
+- **Server** (`node --test`): API tests run the real Express app against an in-memory PostgreSQL (pg-mem) with the production schema. They cover registration, login, session restore, logout, task create/edit/complete/delete, ownership checks, error responses, and that existing records are never modified. Unit tests cover the models, session-secret checks and log sanitising.
+- **Frontend** (`vitest`): component and page tests for the task list and editor: editing saves and shows the new title, failed saves show an error, completing a task reaches the API, and buttons inside draggable cards still receive clicks.
+
+To build the production frontend:
+
+```bash
+cd frontend && npm run build
+```
+
+## Deployment
+
+The Vercel project uses `frontend` as its root directory. `frontend/vercel.json` installs the server's dependencies too, so the serverless function can load `server/app.js`.
+
+Set these environment variables in Vercel:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string (Vercel doesn't provide a database) |
+| `SESSION_SECRET` | Long random string used to sign session cookies |
+
+Create the tables once with `npm run db:setup` pointed at the production `DATABASE_URL`.
+
+## Engineering highlights
+
+- One Express app, two runtimes: a local server and a Vercel serverless function, with the same routes and middleware.
+- Same-origin deployment, so session cookies work without cross-site cookie settings or CORS.
+- Ownership enforced twice: a check in the controller and a `user_id` condition in the SQL.
+- Optimistic UI updates that roll back on failure and show the server's saved result on success.
+- Error logs that never include passwords, request bodies or database connection details.
+- End-to-end behaviour tested against an in-memory PostgreSQL with the production schema.
+
+## Known limitations
+
+- Tasks have a title, completion state and optional due date only; there are no descriptions, priorities or categories.
+- Due dates can be stored and are shown on the calendar, but the interface has no control for setting them.
+- Drag-to-reorder changes the order on screen only; the order isn't saved.
+- The theme picker in Settings is saved but doesn't change the appearance yet.
+- The Dashboard's "AI Recommendation" and Analytics' reflection are rule-based messages, not AI.
+
+---
+
+Built by [Tatiana Barmer](https://github.com/iamtati1).

@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 import TaskItem from "./TaskItem";
 
 // =====================================================
@@ -47,6 +49,14 @@ function TaskList({
     selectedTaskId,
     reorderTasks, // ⭐ REQUIRED
 }) {
+    // A press that starts on a control (Edit, Delete, the checkbox) must stay
+    // a click: in a draggable card, moving a few pixels during the click
+    // otherwise starts a drag and the click never fires
+    const pressedOnControl = useRef(false);
+    const rememberPressTarget = (e) => {
+        pressedOnControl.current = !!e.target.closest("button, a, input, textarea, select");
+    };
+
     // =====================================================
     // GROUP TASKS
     // =====================================================
@@ -70,6 +80,11 @@ function TaskList({
     // DRAG HANDLERS
     // =====================================================
     const handleDragStart = (e, index, type) => {
+        if (pressedOnControl.current) {
+            e.preventDefault();
+            return;
+        }
+
         e.dataTransfer.setData(
             "text/plain",
             JSON.stringify({ index, type })
@@ -85,8 +100,6 @@ function TaskList({
         // prevent cross-section drag (for now)
         if (fromType !== type) return;
 
-        console.log("reorderTasks:", reorderTasks);
-        console.log("type:", typeof reorderTasks);
         reorderTasks(fromIndex, toIndex);
     };
 
@@ -128,6 +141,7 @@ function TaskList({
                             <div
                                 key={task.task_id}
                                 draggable
+                                onPointerDown={rememberPressTarget}
                                 onDragStart={(e) =>
                                     handleDragStart(e, index, "active")
                                 }
@@ -165,6 +179,7 @@ function TaskList({
                                 <div
                                     key={task.task_id}
                                     draggable
+                                    onPointerDown={rememberPressTarget}
                                     onDragStart={(e) =>
                                         handleDragStart(
                                             e,

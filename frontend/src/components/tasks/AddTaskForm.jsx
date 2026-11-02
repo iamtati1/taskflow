@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Flag, CheckCircle2 } from "lucide-react";
+import { Sparkles, CheckCircle2 } from "lucide-react";
 
 import Button from "../ui/Button";
 import Input from "../ui/Input";
@@ -8,30 +8,34 @@ import Card from "../ui/Card";
 
 function AddTaskForm({
     addTask,
-    updateTask,        // 👈 NEW
-    initialData = null // 👈 NEW
+    updateTask,
+    initialData = null
 }) {
     const isEditMode = !!initialData;
 
+    // Only the title is editable: it's the one task field the database stores
+    // besides completion and due date
     const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [priority, setPriority] = useState("medium");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+    const formRef = useRef(null);
 
     // =========================
     // PREFILL FOR EDIT MODE
     // =========================
     useEffect(() => {
-        if (initialData) {
-            setTitle(initialData.title || "");
-            setDescription(initialData.description || "");
-            setPriority(initialData.priority || "medium");
-        } else {
-            setTitle("");
-            setDescription("");
-            setPriority("medium");
-        }
+        setTitle(initialData?.title || "");
+        setSubmitError(null);
+    }, [initialData]);
+
+    // =========================
+    // BRING THE FORM INTO VIEW
+    // =========================
+    // It renders below the task list, so without this Edit looks like it did nothing
+    useEffect(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        formRef.current?.querySelector("input")?.focus({ preventScroll: true });
     }, [initialData]);
 
     const handleSubmit = async (e) => {
@@ -41,33 +45,26 @@ function AddTaskForm({
 
         setIsSubmitting(true);
         setSuccess(false);
+        setSubmitError(null);
 
         try {
             let result;
 
             if (isEditMode) {
-                result = await updateTask(initialData.task_id, {
-                    title,
-                    description,
-                    priority,
-                });
+                result = await updateTask(initialData.task_id, { title });
             } else {
-                result = await addTask({
-                    title,
-                    description,
-                    priority,
-                });
+                result = await addTask({ title });
             }
 
             if (result?.success) {
                 if (!isEditMode) {
                     setTitle("");
-                    setDescription("");
-                    setPriority("medium");
                 }
 
                 setSuccess(true);
                 setTimeout(() => setSuccess(false), 1200);
+            } else if (result) {
+                setSubmitError(result.error || "Couldn't save the task. Please try again.");
             }
         } finally {
             setIsSubmitting(false);
@@ -75,7 +72,7 @@ function AddTaskForm({
     };
 
     return (
-        <motion.div layout>
+        <motion.div layout ref={formRef}>
             <Card className="space-y-6">
 
                 {/* HEADER */}
@@ -100,50 +97,16 @@ function AddTaskForm({
                         placeholder="Task title..."
                     />
 
-                    <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Description (optional)"
-                        rows={3}
-                        className="
-                            w-full
-                            rounded-xl
-                            border border-white/10
-                            bg-black/20
-                            px-4 py-3
-                            text-white
-                            outline-none
-                            resize-none
-                            focus:border-cyan-400/40
-                        "
-                    />
-
-                    {/* PRIORITY */}
-                    <div className="flex gap-2">
-                        {["low", "medium", "high"].map((level) => (
-                            <button
-                                key={level}
-                                type="button"
-                                onClick={() => setPriority(level)}
-                                className={`
-                                    flex items-center gap-2 px-3 py-2 rounded-xl text-sm border
-                                    ${priority === level
-                                        ? "border-cyan-400/40 bg-cyan-500/10 text-white"
-                                        : "border-white/10 text-white/60"
-                                    }
-                                `}
-                            >
-                                <Flag size={14} />
-                                {level}
-                            </button>
-                        ))}
-                    </div>
-
                     {/* FOOTER */}
                     <div className="flex items-center justify-between pt-2">
 
-                        {/* SUCCESS */}
+                        {/* SUCCESS / ERROR */}
                         <div className="text-sm text-cyan-300 min-h-[20px]">
+                            {submitError && (
+                                <div role="alert" className="text-red-300">
+                                    {submitError}
+                                </div>
+                            )}
                             <AnimatePresence>
                                 {success && (
                                     <motion.div
