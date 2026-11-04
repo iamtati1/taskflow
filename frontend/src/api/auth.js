@@ -60,6 +60,24 @@ export const logout = () =>
     method: "DELETE",
   });
 
+// =====================================================
+// ACCOUNT (signed-in user)
+// =====================================================
+
+export const updateProfile = (username) =>
+  handleFetch("/api/users/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username }),
+  });
+
+export const changePassword = (currentPassword, newPassword) =>
+  handleFetch("/api/users/me/password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
 /*
 fetch("http://localhost:8080/api/auth/logout", {
 method: "DELETE",

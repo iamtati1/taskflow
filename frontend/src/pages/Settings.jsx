@@ -1,4 +1,7 @@
+import { useState } from "react";
+
 import Card from "../components/ui/Card";
+import { EditProfileForm, ChangePasswordForm } from "../components/settings/AccountForms";
 import useUISettings from "../hooks/useUISettings";
 
 
@@ -10,6 +13,8 @@ import {
     SlidersHorizontal,
     Palette,
     Check,
+    UserPen,
+    KeyRound,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -53,7 +58,15 @@ const preferences = [
 // =====================================================
 
 function Settings() {
-    const { currentUser, signOut: logout } = useAuth();
+    const { currentUser, signOut: logout, updateUsername, changePassword } = useAuth();
+
+    // Which account form is open ("profile" | "password" | null), and the last result
+    const [openForm, setOpenForm] = useState(null);
+    const [accountMessage, setAccountMessage] = useState(null);
+    const closeForm = (message) => {
+        setOpenForm(null);
+        setAccountMessage(message);
+    };
     const { tasks = [] } = useTasks();
 
     const {
@@ -221,6 +234,46 @@ function Settings() {
                         </p>
 
                         <div className="mt-6 space-y-3">
+                            {accountMessage && !openForm && (
+                                <p role="status" className="text-sm text-cyan-300">
+                                    {accountMessage}
+                                </p>
+                            )}
+
+                            {openForm === "profile" && (
+                                <EditProfileForm
+                                    currentName={currentUser?.username}
+                                    onSave={updateUsername}
+                                    onDone={closeForm}
+                                />
+                            )}
+
+                            {openForm === "password" && (
+                                <ChangePasswordForm onSave={changePassword} onDone={closeForm} />
+                            )}
+
+                            {!openForm && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAccountMessage(null); setOpenForm("profile"); }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white/80 hover:bg-white/[0.07]"
+                                    >
+                                        <UserPen size={16} />
+                                        Edit Profile
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAccountMessage(null); setOpenForm("password"); }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white/80 hover:bg-white/[0.07]"
+                                    >
+                                        <KeyRound size={16} />
+                                        Change Password
+                                    </button>
+                                </>
+                            )}
+
                             <button
                                 type="button"
                                 onClick={logout}

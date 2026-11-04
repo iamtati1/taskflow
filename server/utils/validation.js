@@ -6,14 +6,19 @@ const PASSWORD_MIN = 8;
 const PASSWORD_MAX_BYTES = 72; // bcrypt ignores anything past 72 bytes
 const TITLE_MAX = 200;
 
-// Registration only: existing accounts can still log in with older usernames
-const registrationError = (username, password) => {
-  if (typeof username !== "string" || !username.trim() || typeof password !== "string" || !password) {
-    return "Username and password are required.";
-  }
+// New usernames (registration and renames). Existing accounts can still log
+// in with older usernames that don't meet these rules.
+const usernameError = (username) => {
+  if (typeof username !== "string" || !username.trim()) return "Username is required.";
   if (!USERNAME_PATTERN.test(username.trim())) {
     return "Usernames are 3 to 30 characters: letters, numbers, dots, dashes or underscores.";
   }
+  return null;
+};
+
+// New passwords (registration and password changes)
+const passwordError = (password) => {
+  if (typeof password !== "string" || !password) return "Password is required.";
   if (password.length < PASSWORD_MIN) {
     return `Passwords need at least ${PASSWORD_MIN} characters.`;
   }
@@ -21,6 +26,13 @@ const registrationError = (username, password) => {
     return `Passwords can be at most ${PASSWORD_MAX_BYTES} characters.`;
   }
   return null;
+};
+
+const registrationError = (username, password) => {
+  if (typeof username !== "string" || !username.trim() || typeof password !== "string" || !password) {
+    return "Username and password are required.";
+  }
+  return usernameError(username) || passwordError(password);
 };
 
 const titleError = (title) => {
@@ -41,4 +53,4 @@ const dueDateError = (value) => {
   return "Due dates must be a real date in YYYY-MM-DD format.";
 };
 
-module.exports = { registrationError, titleError, dueDateError, TITLE_MAX };
+module.exports = { usernameError, passwordError, registrationError, titleError, dueDateError, TITLE_MAX };

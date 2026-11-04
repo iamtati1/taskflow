@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState } from "react";
 
-import { getMe, login, register, logout } from "../api/auth";
+import { getMe, login, register, logout, updateProfile, changePassword } from "../api/auth";
 
 export const AuthContext = createContext(null);
 
@@ -92,6 +92,23 @@ export function AuthProvider({ children }) {
         checkSession();
     }, []);
 
+    // ================================
+    // ACCOUNT CHANGES
+    // ================================
+    const handleUpdateUsername = async (username) => {
+        const { data, error } = await updateProfile(username);
+        if (error) return { success: false, error: error.message };
+
+        // Every screen showing the name (Topbar, Settings) updates at once
+        setCurrentUser(normalizeUser(data));
+        return { success: true };
+    };
+
+    const handleChangePassword = async (currentPassword, newPassword) => {
+        const { error } = await changePassword(currentPassword, newPassword);
+        return error ? { success: false, error: error.message } : { success: true };
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -105,6 +122,8 @@ export function AuthProvider({ children }) {
                 signOut: handleLogout,
                 logout: handleLogout,
                 register: handleRegister,
+                updateUsername: handleUpdateUsername,
+                changePassword: handleChangePassword,
             }}
         >
             {children}

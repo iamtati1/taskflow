@@ -433,6 +433,100 @@ test("is_complete must be a boolean", async () => {
   assert.strictEqual((await api("PATCH", `/api/tasks/${ids[0]}`, { is_complete: true })).data.is_complete, true);
 });
 
+// ---------- Account: change username and password ----------
+
+test("account: change username; the new name logs in and the old one doesn't", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "renamer", password: "renamer-pass" });
+
+  const res = await api("PATCH", "/api/users/me", { username: "  renamed.user  " });
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.user.username, "renamed.user");
+  assert.strictEqual((await api("GET", "/api/auth/me")).data.user.username, "renamed.user", "same session, new name");
+
+  assert.strictEqual((await client()("POST", "/api/auth/login", { username: "renamed.user", password: "renamer-pass" })).status, 200);
+  assert.strictEqual((await client()("POST", "/api/auth/login", { username: "renamer", password: "renamer-pass" })).status, 401);
+});
+
+test("account: username rules apply, names taken by others are refused, your own capitalisation can change", async () => {
+  await client()("POST", "/api/auth/register", { username: "TakenName", password: "taken-pass-1" });
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "chooser", password: "chooser-pass" });
+
+  for (const username of ["ab", "has space", "", 42]) {
+    const res = await api("PATCH", "/api/users/me", { username });
+    assert.strictEqual(res.status, 400, String(username));
+  }
+  const taken = await api("PATCH", "/api/users/me", { username: "takenname" });
+  assert.strictEqual(taken.status, 400);
+  assert.match(taken.data.error, /already taken/);
+
+  const recased = await api("PATCH", "/api/users/me", { username: "Chooser" });
+  assert.strictEqual(recased.status, 200);
+  assert.strictEqual(recased.data.user.username, "Chooser");
+});
+
+test("account: change password; the new password logs in and the old one doesn't", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "pwchanger", password: "old-password-1" });
+
+  const res = await api("POST", "/api/users/me/password", { currentPassword: "old-password-1", newPassword: "new-password-2" });
+  assert.strictEqual(res.status, 200);
+  assert.deepStrictEqual(res.data, { message: "Password updated." });
+
+  assert.strictEqual((await client()("POST", "/api/auth/login", { username: "pwchanger", password: "new-password-2" })).status, 200);
+  assert.strictEqual((await client()("POST", "/api/auth/login", { username: "pwchanger", password: "old-password-1" })).status, 401);
+});
+
+test("account: a wrong current password or a weak new one is refused and changes nothing", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "pwkeeper", password: "keep-password-1" });
+
+  const wrong = await api("POST", "/api/users/me/password", { currentPassword: "not-it", newPassword: "another-pass-9" });
+  assert.strictEqual(wrong.status, 400);
+  assert.match(wrong.data.error, /current password is incorrect/);
+
+  const weak = await api("POST", "/api/users/me/password", { currentPassword: "keep-password-1", newPassword: "short" });
+  assert.strictEqual(weak.status, 400);
+  assert.match(weak.data.error, /at least 8 characters/);
+
+  const missing = await api("POST", "/api/users/me/password", { newPassword: "another-pass-9" });
+  assert.strictEqual(missing.status, 400);
+
+  assert.strictEqual((await client()("POST", "/api/auth/login", { username: "pwkeeper", password: "keep-password-1" })).status, 200);
+});
+
+test("account: both routes require a session", async () => {
+  const anon = client();
+  assert.strictEqual((await anon("PATCH", "/api/users/me", { username: "ghosty" })).status, 401);
+  assert.strictEqual((await anon("POST", "/api/users/me/password", { currentPassword: "a", newPassword: "bbbbbbbbb" })).status, 401);
+});
+
+test("account: a server error during a password change never logs the passwords", async () => {
+  const userModel = require("./models/userModel");
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "logcheck", password: "log-check-pass" });
+
+  const original = userModel.checkPassword;
+  const logged = [];
+  const originalError = console.error;
+  userModel.checkPassword = async (id, password) => {
+    throw new Error(`database exploded while checking ${password}`);
+  };
+  console.error = (...args) => logged.push(args.join(" "));
+  try {
+    const res = await api("POST", "/api/users/me/password", { currentPassword: "log-check-pass", newPassword: "secret-new-pass" });
+    assert.strictEqual(res.status, 500);
+  } finally {
+    userModel.checkPassword = original;
+    console.error = originalError;
+  }
+  assert.ok(logged.length > 0, "the error was logged");
+  for (const line of logged) {
+    assert.ok(!line.includes("log-check-pass") && !line.includes("secret-new-pass"), line);
+  }
+});
+
 test("existing user and task records are never modified", () => {
   assert.deepStrictEqual(snapshot(), snapshotBefore);
 });
