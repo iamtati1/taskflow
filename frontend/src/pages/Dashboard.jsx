@@ -6,7 +6,7 @@ import {
     Sparkles,
     CheckCircle2,
     Clock3,
-    BrainCircuit,
+    Lightbulb,
     ArrowRight,
     CalendarDays,
     Zap,
@@ -125,7 +125,7 @@ function Dashboard() {
                 <div className="relative max-w-3xl space-y-5">
                     <div className="flex items-center gap-2 text-blue-300">
                         <Sparkles size={16} />
-                        Flow Workspace
+                        Your workspace
                     </div>
 
                     <h1 className="text-4xl font-bold text-white leading-tight">
@@ -194,7 +194,7 @@ function Dashboard() {
             </div>
 
             {/* =====================================================
-                FOCUS + AI
+                FOCUS + INSIGHT
             ===================================================== */}
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -219,12 +219,12 @@ function Dashboard() {
                 {aiEnabled ? (
                     <Card>
                         <div className="flex items-center gap-2 text-blue-300">
-                            <BrainCircuit size={18} />
-                            AI Recommendation
+                            <Lightbulb size={18} />
+                            Workflow Insight
                         </div>
 
                         <h3 className="mt-4 text-xl font-semibold text-white">
-                            Smart Workflow Insight
+                            Your workload
                         </h3>
 
                         <p className="mt-2 text-white/60">
@@ -234,14 +234,13 @@ function Dashboard() {
                 ) : (
                     <Card>
                         <div className="flex items-center gap-2 text-white/60">
-                            <BrainCircuit size={18} />
-                            AI Disabled
+                            <Lightbulb size={18} />
+                            Insights are off
                         </div>
 
                         <p className="mt-4 text-white/50">
-                            Enable Productivity Insights
-                            in Settings to receive AI
-                            recommendations.
+                            Turn on Workflow insights in Settings
+                            to see a note about your workload.
                         </p>
                     </Card>
                 )}

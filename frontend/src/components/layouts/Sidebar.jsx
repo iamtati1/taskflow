@@ -60,11 +60,11 @@ function Sidebar() {
 
                     <div>
                         <h1 className="font-semibold text-white">
-                            FlowState
+                            TaskFlow
                         </h1>
 
                         <p className="text-xs text-white/40">
-                            Personal OS
+                            Plan · Focus · Finish
                         </p>
                     </div>
                 </div>

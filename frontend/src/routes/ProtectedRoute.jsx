@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, BrainCircuit } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
 // =====================================================
@@ -41,7 +41,7 @@ function LoadingScreen() {
                         mb-6
                     "
                 >
-                    <BrainCircuit size={32} className="text-cyan-300" />
+                    <Sparkles size={32} className="text-cyan-300" />
                 </motion.div>
 
                 {/* TAG */}

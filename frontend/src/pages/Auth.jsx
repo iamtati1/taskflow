@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
     Eye,
     EyeOff,
     Sparkles,
     ArrowRight,
-    BrainCircuit,
+    BarChart3,
     Layers3,
     Loader2,
     CheckCircle2,
@@ -27,7 +27,7 @@ function Card({ children, className = "" }) {
 
 function Auth() {
     const navigate = useNavigate();
-    const { signIn, register, error } = useAuth();
+    const { signIn, register, error, user, loading } = useAuth();
 
     const [isRegistering, setIsRegistering] = useState(false);
     const [username, setUsername] = useState("");
@@ -36,6 +36,12 @@ function Auth() {
 
     const [status, setStatus] = useState("idle");
     const isLoading = status === "loading";
+
+    // Already signed in (e.g. opened /auth from a bookmark): go to the app.
+    // Not during a sign-in that just succeeded; that navigates after its animation.
+    if (!loading && user && status === "idle") {
+        return <Navigate to="/tasks" replace />;
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -95,7 +101,7 @@ function Auth() {
 
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5">
                         <Sparkles size={16} className="text-cyan-300" />
-                        <span className="text-sm text-white/70">Flow OS</span>
+                        <span className="text-sm text-white/70">TaskFlow</span>
                     </div>
 
                     <div className="max-w-xl space-y-6">
@@ -114,9 +120,9 @@ function Auth() {
                         <div className="grid grid-cols-2 gap-4">
 
                             <Card className="p-5">
-                                <BrainCircuit className="text-cyan-300 mb-3" />
-                                <h3 className="font-semibold">AI Planning</h3>
-                                <p className="text-sm text-white/40">Execution guidance</p>
+                                <BarChart3 className="text-cyan-300 mb-3" />
+                                <h3 className="font-semibold">Progress Insights</h3>
+                                <p className="text-sm text-white/40">See what you've finished</p>
                             </Card>
 
                             <Card className="p-5">

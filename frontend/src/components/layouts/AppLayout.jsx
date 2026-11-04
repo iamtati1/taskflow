@@ -20,7 +20,6 @@ function AppLayout() {
 
     const ui = useUISettings() || {};
 
-    const theme = ui.theme || "midnight";
     const quickSettings = ui.quickSettings || { "Focus Mode": false };
     // =====================================================
     // PAGE TITLE RESOLUTION

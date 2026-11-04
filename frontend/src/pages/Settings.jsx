@@ -3,17 +3,11 @@ import useUISettings from "../hooks/useUISettings";
 
 
 import {
-    Bell,
-    Shield,
     Sparkles,
     Moon,
-    Palette,
-    BrainCircuit,
-    User,
+    Lightbulb,
     LogOut,
-    Check,
-    Monitor,
-    Zap,
+    SlidersHorizontal,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -24,40 +18,24 @@ import { useAuth } from "../hooks/useAuth";
 // DATA CONFIG
 // =====================================================
 
-const appearanceOptions = [
+// Every preference here changes the app: Focus Mode dims the sidebar and
+// changes the Dashboard's focus copy; Workflow insights shows or hides the
+// Dashboard's insight card. (Storage keys are kept for existing browsers.)
+const preferences = [
     {
-        id: "midnight",
-        name: "Midnight",
-        preview: "from-cyan-500/30 via-blue-500/20 to-violet-500/30",
+        icon: Moon,
+        label: "Focus Mode",
+        description: "Dim the sidebar and keep the Dashboard on one outcome.",
+        group: "quick",
+        key: "Focus Mode",
     },
     {
-        id: "violet",
-        name: "Violet",
-        preview: "from-violet-500/30 via-purple-500/20 to-pink-500/30",
+        icon: Lightbulb,
+        label: "Workflow insights",
+        description: "Show a short note on the Dashboard about your workload.",
+        group: "ai",
+        key: "Productivity insights",
     },
-    {
-        id: "emerald",
-        name: "Emerald",
-        preview: "from-emerald-500/30 via-teal-500/20 to-cyan-500/30",
-    },
-    {
-        id: "sunset",
-        name: "Sunset",
-        preview: "from-orange-500/30 via-rose-500/20 to-pink-500/30",
-    },
-];
-
-const aiSettingsList = [
-    "Smart task prioritization",
-    "AI workflow suggestions",
-    "Focus session recommendations",
-    "Productivity insights",
-];
-
-const quickSettingsList = [
-    { icon: Bell, label: "Notifications" },
-    { icon: Moon, label: "Focus Mode" },
-    { icon: Monitor, label: "Desktop Layout" },
 ];
 
 // =====================================================
@@ -69,13 +47,16 @@ function Settings() {
     const { tasks = [] } = useTasks();
 
     const {
-        theme,
-        setTheme,
         aiSettings,
         toggleAI,
         quickSettings,
         toggleQuick,
     } = useUISettings();
+
+    const isOn = ({ group, key }) =>
+        Boolean(group === "ai" ? aiSettings?.[key] : quickSettings?.[key]);
+    const toggle = ({ group, key }) =>
+        group === "ai" ? toggleAI(key) : toggleQuick(key);
 
     // =====================================================
     // RENDER
@@ -92,11 +73,11 @@ function Settings() {
                 <div className="relative space-y-3">
                     <div className="flex items-center gap-2 text-cyan-300">
                         <Sparkles size={16} />
-                        Workspace Settings
+                        Settings
                     </div>
 
                     <h1 className="text-3xl font-bold text-white">
-                        Personalize your workspace
+                        Your workspace
                     </h1>
 
                     <p className="text-white/60">
@@ -116,82 +97,52 @@ function Settings() {
                 {/* LEFT */}
                 <div className="xl:col-span-2 space-y-6">
 
-                    {/* APPEARANCE */}
+                    {/* PREFERENCES */}
                     <Card>
                         <div className="flex items-center gap-3 mb-6">
-                            <Palette className="text-cyan-300" size={18} />
+                            <SlidersHorizontal className="text-cyan-300" size={18} />
                             <div>
                                 <h3 className="text-lg font-semibold text-white">
-                                    Appearance
+                                    Preferences
                                 </h3>
                                 <p className="text-sm text-white/45">
-                                    Visual styling and theme options
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {appearanceOptions.map((option) => (
-                                <button
-                                    key={option.id}
-                                    onClick={() => setTheme(option.id)}
-                                    className={`p-4 rounded-2xl border text-left transition
-                                        ${theme === option.id
-                                            ? "border-cyan-400/40 bg-cyan-400/10"
-                                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.06]"
-                                        }`}
-                                >
-                                    <div
-                                        className={`h-20 rounded-xl mb-3 bg-gradient-to-br ${option.preview}`}
-                                    />
-
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-white font-medium">
-                                            {option.name}
-                                        </span>
-
-                                        {theme === option.id && (
-                                            <div className="flex items-center gap-2 text-cyan-300 text-xs">
-                                                <Check size={12} />
-                                                Active
-                                            </div>
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </Card>
-
-
-                    {/* AI SETTINGS */}
-                    <Card>
-                        <div className="flex items-center gap-3 mb-6">
-                            <BrainCircuit className="text-cyan-300" size={18} />
-                            <div>
-                                <h3 className="text-lg font-semibold text-white">
-                                    AI Preferences
-                                </h3>
-                                <p className="text-sm text-white/45">
-                                    Control how AI supports your workflow
+                                    Saved in this browser
                                 </p>
                             </div>
                         </div>
 
                         <div className="space-y-3">
-                            {aiSettingsList.map((setting) => (
-                                <div
-                                    key={setting}
-                                    className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.04]"
-                                >
-                                    <span className="text-white/80 text-sm">
-                                        {setting}
-                                    </span>
+                            {preferences.map((pref) => {
+                                const { icon: Icon, label, description } = pref;
+                                return (
+                                    <div
+                                        key={label}
+                                        className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-white/10 bg-white/[0.04]"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <Icon size={16} className="mt-0.5 text-white/60" />
+                                            <div>
+                                                <p className="text-white/85 text-sm font-medium">
+                                                    {label}
+                                                </p>
+                                                <p className="text-white/45 text-sm">
+                                                    {description}
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                    <button onClick={() => toggleAI(setting)}>
-                                        <Toggle enabled={aiSettings?.[setting]} />
-                                    </button>
-                                </div>
-                            ))}
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={isOn(pref)}
+                                            aria-label={label}
+                                            onClick={() => toggle(pref)}
+                                        >
+                                            <Toggle enabled={isOn(pref)} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </Card>
                 </div>
@@ -214,53 +165,14 @@ function Settings() {
                         </p>
 
                         <div className="mt-6 space-y-3">
-                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white/70">
-                                <User size={16} />
-                                Edit Profile
-                            </button>
-
-                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white/70">
-                                <Shield size={16} />
-                                Security
-                            </button>
-
                             <button
+                                type="button"
                                 onClick={logout}
                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/10 text-red-300 border border-red-400/10"
                             >
                                 <LogOut size={16} />
                                 Log Out
                             </button>
-                        </div>
-                    </Card>
-
-                    {/* QUICK SETTINGS */}
-                    <Card>
-                        <div className="flex items-center gap-2 mb-4">
-                            <Zap size={18} className="text-cyan-300" />
-                            <h3 className="text-lg font-semibold text-white">
-                                Quick Settings
-                            </h3>
-                        </div>
-
-                        <div className="space-y-3">
-                            {quickSettingsList.map(({ icon: Icon, label }) => (
-                                <div
-                                    key={label}
-                                    className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/[0.04]"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Icon size={16} className="text-white/60" />
-                                        <span className="text-white/70 text-sm">
-                                            {label}
-                                        </span>
-                                    </div>
-
-                                    <button onClick={() => toggleQuick(label)}>
-                                        <Toggle enabled={quickSettings?.[label]} />
-                                    </button>
-                                </div>
-                            ))}
                         </div>
                     </Card>
                 </div>
