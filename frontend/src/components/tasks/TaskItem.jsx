@@ -1,7 +1,5 @@
 import { motion } from "framer-motion";
-import { useSortable } from "@dnd-kit/sortable";
 import { formatDueDate } from "../../utils/dates";
-import { CSS } from "@dnd-kit/utilities";
 
 import {
   CheckCircle2,
@@ -23,29 +21,12 @@ function TaskItem({
   if (!task?.task_id) return null;
 
   // =====================================================
-  // DRAG ENGINE
-  // =====================================================
-  const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.task_id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  // =====================================================
   // DERIVED STATE (clean + explicit)
   // =====================================================
   const isUpdating = isActiveActionId === task.task_id;
   const isCompleted = task.is_complete;
 
-  const isLocked = isUpdating || isDragging;
+  const isLocked = isUpdating;
 
   // =====================================================
   // DATE FORMAT
@@ -81,8 +62,6 @@ function TaskItem({
 
     isCompleted ? "opacity-80" : "",
 
-    isDragging ? "scale-[1.02] shadow-xl" : "",
-
     isUpdating ? "ring-1 ring-cyan-400/30 opacity-90" : "",
   ].join(" ");
 
@@ -91,14 +70,9 @@ function TaskItem({
   // =====================================================
   return (
     <motion.div
-      ref={setNodeRef}
-      style={style}
       layout
       onClick={handleSelect}
       whileHover={!isLocked ? { y: -2 } : {}}
-      animate={{
-        opacity: isDragging ? 0.6 : 1,
-      }}
       className={`${base} ${state}`}
     >
       <div className="flex gap-4">
@@ -180,10 +154,9 @@ function TaskItem({
         </div>
 
 
-        {/* DRAG HANDLE */}
+        {/* DRAG HANDLE (visual cue; the card itself is draggable, see TaskList) */}
         <div
-          {...attributes}
-          {...listeners}
+          aria-hidden="true"
           className="
                         self-center
                         opacity-0 group-hover:opacity-100
