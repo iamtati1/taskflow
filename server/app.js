@@ -13,6 +13,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const isProduction = require('./utils/isProduction');
 const sessionKeys = require('./utils/sessionKeys');
 const { logError } = require('./utils/safeError');
+const { createAuthLimiter } = require('./middleware/authRateLimit');
 
 const app = express();
 
@@ -56,8 +57,10 @@ app.use(logRoutes);
 // ====================================
 // Auth routes
 // ====================================
-app.post('/api/auth/register', authControllers.register);
-app.post('/api/auth/login', authControllers.login);
+// One shared limiter: register and login attempts count against the same budget
+const authLimiter = createAuthLimiter();
+app.post('/api/auth/register', authLimiter, authControllers.register);
+app.post('/api/auth/login', authLimiter, authControllers.login);
 app.get('/api/auth/me', authControllers.getMe);
 app.delete('/api/auth/logout', authControllers.logout);
 

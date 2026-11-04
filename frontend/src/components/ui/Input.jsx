@@ -4,6 +4,7 @@ function Input({
     placeholder,
     type = "text",
     className = "",
+    maxLength,
 }) {
     return (
         <input
@@ -11,6 +12,7 @@ function Input({
             onChange={onChange}
             placeholder={placeholder}
             type={type}
+            maxLength={maxLength}
             className={`
                 w-full
                 rounded-xl

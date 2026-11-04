@@ -84,7 +84,8 @@ function App() {
         {/* =====================================================
            FALLBACK ROUTE
         ===================================================== */}
-        <Route path="*" element={<Navigate to="/auth" replace />} />
+        {/* "/" goes to the tasks page, which sends signed-out visitors to /auth */}
+        <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
     </BrowserRouter>

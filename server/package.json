@@ -1,6 +1,9 @@
 {
   "name": "todo-app-server",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -14,6 +17,7 @@
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.2",
+    "express-rate-limit": "^7.5.1",
     "pg": "^8.11.3"
   },
   "devDependencies": {

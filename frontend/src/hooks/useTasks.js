@@ -29,7 +29,11 @@ function useTasks() {
         tasksRef.current = tasks;
     }, [tasks]);
     const [status, setStatus] = useState("idle");
+    // error: loading the list failed (the page can't show tasks)
+    // notice: one action failed; the list is still shown
     const [error, setError] = useState(null);
+    const [notice, setNotice] = useState(null);
+    const dismissNotice = useCallback(() => setNotice(null), []);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [loading, setLoading] = useState(true);
     // =====================================================
@@ -144,8 +148,6 @@ function useTasks() {
 
         } catch (err) {
 
-            setError(err.message);
-
             setTasks((prev) =>
                 prev.filter(
                     (task) =>
@@ -205,7 +207,7 @@ function useTasks() {
 
         } catch (err) {
 
-            setError(err.message);
+            setNotice(`Couldn't update "${task.title}": ${err.message}`);
             setTasks((prev) =>
                 replaceTask(prev, taskId, { is_complete: task.is_complete })
             );
@@ -322,7 +324,7 @@ function useTasks() {
 
             } catch (err) {
 
-                setError(err.message);
+                setNotice(`Couldn't delete that task: ${err.message}`);
                 setTasks(snapshot);
 
                 return {
@@ -408,6 +410,8 @@ function useTasks() {
 
         status,
         error,
+        notice,
+        dismissNotice,
         lastUpdated,
 
         selectedTaskId,

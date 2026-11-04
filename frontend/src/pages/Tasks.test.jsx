@@ -60,7 +60,7 @@ test("saving an edit sends the right task id and shows the saved title", async (
     fireEvent.click(screen.getByRole("button", { name: /Update Task/ }));
 
     await waitFor(() => expect(screen.queryByRole("heading", { name: "Edit Task" })).toBeNull());
-    expect(taskApi.updateTask).toHaveBeenCalledWith(2, { title: "Write final report" });
+    expect(taskApi.updateTask).toHaveBeenCalledWith(2, { title: "Write final report", due_date: null });
     expect(screen.getByText("Write final report")).toBeTruthy();
     expect(screen.queryByText("Write report")).toBeNull();
     expect(screen.getByText("Buy milk")).toBeTruthy();
@@ -129,4 +129,101 @@ test("ticking a task's checkbox sends the completion to the server and moves it 
 
     await waitFor(() => expect(taskApi.updateTask).toHaveBeenCalledWith(1, { is_complete: true }));
     expect(await screen.findByRole("heading", { name: "Completed" })).toBeTruthy();
+});
+
+// ---------- Failed actions keep the list on screen ----------
+
+test("a failed complete shows a dismissible notice, keeps the list, and reverts the checkbox", async () => {
+    taskApi.updateTask.mockResolvedValue({ success: false, data: null, error: { message: "Not authenticated" } });
+
+    render(<Tasks />);
+    const card = (await screen.findByText("Buy milk")).closest("div.group");
+    fireEvent.click(within(card).getAllByRole("button")[0]);
+
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Couldn't update "Buy milk": Not authenticated/);
+    expect(screen.getByText("Write report")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Completed" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("a failed delete shows a notice and puts the task back", async () => {
+    taskApi.deleteTask.mockResolvedValue({ success: false, data: null, error: { message: "Server unavailable" } });
+
+    render(<Tasks />);
+    const card = (await screen.findByText("Buy milk")).closest("div.group");
+    fireEvent.click(within(card).getByRole("button", { name: "Delete" }));
+
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Couldn't delete that task: Server unavailable/);
+    expect(await screen.findByText("Buy milk")).toBeTruthy();
+});
+
+test("a failed create keeps the form open with the error and the typed title", async () => {
+    taskApi.createTask.mockResolvedValue({ success: false, data: null, error: { message: "Title is required." } });
+
+    render(<Tasks />);
+    await screen.findByText("Buy milk");
+    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "New idea" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Title is required.");
+    expect(screen.getByPlaceholderText("Task title...").value).toBe("New idea");
+    expect(screen.getByText("Buy milk")).toBeTruthy();
+});
+
+test("a failed load explains the problem and can be retried", async () => {
+    taskApi.getTasks
+        .mockResolvedValueOnce({ success: false, data: null, error: { message: "Network error" } })
+        .mockResolvedValueOnce({ success: true, data: serverTasks(), error: null });
+
+    render(<Tasks />);
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Couldn't load your tasks: Network error/);
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("Buy milk")).toBeTruthy();
+});
+
+// ---------- Due dates ----------
+
+test("creating a task with a due date sends it as YYYY-MM-DD and keeps the task in the list", async () => {
+    taskApi.createTask.mockImplementation(async (fields) => ({
+        success: true,
+        data: { task_id: 9, user_id: 1, is_complete: false, ...fields },
+        error: null,
+    }));
+
+    render(<Tasks />);
+    await screen.findByText("Buy milk");
+    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "File taxes" } });
+    fireEvent.change(screen.getByLabelText("Due date (optional)"), { target: { value: "2027-04-15" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
+
+    await waitFor(() => expect(taskApi.createTask).toHaveBeenCalledWith({ title: "File taxes", due_date: "2027-04-15" }));
+    // A task due on another day is still listed (the calendar shows the day view)
+    expect(await screen.findByText("File taxes")).toBeTruthy();
+    expect(screen.getByText("Apr 15")).toBeTruthy();
+});
+
+test("editing a dated task prefills the date, and Clear date removes it", async () => {
+    taskApi.getTasks.mockResolvedValue({
+        success: true,
+        data: [{ task_id: 5, user_id: 1, title: "Dentist", is_complete: false, due_date: "2026-11-20" }],
+        error: null,
+    });
+    taskApi.updateTask.mockImplementation(async (id, changes) => ({
+        success: true,
+        data: { task_id: id, user_id: 1, title: "Dentist", is_complete: false, ...changes },
+        error: null,
+    }));
+
+    await openEditFor("Dentist");
+    expect(screen.getByLabelText("Due date (optional)").value).toBe("2026-11-20");
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear date" }));
+    fireEvent.click(screen.getByRole("button", { name: /Update Task/ }));
+
+    await waitFor(() => expect(taskApi.updateTask).toHaveBeenCalledWith(5, { title: "Dentist", due_date: null }));
 });

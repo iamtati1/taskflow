@@ -36,8 +36,8 @@ function Topbar() {
 
     const currentPage =
         pageMap[location.pathname] || {
-            title: "FlowState",
-            subtitle: "Your personal productivity system",
+            title: "TaskFlow",
+            subtitle: "Your personal task manager",
         };
 
     return (

@@ -7,7 +7,8 @@ import {
     Settings,
 } from "lucide-react";
 
-const links = [
+// Shared with MobileNav so both navigations list the same pages
+export const links = [
     {
         to: "/dashboard",
         label: "Dashboard",
@@ -59,11 +60,11 @@ function Sidebar() {
 
                     <div>
                         <h1 className="font-semibold text-white">
-                            FlowState
+                            TaskFlow
                         </h1>
 
                         <p className="text-xs text-white/40">
-                            Personal OS
+                            Plan · Focus · Finish
                         </p>
                     </div>
                 </div>

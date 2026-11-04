@@ -21,7 +21,6 @@ function Card({ children, className = "" }) {
 }
 
 function Tasks() {
-    const [selectedDate, setSelectedDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
 
@@ -29,6 +28,9 @@ function Tasks() {
         tasks,
         status,
         error,
+        notice,
+        dismissNotice,
+        refreshTasks,
         selectedTaskId,
         onSelect,
         addTask,
@@ -47,8 +49,10 @@ function Tasks() {
     // CREATE
     // ===============================
     const handleCreate = async (data) => {
-        await addTask(data);
-        closeModal();
+        const result = await addTask(data);
+        // Keep the form open on failure so the error is visible and the text isn't lost
+        if (result?.success) closeModal();
+        return result;
     };
 
     // ===============================
@@ -85,19 +89,6 @@ function Tasks() {
         setIsModalOpen(true);
     };
 
-    // ===============================
-    // FILTER TASKS BY DATE (optimized)
-    // ===============================
-    const filteredTasks = useMemo(() => {
-        return tasks.filter((task) => {
-            if (!task.due_date) return true;
-
-            return (
-                new Date(task.due_date).toDateString() ===
-                selectedDate.toDateString()
-            );
-        });
-    }, [tasks, selectedDate]);
 
     // ===============================
     // STATS
@@ -134,7 +125,18 @@ function Tasks() {
     }
 
     if (error) {
-        return <div className="p-6 text-red-400">{error}</div>;
+        return (
+            <div role="alert" className="space-y-4 p-6">
+                <p className="text-red-300">Couldn&apos;t load your tasks: {error}</p>
+                <button
+                    type="button"
+                    onClick={() => refreshTasks()}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-white hover:bg-white/10"
+                >
+                    Try again
+                </button>
+            </div>
+        );
     }
 
     return (
@@ -187,19 +189,35 @@ function Tasks() {
                 })}
             </div>
 
+            {/* ACTION ERRORS (the list stays visible) */}
+            {notice && (
+                <div
+                    role="alert"
+                    className="flex items-start justify-between gap-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                >
+                    <span>{notice}</span>
+                    <button
+                        type="button"
+                        onClick={dismissNotice}
+                        className="shrink-0 text-red-200/80 hover:text-white"
+                    >
+                        Dismiss
+                    </button>
+                </div>
+            )}
+
             {/* MAIN GRID */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
                 <Card className="xl:col-span-1">
                     <TaskCalendar
                         tasks={tasks}
-                        onDateChange={setSelectedDate}
                     />
                 </Card>
 
                 <Card className="xl:col-span-2">
                     <TaskList
-                        tasks={filteredTasks}
+                        tasks={tasks}
                         selectedTaskId={selectedTaskId}
                         onDelete={removeTask}
                         onToggle={toggleTask}
