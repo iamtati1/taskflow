@@ -22,7 +22,7 @@
   <img alt="Deployed on Vercel" src="https://img.shields.io/badge/Deployed%20on-Vercel-000000?logo=vercel&logoColor=white">
 </p>
 
-![TaskFlow Tasks page with total and completed counts, a Planning Horizon calendar, and the task list split into Active and Completed sections](screenshots/taskflow-tasks.png)
+![TaskFlow Tasks page with total and completed counts, a Planning Horizon calendar with due dates marked, and the task list split into Active and Completed sections with due dates on each task](screenshots/taskflow-tasks.png)
 
 ## Overview
 
@@ -41,11 +41,11 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="screenshots/taskflow-edit-task.png" alt="TaskFlow Edit Task form, prefilled with the title Draft the Q3 roadmap, below the task list"></td>
+    <td width="50%"><img src="screenshots/taskflow-edit-task.png" alt="TaskFlow Edit Task form with the title Draft and share the Q3 roadmap, a due date of 11/12/2026 and a Clear date link"></td>
     <td width="50%"><img src="screenshots/taskflow-dashboard.png" alt="TaskFlow Dashboard with completed and active counts, progress, today's focus, upcoming tasks and workspace status"></td>
   </tr>
   <tr>
-    <td><em>Edit a task in place; the new title is saved straight to the database.</em></td>
+    <td><em>Edit a task's title and due date; changes save straight to the database.</em></td>
     <td><em>Dashboard: where your work stands, computed from your tasks.</em></td>
   </tr>
   <tr>
@@ -58,31 +58,38 @@
   </tr>
 </table>
 
+<p align="center">
+  <img src="screenshots/taskflow-mobile-tasks.png" alt="TaskFlow on a phone: the Tasks page with a full-width New Task button, task counts, and a bottom navigation bar with Dashboard, Tasks, Analytics and Settings" width="300"><br>
+  <em>On phones, a bottom navigation bar replaces the sidebar.</em>
+</p>
+
 ## Features
 
 | | |
 | --- | --- |
-| **Accounts** | Register and log in with a username and password. Passwords are hashed with bcrypt. |
+| **Accounts** | Register and log in with a username and password. New usernames are 3–30 characters and unique regardless of capitalisation; passwords need at least 8 characters and are hashed with bcrypt. |
 | **Persistent sessions** | A signed, HTTP-only session cookie keeps you signed in across refreshes until you log out. |
 | **Task management** | Create tasks, edit their titles, mark them complete or reopen them, and delete them. |
+| **Due dates** | Give a task an optional due date, change it or clear it. Dates always show on the right calendar day, whatever your time zone. |
 | **Private by default** | Every task belongs to one user; the API rejects reading or changing anyone else's. |
 | **Active and Completed views** | Open work and finished work are listed separately, newest first. |
-| **Dashboard** | Completed and active counts, progress percentage, overdue count and upcoming tasks. |
+| **Dashboard** | Completed and active counts, progress percentage, overdue tasks (due before today) and upcoming tasks. |
 | **Analytics** | Completion rate, totals and a reflection message based on your progress. |
-| **Calendar** | Shows tasks that have a due date on the day you select; tasks without a date are always listed. |
-| **Focus Mode** | Dims the sidebar to reduce distraction; the preference is saved in your browser. |
-| **Clear error feedback** | A failed save keeps your text, shows the reason, and leaves your list as it was. |
+| **Calendar** | Marks the days that have tasks due and lists the tasks due on the day you select. |
+| **Works on phones** | A bottom navigation bar replaces the sidebar on small screens. |
+| **Preferences** | Focus Mode dims the sidebar; Workflow insights shows a note about your workload on the Dashboard. Both are saved in your browser. |
+| **Clear error feedback** | A failed save keeps your text and shows the reason; a failed complete or delete shows a notice and leaves your list on screen. |
 
 ## Tech stack
 
 | Category | Technologies |
 | --- | --- |
 | **Frontend** | React 18, Vite 5, React Router 7, Tailwind CSS 4, Framer Motion, lucide-react, react-calendar |
-| **Backend** | Node.js, Express 4, cors (allow-listed origins only), dotenv |
+| **Backend** | Node.js 20+, Express 4, express-rate-limit, cors (allow-listed origins only), dotenv |
 | **Database** | PostgreSQL (Neon in production), node-postgres (`pg`) connection pool |
 | **Authentication & security** | bcrypt, cookie-session (signed, HTTP-only, `SameSite=Lax`, `Secure` in production), ownership checks, sanitised error logging |
 | **Deployment & infrastructure** | Vercel (static frontend and a serverless API function in one project), Neon serverless PostgreSQL |
-| **Development & testing** | nodemon, Vite dev proxy, Node.js test runner, pg-mem, Vitest, Testing Library, jsdom |
+| **Development & testing** | nodemon, Vite dev proxy, Node.js test runner, pg-mem, Vitest, Testing Library, jsdom, GitHub Actions CI |
 
 ## Architecture
 
@@ -141,8 +148,8 @@ All responses are JSON. Task routes need a signed-in session, and users can only
 | Method | Endpoint | Body | Success response |
 | --- | --- | --- | --- |
 | `GET` | `/api/tasks` | — | `200` `[task]`, newest first |
-| `POST` | `/api/tasks` | `{ title, due_date? }` | `201` `task` |
-| `PATCH` | `/api/tasks/:task_id` | `{ title?, is_complete?, due_date? }` | `200` updated `task` |
+| `POST` | `/api/tasks` | `{ title, due_date? }` (date as `YYYY-MM-DD`) | `201` `task` |
+| `PATCH` | `/api/tasks/:task_id` | `{ title?, is_complete?, due_date? }`; only the fields sent change, and `due_date: null` clears the date | `200` updated `task` |
 | `DELETE` | `/api/tasks/:task_id` | — | `200` deleted `task` |
 
 ```json
@@ -155,7 +162,7 @@ All responses are JSON. Task routes need a signed-in session, and users can only
 }
 ```
 
-**Errors** come back as `{ error }` or `{ message }`: `400` for invalid input (such as an empty title or an update with no fields), `401` when not signed in, `403` for another user's task, `404` for a task that doesn't exist, and `500` with a generic message for anything unexpected.
+**Errors** come back as `{ error }` or `{ message }`: `400` for invalid input (such as an empty or over-200-character title, an invalid date, or an update with no fields), `401` when not signed in, `403` for another user's task, `404` for a task that doesn't exist, `429` after too many login or registration attempts, and `500` with a generic message for anything unexpected.
 
 ## Getting started
 
@@ -239,8 +246,10 @@ cd server && npm test
 cd ../frontend && npm test
 ```
 
-- **Server** (`node --test`): API tests run the real Express app against an in-memory PostgreSQL (pg-mem) built from the production schema. They cover registration, login, session restore and logout; creating, editing, completing and deleting tasks; ownership and error responses; and a check that existing records are never modified. Unit tests cover the user model, session-secret validation and log sanitising.
-- **Frontend** (`vitest`): component and page tests for the task list and editor. They check that edits save and display the new title, that failed saves show an error, that completing a task reaches the API, and that buttons inside draggable task cards still receive clicks.
+- **Server** (`node --test`): API tests run the real Express app against an in-memory PostgreSQL (pg-mem) built from the production schema. They cover registration rules, login, session restore and logout; creating, editing, completing and deleting tasks; due dates; ownership and error responses; and a check that existing records are never modified. Unit tests cover the user model, the login rate limiter, session-secret validation and log sanitising.
+- **Frontend** (`vitest`): component and page tests for the task list, editor, Settings, sign-in page, mobile navigation and date handling. They check that edits and due dates save, that failed actions show an error without blanking the page, that buttons inside draggable task cards still receive clicks, and that dates land on the right day in any time zone.
+
+GitHub Actions runs both suites and the production build on every push to `main` and every pull request.
 
 Build the production frontend with `cd frontend && npm run build`.
 
@@ -252,18 +261,19 @@ Build the production frontend with `cd frontend && npm run build`.
 - **Ownership enforced twice.** Controllers check that a task belongs to the signed-in user, and the `UPDATE` and `DELETE` statements are also scoped by `user_id`.
 - **Instant updates that settle on the truth.** The UI applies changes at once, rolls back if the request fails, and on success shows the task exactly as the server saved it.
 - **Safe errors and logs.** Clients get generic messages for server errors; logs record an error category and code but never request bodies, passwords or database connection details.
+- **Dates as calendar days.** Due dates travel as plain `YYYY-MM-DD` text from the database to the browser, which reads them as local days. Converting them to timestamps on the way would shift a task due on the 20th to the 19th for anyone in the Americas.
+- **Guarding sign-in.** Login and registration share a rate limit (20 attempts per IP per 15 minutes, with a friendly `429`), and new accounts must meet username and password rules. On Vercel each function instance keeps its own count, so the limit slows guessing rather than enforcing a global cap.
 - **Non-destructive database setup.** `npm run db:setup` uses `CREATE TABLE IF NOT EXISTS`, so it is safe to run against a database that already holds data.
 
 ## Roadmap
 
 Not built yet:
 
-- [ ] A due-date picker (due dates are stored and shown, but can't be set from the interface)
-- [ ] Saving the order of tasks after drag-to-reorder
+- [ ] Saving the order of tasks after drag-to-reorder (needs a new database column)
 - [ ] Task notes and priorities (needs new database columns)
-- [ ] Working colour themes (the Settings theme picker is not wired up yet)
-- [ ] Password reset
-- [ ] Rate limiting on login and registration
+- [ ] Colour themes
+- [ ] Password reset and account settings
+- [ ] A shared rate-limit store, so the login limit holds across serverless instances
 
 ---
 
