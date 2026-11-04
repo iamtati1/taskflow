@@ -7,7 +7,8 @@ import {
     Settings,
 } from "lucide-react";
 
-const links = [
+// Shared with MobileNav so both navigations list the same pages
+export const links = [
     {
         to: "/dashboard",
         label: "Dashboard",

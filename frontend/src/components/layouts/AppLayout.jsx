@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import MobileNav from "./MobileNav";
 import { motion } from "framer-motion";
 import useUISettings from "../../hooks/useUISettings";
 
@@ -11,6 +12,7 @@ const PAGE_TITLES = {
     "/dashboard": "Dashboard",
     "/tasks": "Tasks",
     "/analytics": "Analytics",
+    "/settings": "Settings",
 };
 
 function AppLayout() {
@@ -74,7 +76,7 @@ function AppLayout() {
                     </div>
 
                     {/* CONTENT */}
-                    <main className="flex-1 overflow-y-auto px-6 py-8">
+                    <main className="flex-1 overflow-y-auto px-6 pt-8 pb-28 lg:pb-8">
                         <div className="mx-auto w-full max-w-[1400px]">
 
                             <motion.div
@@ -92,6 +94,8 @@ function AppLayout() {
 
                 </div>
             </div>
+
+            <MobileNav />
         </div>
     );
 }
