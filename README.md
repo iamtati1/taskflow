@@ -56,6 +56,14 @@
     <td><em>Analytics: completion stats and a short reflection.</em></td>
     <td><em>Sign in or create an account.</em></td>
   </tr>
+  <tr>
+    <td width="50%"><img src="screenshots/taskflow-settings.png" alt="TaskFlow Settings with an Appearance theme picker (Midnight, Violet, Emerald, Sunset), Focus Mode and Workflow insights switches, and Edit Profile, Change Password and Log Out buttons"></td>
+    <td width="50%"><img src="screenshots/taskflow-tasks-violet.png" alt="TaskFlow Tasks page in the Violet theme: section labels, the active navigation item, the avatar, buttons and calendar highlights are violet"></td>
+  </tr>
+  <tr>
+    <td><em>Settings: theme, preferences, and your account.</em></td>
+    <td><em>The Violet theme recolours every accent in the app.</em></td>
+  </tr>
 </table>
 
 <p align="center">
@@ -77,6 +85,8 @@
 | **Analytics** | Completion rate, totals and a reflection message based on your progress. |
 | **Calendar** | Marks the days that have tasks due and lists the tasks due on the day you select. |
 | **Works on phones** | A bottom navigation bar replaces the sidebar on small screens. |
+| **Themes** | Midnight, Violet, Emerald or Sunset: every accent colour in the app follows your choice, including on the sign-in page. Saved in your browser. |
+| **Account settings** | Change your username or your password from Settings. Changing a password requires your current one. |
 | **Preferences** | Focus Mode dims the sidebar; Workflow insights shows a note about your workload on the Dashboard. Both are saved in your browser. |
 | **Clear error feedback** | A failed save keeps your text and shows the reason; a failed complete or delete shows a notice and leaves your list on screen. |
 
@@ -142,6 +152,13 @@ All responses are JSON. Task routes need a signed-in session, and users can only
 | `POST` | `/api/auth/login` | `{ username, password }` | `200` `{ user: { user_id, username } }` |
 | `GET` | `/api/auth/me` | — | `200` `{ user }`, or `401` when signed out |
 | `DELETE` | `/api/auth/logout` | — | `200` `{ message }` |
+
+### Account
+
+| Method | Endpoint | Body | Success response |
+| --- | --- | --- | --- |
+| `PATCH` | `/api/users/me` | `{ username }` | `200` `{ user: { user_id, username } }` |
+| `POST` | `/api/users/me/password` | `{ currentPassword, newPassword }` | `200` `{ message }` |
 
 ### Tasks
 
@@ -246,8 +263,8 @@ cd server && npm test
 cd ../frontend && npm test
 ```
 
-- **Server** (`node --test`): API tests run the real Express app against an in-memory PostgreSQL (pg-mem) built from the production schema. They cover registration rules, login, session restore and logout; creating, editing, completing and deleting tasks; due dates; ownership and error responses; and a check that existing records are never modified. Unit tests cover the user model, the login rate limiter, session-secret validation and log sanitising.
-- **Frontend** (`vitest`): component and page tests for the task list, editor, Settings, sign-in page, mobile navigation and date handling. They check that edits and due dates save, that failed actions show an error without blanking the page, that buttons inside draggable task cards still receive clicks, and that dates land on the right day in any time zone.
+- **Server** (`node --test`): API tests run the real Express app against an in-memory PostgreSQL (pg-mem) built from the production schema. They cover registration rules, login, session restore and logout; changing your username and password; creating, editing, completing and deleting tasks; due dates; ownership and error responses; that passwords never reach the error log; and that existing records are never modified. Unit tests cover the user model, the login rate limiter, session-secret validation and log sanitising.
+- **Frontend** (`vitest`): component and page tests for the task list, editor, Settings (themes and account forms), sign-in page, mobile navigation, the auth context and date handling. They check that edits and due dates save, that failed actions show an error without blanking the page, that buttons inside draggable task cards still receive clicks, and that dates land on the right day in any time zone.
 
 GitHub Actions runs both suites and the production build on every push to `main` and every pull request.
 
@@ -262,7 +279,8 @@ Build the production frontend with `cd frontend && npm run build`.
 - **Instant updates that settle on the truth.** The UI applies changes at once, rolls back if the request fails, and on success shows the task exactly as the server saved it.
 - **Safe errors and logs.** Clients get generic messages for server errors; logs record an error category and code but never request bodies, passwords or database connection details.
 - **Dates as calendar days.** Due dates travel as plain `YYYY-MM-DD` text from the database to the browser, which reads them as local days. Converting them to timestamps on the way would shift a task due on the 20th to the 19th for anyone in the Americas.
-- **Guarding sign-in.** Login and registration share a rate limit (20 attempts per IP per 15 minutes, with a friendly `429`), and new accounts must meet username and password rules. On Vercel each function instance keeps its own count, so the limit slows guessing rather than enforcing a global cap.
+- **Themes without touching components.** The app's accent is Tailwind's cyan, and Tailwind 4 utilities read their colours from CSS variables. Each theme redefines those few variables, so every accent recolours with no per-component theme code. The saved theme is applied before the first paint, so the colours don't flash.
+- **Guarding sign-in.** Login, registration and password changes share a rate limit (20 attempts per IP per 15 minutes, with a friendly `429`), and new accounts must meet username and password rules. On Vercel each function instance keeps its own count, so the limit slows guessing rather than enforcing a global cap.
 - **Non-destructive database setup.** `npm run db:setup` uses `CREATE TABLE IF NOT EXISTS`, so it is safe to run against a database that already holds data.
 
 ## Roadmap
@@ -271,8 +289,7 @@ Not built yet:
 
 - [ ] Saving the order of tasks after drag-to-reorder (needs a new database column)
 - [ ] Task notes and priorities (needs new database columns)
-- [ ] Colour themes
-- [ ] Password reset and account settings
+- [ ] Password reset by email ("forgot password")
 - [ ] A shared rate-limit store, so the login limit holds across serverless instances
 
 ---
