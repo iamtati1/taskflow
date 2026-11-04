@@ -4,17 +4,16 @@ import "react-calendar/dist/Calendar.css";
 
 import { CheckCircle2, CalendarDays } from "lucide-react";
 
+import { toDateKey } from "../../utils/dates";
+
 function TaskCalendar({ tasks = [], onDateChange }) {
     const [selectedDate, setSelectedDate] = useState(new Date());
 
     // =====================================================
     // DATE NORMALIZATION (single source of truth)
     // =====================================================
-    const formatDate = useCallback((date) => {
-        const d = new Date(date);
-        d.setHours(0, 0, 0, 0);
-        return d.toISOString().split("T")[0];
-    }, []);
+    // Local calendar days on both sides (due dates are "YYYY-MM-DD")
+    const formatDate = useCallback((date) => toDateKey(date), []);
 
     // =====================================================
     // HANDLE DATE CHANGE

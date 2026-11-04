@@ -310,10 +310,12 @@ test("edit: the UPDATE query is sent the new title as its first parameter", asyn
     pool.query = original;
   }
   assert.strictEqual(seen.length, 1);
-  assert.match(seen[0].sql, /SET title = COALESCE\(\$1, title\)/);
-  assert.match(seen[0].sql, /WHERE id = \$4 AND user_id = \$5/);
+  // Only the field that was sent is written
+  assert.match(seen[0].sql, /SET title = \$1\s/);
+  assert.doesNotMatch(seen[0].sql, /is_complete =|due_date =/);
+  assert.match(seen[0].sql, /WHERE id = \$2 AND user_id = \$3/);
   assert.strictEqual(seen[0].params[0], "After");
-  assert.strictEqual(String(seen[0].params[3]), String(ids[0]));
+  assert.strictEqual(String(seen[0].params[1]), String(ids[0]));
 });
 
 test("edit: a request whose JSON body wasn't parsed is rejected, not silently ignored", async () => {
@@ -384,6 +386,51 @@ test("task titles are limited to 200 characters on create and edit", async () =>
   const edit = await api("PATCH", `/api/tasks/${ok.data.task_id}`, { title: "z".repeat(201) });
   assert.strictEqual(edit.status, 400);
   assert.match(edit.data.error, /at most 200 characters/);
+});
+
+// ---------- Due dates ----------
+
+test("due dates: set on create, returned as YYYY-MM-DD, changed, kept on title edits, and cleared", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "dates", password: "dates-pass" });
+
+  const created = await api("POST", "/api/tasks", { title: "Pay rent", due_date: "2026-12-01" });
+  assert.strictEqual(created.status, 201);
+  assert.strictEqual(created.data.due_date, "2026-12-01");
+  const id = created.data.task_id;
+
+  assert.strictEqual((await api("PATCH", `/api/tasks/${id}`, { due_date: "2026-12-15" })).data.due_date, "2026-12-15");
+
+  const renamed = await api("PATCH", `/api/tasks/${id}`, { title: "Pay December rent" });
+  assert.strictEqual(renamed.data.due_date, "2026-12-15", "a title edit leaves the date alone");
+
+  const cleared = await api("PATCH", `/api/tasks/${id}`, { due_date: null });
+  assert.strictEqual(cleared.data.due_date, null);
+
+  const listed = (await api("GET", "/api/tasks")).data.find((t) => t.task_id === id);
+  assert.deepStrictEqual([listed.title, listed.due_date], ["Pay December rent", null]);
+});
+
+test("due dates: tasks without one return null, and invalid dates are rejected", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "baddates", password: "baddates-pass" });
+
+  const plain = await api("POST", "/api/tasks", { title: "No date" });
+  assert.strictEqual(plain.data.due_date, null);
+  assert.strictEqual((await api("POST", "/api/tasks", { title: "Empty", due_date: "" })).data.due_date, null);
+
+  for (const due_date of ["2026-02-30", "12/01/2026", "tomorrow", 20261201]) {
+    const res = await api("POST", "/api/tasks", { title: "Bad", due_date });
+    assert.strictEqual(res.status, 400, String(due_date));
+    assert.match(res.data.error, /YYYY-MM-DD/);
+  }
+  assert.strictEqual((await api("PATCH", `/api/tasks/${plain.data.task_id}`, { due_date: "2026-13-01" })).status, 400);
+});
+
+test("is_complete must be a boolean", async () => {
+  const { api, ids } = await signedInWithTasks("boolcheck", ["Task"]);
+  assert.strictEqual((await api("PATCH", `/api/tasks/${ids[0]}`, { is_complete: "yes" })).status, 400);
+  assert.strictEqual((await api("PATCH", `/api/tasks/${ids[0]}`, { is_complete: true })).data.is_complete, true);
 });
 
 test("existing user and task records are never modified", () => {

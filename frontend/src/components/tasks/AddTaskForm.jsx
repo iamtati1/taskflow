@@ -5,6 +5,7 @@ import { Sparkles, CheckCircle2 } from "lucide-react";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Card from "../ui/Card";
+import { toDateKey } from "../../utils/dates";
 
 function AddTaskForm({
     addTask,
@@ -13,9 +14,9 @@ function AddTaskForm({
 }) {
     const isEditMode = !!initialData;
 
-    // Only the title is editable: it's the one task field the database stores
-    // besides completion and due date
+    // The task fields the database stores (completion is the checkbox)
     const [title, setTitle] = useState("");
+    const [dueDate, setDueDate] = useState(""); // "YYYY-MM-DD" or "" for none
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [submitError, setSubmitError] = useState(null);
@@ -26,6 +27,7 @@ function AddTaskForm({
     // =========================
     useEffect(() => {
         setTitle(initialData?.title || "");
+        setDueDate(toDateKey(initialData?.due_date) || "");
         setSubmitError(null);
     }, [initialData]);
 
@@ -50,15 +52,19 @@ function AddTaskForm({
         try {
             let result;
 
+            // An empty date field means "no due date" (null clears an existing one)
+            const fields = { title, due_date: dueDate || null };
+
             if (isEditMode) {
-                result = await updateTask(initialData.task_id, { title });
+                result = await updateTask(initialData.task_id, fields);
             } else {
-                result = await addTask({ title });
+                result = await addTask(fields);
             }
 
             if (result?.success) {
                 if (!isEditMode) {
                     setTitle("");
+                    setDueDate("");
                 }
 
                 setSuccess(true);
@@ -97,6 +103,25 @@ function AddTaskForm({
                         placeholder="Task title..."
                         maxLength={200}
                     />
+
+                    <label className="flex flex-col gap-2 text-sm text-white/60 sm:flex-row sm:items-center sm:gap-3">
+                        Due date (optional)
+                        <input
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            className="rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none [color-scheme:dark] focus:border-cyan-400/40"
+                        />
+                        {dueDate && (
+                            <button
+                                type="button"
+                                onClick={() => setDueDate("")}
+                                className="self-start text-xs text-white/50 hover:text-white sm:self-auto"
+                            >
+                                Clear date
+                            </button>
+                        )}
+                    </label>
 
                     {/* FOOTER */}
                     <div className="flex items-center justify-between pt-2">

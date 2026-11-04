@@ -60,7 +60,7 @@ test("saving an edit sends the right task id and shows the saved title", async (
     fireEvent.click(screen.getByRole("button", { name: /Update Task/ }));
 
     await waitFor(() => expect(screen.queryByRole("heading", { name: "Edit Task" })).toBeNull());
-    expect(taskApi.updateTask).toHaveBeenCalledWith(2, { title: "Write final report" });
+    expect(taskApi.updateTask).toHaveBeenCalledWith(2, { title: "Write final report", due_date: null });
     expect(screen.getByText("Write final report")).toBeTruthy();
     expect(screen.queryByText("Write report")).toBeNull();
     expect(screen.getByText("Buy milk")).toBeTruthy();
@@ -183,4 +183,47 @@ test("a failed load explains the problem and can be retried", async () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("Buy milk")).toBeTruthy();
+});
+
+// ---------- Due dates ----------
+
+test("creating a task with a due date sends it as YYYY-MM-DD and keeps the task in the list", async () => {
+    taskApi.createTask.mockImplementation(async (fields) => ({
+        success: true,
+        data: { task_id: 9, user_id: 1, is_complete: false, ...fields },
+        error: null,
+    }));
+
+    render(<Tasks />);
+    await screen.findByText("Buy milk");
+    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "File taxes" } });
+    fireEvent.change(screen.getByLabelText("Due date (optional)"), { target: { value: "2027-04-15" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
+
+    await waitFor(() => expect(taskApi.createTask).toHaveBeenCalledWith({ title: "File taxes", due_date: "2027-04-15" }));
+    // A task due on another day is still listed (the calendar shows the day view)
+    expect(await screen.findByText("File taxes")).toBeTruthy();
+    expect(screen.getByText("Apr 15")).toBeTruthy();
+});
+
+test("editing a dated task prefills the date, and Clear date removes it", async () => {
+    taskApi.getTasks.mockResolvedValue({
+        success: true,
+        data: [{ task_id: 5, user_id: 1, title: "Dentist", is_complete: false, due_date: "2026-11-20" }],
+        error: null,
+    });
+    taskApi.updateTask.mockImplementation(async (id, changes) => ({
+        success: true,
+        data: { task_id: id, user_id: 1, title: "Dentist", is_complete: false, ...changes },
+        error: null,
+    }));
+
+    await openEditFor("Dentist");
+    expect(screen.getByLabelText("Due date (optional)").value).toBe("2026-11-20");
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear date" }));
+    fireEvent.click(screen.getByRole("button", { name: /Update Task/ }));
+
+    await waitFor(() => expect(taskApi.updateTask).toHaveBeenCalledWith(5, { title: "Dentist", due_date: null }));
 });

@@ -15,6 +15,7 @@ import {
 
 import Card from "../components/ui/Card";
 import useTasks from "../hooks/useTasks";
+import { formatDueDate, isOverdue, toDateKey } from "../utils/dates";
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -48,18 +49,15 @@ function Dashboard() {
                 task.due_date &&
                 !task.is_complete
         )
-        .sort(
-            (a, b) =>
-                new Date(a.due_date) -
-                new Date(b.due_date)
+        .sort((a, b) =>
+            toDateKey(a.due_date).localeCompare(toDateKey(b.due_date))
         )
         .slice(0, 3);
 
     const overdue = tasks.filter(
         (task) =>
-            task.due_date &&
             !task.is_complete &&
-            new Date(task.due_date) < new Date()
+            isOverdue(task.due_date)
     );
 
     const streak = completed > 0 ? completed : 0;
@@ -273,9 +271,7 @@ function Dashboard() {
 
                                 <p className="mt-1 text-sm text-white/50">
                                     Due{" "}
-                                    {new Date(
-                                        task.due_date
-                                    ).toLocaleDateString()}
+                                    {formatDueDate(task.due_date)}
                                 </p>
                             </div>
                         ))

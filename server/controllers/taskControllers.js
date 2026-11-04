@@ -1,5 +1,5 @@
 const taskModel = require('../models/taskModel');
-const { titleError } = require('../utils/validation');
+const { titleError, dueDateError } = require('../utils/validation');
 
 // Task ids are positive integers; anything else (e.g. a client-side temp id) can't exist
 const isTaskId = (value) => /^\d+$/.test(String(value));
@@ -18,7 +18,7 @@ module.exports.listTasks = async (req, res, next) => {
 
 module.exports.createTask = async (req, res, next) => {
   try {
-    const { title, priority, due_date, category_id } = req.body;
+    const { title, due_date } = req.body;
 
     const user_id = req.session.user_id;
 
@@ -30,11 +30,15 @@ module.exports.createTask = async (req, res, next) => {
     if (invalidTitle) {
       return res.status(400).json({ error: invalidTitle });
     }
+
+    const invalidDate = due_date === undefined || due_date === "" ? null : dueDateError(due_date);
+    if (invalidDate) {
+      return res.status(400).json({ error: invalidDate });
+    }
+
     const task = await taskModel.createTask({
       title,
-      priority,
-      due_date,
-      category_id,
+      due_date: due_date || null,
       user_id,
     });
 
@@ -76,6 +80,15 @@ module.exports.updateTask = async (req, res, next) => {
     const invalidTitle = title === undefined ? null : titleError(title);
     if (invalidTitle) {
       return res.status(400).send({ error: invalidTitle });
+    }
+
+    const invalidDate = due_date === undefined ? null : dueDateError(due_date);
+    if (invalidDate) {
+      return res.status(400).send({ error: invalidDate });
+    }
+
+    if (is_complete !== undefined && typeof is_complete !== "boolean") {
+      return res.status(400).send({ error: 'is_complete must be true or false.' });
     }
 
     const updatedTask = await taskModel.updateTask(task_id, req.session.user_id, {

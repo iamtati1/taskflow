@@ -21,7 +21,6 @@ function Card({ children, className = "" }) {
 }
 
 function Tasks() {
-    const [selectedDate, setSelectedDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
 
@@ -90,19 +89,6 @@ function Tasks() {
         setIsModalOpen(true);
     };
 
-    // ===============================
-    // FILTER TASKS BY DATE (optimized)
-    // ===============================
-    const filteredTasks = useMemo(() => {
-        return tasks.filter((task) => {
-            if (!task.due_date) return true;
-
-            return (
-                new Date(task.due_date).toDateString() ===
-                selectedDate.toDateString()
-            );
-        });
-    }, [tasks, selectedDate]);
 
     // ===============================
     // STATS
@@ -226,13 +212,12 @@ function Tasks() {
                 <Card className="xl:col-span-1">
                     <TaskCalendar
                         tasks={tasks}
-                        onDateChange={setSelectedDate}
                     />
                 </Card>
 
                 <Card className="xl:col-span-2">
                     <TaskList
-                        tasks={filteredTasks}
+                        tasks={tasks}
                         selectedTaskId={selectedTaskId}
                         onDelete={removeTask}
                         onToggle={toggleTask}

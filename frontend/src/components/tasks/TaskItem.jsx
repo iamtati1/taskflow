@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
+import { formatDueDate } from "../../utils/dates";
 import { CSS } from "@dnd-kit/utilities";
 
 import {
@@ -50,10 +51,7 @@ function TaskItem({
   // DATE FORMAT
   // =====================================================
   const dueDateLabel = task.due_date
-    ? new Date(task.due_date).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    })
+    ? formatDueDate(task.due_date, { month: "short", day: "numeric" })
     : null;
 
   // =====================================================

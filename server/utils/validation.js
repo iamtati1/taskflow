@@ -29,4 +29,16 @@ const titleError = (title) => {
   return null;
 };
 
-module.exports = { registrationError, titleError, TITLE_MAX };
+// A due date is a calendar day ("YYYY-MM-DD") or null (no due date)
+const dueDateError = (value) => {
+  if (value === null) return null;
+  const match = typeof value === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (match) {
+    const [, y, m, d] = match.map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d));
+    if (date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d) return null;
+  }
+  return "Due dates must be a real date in YYYY-MM-DD format.";
+};
+
+module.exports = { registrationError, titleError, dueDateError, TITLE_MAX };
