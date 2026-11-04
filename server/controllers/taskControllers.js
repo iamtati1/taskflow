@@ -1,4 +1,5 @@
 const taskModel = require('../models/taskModel');
+const { titleError } = require('../utils/validation');
 
 // Task ids are positive integers; anything else (e.g. a client-side temp id) can't exist
 const isTaskId = (value) => /^\d+$/.test(String(value));
@@ -25,8 +26,9 @@ module.exports.createTask = async (req, res, next) => {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    if (typeof title !== "string" || !title.trim()) {
-      return res.status(400).json({ error: "Title is required." });
+    const invalidTitle = titleError(title);
+    if (invalidTitle) {
+      return res.status(400).json({ error: invalidTitle });
     }
     const task = await taskModel.createTask({
       title,
@@ -71,8 +73,9 @@ module.exports.updateTask = async (req, res, next) => {
       return res.status(400).send({ error: 'No changes were received. Please try again.' });
     }
 
-    if (title !== undefined && (typeof title !== "string" || !title.trim())) {
-      return res.status(400).send({ error: 'Title cannot be empty.' });
+    const invalidTitle = title === undefined ? null : titleError(title);
+    if (invalidTitle) {
+      return res.status(400).send({ error: invalidTitle });
     }
 
     const updatedTask = await taskModel.updateTask(task_id, req.session.user_id, {

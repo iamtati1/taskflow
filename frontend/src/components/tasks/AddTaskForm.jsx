@@ -95,6 +95,7 @@ function AddTaskForm({
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Task title..."
+                        maxLength={200}
                     />
 
                     {/* FOOTER */}

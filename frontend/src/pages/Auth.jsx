@@ -192,6 +192,14 @@ function Auth() {
                                 </button>
                             </div>
 
+                            {/* RULES (registration only; the server enforces them) */}
+                            {isRegistering && (
+                                <p className="px-1 text-sm text-white/45">
+                                    Username: 3–30 letters, numbers, dots, dashes or underscores.
+                                    Password: at least 8 characters.
+                                </p>
+                            )}
+
                             {/* ERROR */}
                             {(error || status === "error") && (
                                 <div className="p-4 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-2xl">

@@ -43,6 +43,13 @@ const fakePool = {
       rows.push(row);
       return { rows: [project(row, projection)] };
     }
+    m = sql.match(/^SELECT (.+) FROM users WHERE LOWER\((\w+)\) = LOWER\(\$1\)$/i);
+    if (m) {
+      const projection = parseProjection(m[1]);
+      checkColumn(m[2]);
+      const wanted = String(params[0]).toLowerCase();
+      return { rows: rows.filter((r) => String(r[m[2]]).toLowerCase() === wanted).map((r) => project(r, projection)) };
+    }
     m = sql.match(/^SELECT (.+) FROM users WHERE (\w+) = \$1$/i);
     if (m) {
       const projection = parseProjection(m[1]);
@@ -76,6 +83,11 @@ test("findByUsername returns user_id for a taken username and null otherwise", a
   const id = await addExistingUser("existing", "pw-1234");
   assert.deepStrictEqual(await userModel.findByUsername("existing"), { user_id: id, username: "existing" });
   assert.strictEqual(await userModel.findByUsername("nobody"), null);
+});
+
+test("findByUsername ignores capitalisation, so Jordan and jordan can't both register", async () => {
+  const id = await addExistingUser("Jordan", "pw-12345678");
+  assert.deepStrictEqual(await userModel.findByUsername("jordan"), { user_id: id, username: "Jordan" });
 });
 
 test("find looks a user up by id and returns user_id", async () => {

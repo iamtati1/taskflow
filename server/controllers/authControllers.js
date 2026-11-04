@@ -1,15 +1,18 @@
 const userModel = require('../models/userModel');
+const { registrationError } = require('../utils/validation');
 
 module.exports.register = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
+    const { password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({
-        error: 'Username and password are required.'
-      });
+    const invalid = registrationError(req.body.username, password);
+    if (invalid) {
+      return res.status(400).json({ error: invalid });
     }
 
+    const username = req.body.username.trim();
+
+    // Case-insensitive, so "Jordan" can't be registered next to "jordan"
     const existingUser = await userModel.findByUsername(username);
 
     if (existingUser) {

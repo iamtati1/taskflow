@@ -24,9 +24,10 @@ module.exports.find = async (user_id) => {
   return rows[0] || null;
 };
 
-// Returns { user_id, username } or null — used to check if a username is taken
+// Returns { user_id, username } or null — used to check if a username is taken.
+// Case-insensitive, so names that differ only in capitalisation count as taken.
 module.exports.findByUsername = async (username) => {
-  const query = 'SELECT id AS user_id, username FROM users WHERE username = $1';
+  const query = 'SELECT id AS user_id, username FROM users WHERE LOWER(username) = LOWER($1)';
   const { rows } = await pool.query(query, [username]);
   return rows[0] || null;
 };

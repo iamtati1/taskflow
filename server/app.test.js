@@ -21,6 +21,8 @@ db.public.none(`
 const { Pool } = db.adapters.createPg();
 require.cache[require.resolve("./db/pool")] = { exports: new Pool() };
 
+// Many tests log in from the same address; the limiter itself is tested separately
+process.env.AUTH_RATE_LIMIT = "100000";
 const app = require("./app");
 
 let server;
@@ -99,8 +101,9 @@ test("register creates a user, starts a session, and rejects duplicates", async 
   assert.strictEqual(me.status, 200);
   assert.deepStrictEqual(me.data.user, reg.data.user);
 
-  const dup = await client()("POST", "/api/auth/register", { username: "newbie", password: "x" });
+  const dup = await client()("POST", "/api/auth/register", { username: "newbie", password: "another-pass" });
   assert.strictEqual(dup.status, 400);
+  assert.match(dup.data.error, /already taken/);
 });
 
 test("register rejects missing fields", async () => {
@@ -332,6 +335,55 @@ test("edit: an empty update is rejected with a clear message and changes nothing
   assert.strictEqual(res.status, 400);
   assert.match(res.data.error, /No changes were received/);
   assert.strictEqual((await api("GET", "/api/tasks")).data[0].title, "Keep too");
+});
+
+// ---------- Input rules ----------
+
+test("registration rejects short passwords and invalid usernames with clear messages", async () => {
+  const short = await client()("POST", "/api/auth/register", { username: "shorty", password: "1234567" });
+  assert.strictEqual(short.status, 400);
+  assert.match(short.data.error, /at least 8 characters/);
+
+  for (const username of ["ab", "has space", "way-too-long-username-over-thirty", "emoji😀"]) {
+    const res = await client()("POST", "/api/auth/register", { username, password: "long-enough-1" });
+    assert.strictEqual(res.status, 400, username);
+    assert.match(res.data.error, /3 to 30 characters/);
+  }
+
+  const tooLong = await client()("POST", "/api/auth/register", { username: "longpass", password: "x".repeat(73) });
+  assert.strictEqual(tooLong.status, 400);
+});
+
+test("registration trims the username and treats capitalisation as the same name", async () => {
+  const api = client();
+  const res = await api("POST", "/api/auth/register", { username: "  Casey  ", password: "casey-pass-1" });
+  assert.strictEqual(res.status, 201);
+  assert.strictEqual(res.data.user.username, "Casey");
+
+  const dup = await client()("POST", "/api/auth/register", { username: "casey", password: "casey-pass-2" });
+  assert.strictEqual(dup.status, 400);
+  assert.match(dup.data.error, /already taken/);
+});
+
+test("an existing account with an older-style username can still log in", async () => {
+  const hash = await bcrypt.hash("legacy-password", 4);
+  db.public.none(`INSERT INTO users (username, password_hash) VALUES ('old name!', '${hash}')`);
+  const res = await client()("POST", "/api/auth/login", { username: "old name!", password: "legacy-password" });
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.user.username, "old name!");
+});
+
+test("task titles are limited to 200 characters on create and edit", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "titles", password: "titles-pass" });
+
+  assert.strictEqual((await api("POST", "/api/tasks", { title: "x".repeat(201) })).status, 400);
+  const ok = await api("POST", "/api/tasks", { title: "y".repeat(200) });
+  assert.strictEqual(ok.status, 201);
+
+  const edit = await api("PATCH", `/api/tasks/${ok.data.task_id}`, { title: "z".repeat(201) });
+  assert.strictEqual(edit.status, 400);
+  assert.match(edit.data.error, /at most 200 characters/);
 });
 
 test("existing user and task records are never modified", () => {
