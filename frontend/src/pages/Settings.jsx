@@ -8,6 +8,8 @@ import {
     Lightbulb,
     LogOut,
     SlidersHorizontal,
+    Palette,
+    Check,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -17,6 +19,14 @@ import { useAuth } from "../hooks/useAuth";
 // =====================================================
 // DATA CONFIG
 // =====================================================
+
+// Each theme recolours every accent in the app (see THEMES in globals.css)
+const appearanceOptions = [
+    { id: "midnight", name: "Midnight", preview: "from-cyan-500/40 via-blue-500/20 to-cyan-300/30" },
+    { id: "violet", name: "Violet", preview: "from-violet-500/40 via-purple-500/20 to-violet-300/30" },
+    { id: "emerald", name: "Emerald", preview: "from-emerald-500/40 via-teal-500/20 to-emerald-300/30" },
+    { id: "sunset", name: "Sunset", preview: "from-rose-500/40 via-orange-500/20 to-rose-300/30" },
+];
 
 // Every preference here changes the app: Focus Mode dims the sidebar and
 // changes the Dashboard's focus copy; Workflow insights shows or hides the
@@ -47,6 +57,8 @@ function Settings() {
     const { tasks = [] } = useTasks();
 
     const {
+        theme,
+        setTheme,
         aiSettings,
         toggleAI,
         quickSettings,
@@ -96,6 +108,50 @@ function Settings() {
 
                 {/* LEFT */}
                 <div className="xl:col-span-2 space-y-6">
+
+                    {/* APPEARANCE */}
+                    <Card>
+                        <div className="flex items-center gap-3 mb-6">
+                            <Palette className="text-cyan-300" size={18} />
+                            <div>
+                                <h3 className="text-lg font-semibold text-white">
+                                    Appearance
+                                </h3>
+                                <p className="text-sm text-white/45">
+                                    Accent colour for the whole app, saved in this browser
+                                </p>
+                            </div>
+                        </div>
+
+                        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {appearanceOptions.map((option) => (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={theme === option.id}
+                                    onClick={() => setTheme(option.id)}
+                                    className={`p-3 rounded-2xl border text-left transition
+                                        ${theme === option.id
+                                            ? "border-cyan-400/40 bg-cyan-400/10"
+                                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.06]"
+                                        }`}
+                                >
+                                    <div className={`h-14 rounded-xl mb-3 bg-gradient-to-br ${option.preview}`} />
+
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-white text-sm font-medium">
+                                            {option.name}
+                                        </span>
+
+                                        {theme === option.id && (
+                                            <Check size={14} className="text-cyan-300" aria-hidden="true" />
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </Card>
 
                     {/* PREFERENCES */}
                     <Card>
