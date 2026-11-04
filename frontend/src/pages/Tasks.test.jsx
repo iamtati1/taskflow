@@ -130,3 +130,57 @@ test("ticking a task's checkbox sends the completion to the server and moves it 
     await waitFor(() => expect(taskApi.updateTask).toHaveBeenCalledWith(1, { is_complete: true }));
     expect(await screen.findByRole("heading", { name: "Completed" })).toBeTruthy();
 });
+
+// ---------- Failed actions keep the list on screen ----------
+
+test("a failed complete shows a dismissible notice, keeps the list, and reverts the checkbox", async () => {
+    taskApi.updateTask.mockResolvedValue({ success: false, data: null, error: { message: "Not authenticated" } });
+
+    render(<Tasks />);
+    const card = (await screen.findByText("Buy milk")).closest("div.group");
+    fireEvent.click(within(card).getAllByRole("button")[0]);
+
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Couldn't update "Buy milk": Not authenticated/);
+    expect(screen.getByText("Write report")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Completed" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("a failed delete shows a notice and puts the task back", async () => {
+    taskApi.deleteTask.mockResolvedValue({ success: false, data: null, error: { message: "Server unavailable" } });
+
+    render(<Tasks />);
+    const card = (await screen.findByText("Buy milk")).closest("div.group");
+    fireEvent.click(within(card).getByRole("button", { name: "Delete" }));
+
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Couldn't delete that task: Server unavailable/);
+    expect(await screen.findByText("Buy milk")).toBeTruthy();
+});
+
+test("a failed create keeps the form open with the error and the typed title", async () => {
+    taskApi.createTask.mockResolvedValue({ success: false, data: null, error: { message: "Title is required." } });
+
+    render(<Tasks />);
+    await screen.findByText("Buy milk");
+    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "New idea" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Title is required.");
+    expect(screen.getByPlaceholderText("Task title...").value).toBe("New idea");
+    expect(screen.getByText("Buy milk")).toBeTruthy();
+});
+
+test("a failed load explains the problem and can be retried", async () => {
+    taskApi.getTasks
+        .mockResolvedValueOnce({ success: false, data: null, error: { message: "Network error" } })
+        .mockResolvedValueOnce({ success: true, data: serverTasks(), error: null });
+
+    render(<Tasks />);
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Couldn't load your tasks: Network error/);
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("Buy milk")).toBeTruthy();
+});
