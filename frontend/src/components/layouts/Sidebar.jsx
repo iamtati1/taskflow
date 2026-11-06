@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
     Sparkles,
@@ -5,7 +6,10 @@ import {
     CheckSquare,
     BarChart3,
     Settings,
+    LogOut,
 } from "lucide-react";
+
+import { useAuth } from "../../hooks/useAuth";
 
 // Shared with MobileNav so both navigations list the same pages
 export const links = [
@@ -32,6 +36,20 @@ export const links = [
 ];
 
 function Sidebar() {
+    const { currentUser, signOut } = useAuth();
+    const [signingOut, setSigningOut] = useState(false);
+
+    // Signing out clears the user, so ProtectedRoute sends the page to /auth
+    const handleSignOut = async () => {
+        if (signingOut) return;
+        setSigningOut(true);
+        try {
+            await signOut();
+        } finally {
+            setSigningOut(false);
+        }
+    };
+
     return (
         <div className="flex h-full flex-col px-5 py-6">
 
@@ -119,8 +137,8 @@ function Sidebar() {
 
             </nav>
 
-            {/* FUTURE USER SECTION */}
-            <div className="mt-auto">
+            {/* ACCOUNT */}
+            <div className="mt-auto space-y-2">
 
                 <div
                     className="
@@ -132,13 +150,41 @@ function Sidebar() {
                     "
                 >
                     <p className="text-xs text-white/40">
-                        Workspace
+                        Signed in as
                     </p>
 
-                    <p className="mt-1 text-sm font-medium text-white">
-                        Personal Productivity
+                    <p className="mt-1 truncate text-sm font-medium text-white">
+                        {currentUser?.username}
                     </p>
                 </div>
+
+                <button
+                    type="button"
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    className="
+                        flex
+                        w-full
+                        items-center
+                        gap-3
+                        rounded-2xl
+                        border
+                        border-transparent
+                        px-4
+                        py-3
+                        text-sm
+                        font-medium
+                        text-white/50
+                        transition-all
+                        duration-200
+                        hover:bg-red-500/10
+                        hover:text-red-300
+                        disabled:opacity-50
+                    "
+                >
+                    <LogOut size={18} aria-hidden="true" />
+                    {signingOut ? "Logging out…" : "Log Out"}
+                </button>
 
             </div>
 
