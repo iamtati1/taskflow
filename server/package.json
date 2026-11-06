@@ -9,7 +9,9 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "node --test",
-    "db:setup": "node db/setup.js"
+    "db:setup": "node db/setup.js",
+    "db:migrate": "node db/runMigrations.js",
+    "db:migrate:check": "node db/runMigrations.js --check"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
