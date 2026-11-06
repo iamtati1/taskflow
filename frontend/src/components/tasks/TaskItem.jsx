@@ -79,8 +79,10 @@ function TaskItem({
 
         {/* CHECK */}
         <button
+          type="button"
           onClick={handleToggle}
           disabled={isLocked}
+          aria-label={isCompleted ? "Mark as not done" : "Mark complete"}
           className="mt-1 shrink-0 transition-transform hover:scale-105 disabled:opacity-50"
         >
           {isUpdating ? (

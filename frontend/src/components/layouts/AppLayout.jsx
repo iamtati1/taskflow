@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import MobileNav from "./MobileNav";
+import ToastViewport from "../notifications/ToastViewport";
 import { motion } from "framer-motion";
 import useUISettings from "../../hooks/useUISettings";
 
@@ -95,6 +96,7 @@ function AppLayout() {
             </div>
 
             <MobileNav />
+            <ToastViewport />
         </div>
     );
 }
