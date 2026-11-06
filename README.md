@@ -133,12 +133,16 @@ flowchart LR
 
 **Request flow:** the browser calls `/api/...` with its session cookie → `cookie-session` verifies the cookie's signature and exposes `req.session.user_id` → an authentication check guards the task routes → the controller validates input and ownership → the model runs a parameterised query → the API returns JSON that the React hooks merge into the screen.
 
-**Data model** ([`server/db/schema.sql`](server/db/schema.sql)): two tables. A user has many tasks, and deleting a user deletes their tasks.
+**Data model** ([`server/db/schema.sql`](server/db/schema.sql) plus the additive migrations in [`server/db/migrations`](server/db/migrations)). A user has many tasks, categories and history entries, and deleting a user deletes all three.
 
 | Table | Columns |
 | --- | --- |
 | `users` | `id`, `username` (unique), `password_hash` |
-| `tasks` | `id`, `user_id` → `users.id`, `title`, `is_complete`, `due_date` |
+| `tasks` | `id`, `user_id` → `users.id`, `title`, `is_complete`, `due_date`, `priority` (`low`/`medium`/`high`), `description`, `category_id` → `categories.id`, `created_at`, `completed_at` |
+| `categories` | `id`, `user_id` → `users.id`, `name` (unique per user), `color`, `created_at` |
+| `task_activity` | `id`, `user_id` → `users.id`, `task_id` → `tasks.id`, `task_title`, `action` (`created`/`updated`/`completed`/`reopened`/`deleted`), `created_at` |
+
+Tasks from before the migrations have no `created_at` or `completed_at`, because those times were never recorded. Deleting a category leaves its tasks uncategorised; deleting a task keeps its history, which stores the title at the time.
 
 ## API
 
@@ -165,8 +169,8 @@ All responses are JSON. Task routes need a signed-in session, and users can only
 | Method | Endpoint | Body | Success response |
 | --- | --- | --- | --- |
 | `GET` | `/api/tasks` | — | `200` `[task]`, newest first |
-| `POST` | `/api/tasks` | `{ title, due_date? }` (date as `YYYY-MM-DD`) | `201` `task` |
-| `PATCH` | `/api/tasks/:task_id` | `{ title?, is_complete?, due_date? }`; only the fields sent change, and `due_date: null` clears the date | `200` updated `task` |
+| `POST` | `/api/tasks` | `{ title, due_date?, priority?, description?, category_id? }` (date as `YYYY-MM-DD`) | `201` `task` |
+| `PATCH` | `/api/tasks/:task_id` | `{ title?, is_complete?, due_date?, priority?, description?, category_id? }`; only the fields sent change, and `null` clears `due_date`, `description` or `category_id` | `200` updated `task` |
 | `DELETE` | `/api/tasks/:task_id` | — | `200` deleted `task` |
 
 ```json
@@ -174,12 +178,19 @@ All responses are JSON. Task routes need a signed-in session, and users can only
   "task_id": 12,
   "user_id": 3,
   "title": "Draft and share the Q3 roadmap",
-  "is_complete": false,
-  "due_date": null
+  "is_complete": true,
+  "due_date": "2026-07-01",
+  "priority": "high",
+  "description": "Include the hiring plan.",
+  "category_id": null,
+  "created_at": "2026-06-20T14:03:11.402Z",
+  "completed_at": "2026-06-24T09:41:57.118Z"
 }
 ```
 
-**Errors** come back as `{ error }` or `{ message }`: `400` for invalid input (such as an empty or over-200-character title, an invalid date, or an update with no fields), `401` when not signed in, `403` for another user's task, `404` for a task that doesn't exist, `429` after too many login or registration attempts, and `500` with a generic message for anything unexpected.
+`priority` defaults to `medium`. `completed_at` is set when a task is completed and cleared when it is reopened. Each create, complete, reopen, edit and delete also adds a `task_activity` entry, saved in the same transaction as the change.
+
+**Errors** come back as `{ error }` or `{ message }`: `400` for invalid input (such as an empty or over-200-character title, an invalid date or priority, notes over 2,000 characters, another user's category, or an update with no fields), `401` when not signed in, `403` for another user's task, `404` for a task that doesn't exist, `429` after too many login or registration attempts, and `500` with a generic message for anything unexpected.
 
 ## Getting started
 
@@ -225,7 +236,21 @@ cd server
 npm run db:setup
 ```
 
-This runs `server/db/schema.sql`, which only creates tables that don't already exist. It never drops or changes existing tables or data.
+This runs `server/db/schema.sql`, which only creates tables that don't already exist. It never drops or changes existing tables or data. Then apply the migrations:
+
+```bash
+npm run db:migrate
+```
+
+### Updating an existing database
+
+The migrations in `server/db/migrations` only add columns, tables and indexes, so they can be applied before the code that uses them. Run them **before** deploying a release that needs them:
+
+1. `npm run db:migrate:check` shows the `tasks` columns and which migrations are pending. It is read-only.
+2. Apply to a copy first (for Neon, a branch of the production database): point `DATABASE_URL` at it and run `npm run db:migrate`.
+3. Apply to production the same way, then deploy.
+
+Each file runs in its own transaction and is recorded in `schema_migrations`, so running the command again only applies what is new, and a failed file leaves nothing half-applied.
 
 ### 4. Run the app
 
@@ -263,10 +288,10 @@ cd server && npm test
 cd ../frontend && npm test
 ```
 
-- **Server** (`node --test`): API tests run the real Express app against an in-memory PostgreSQL (pg-mem) built from the production schema. They cover registration rules, login, session restore and logout; changing your username and password; creating, editing, completing and deleting tasks; due dates; ownership and error responses; that passwords never reach the error log; and that existing records are never modified. Unit tests cover the user model, the login rate limiter, session-secret validation and log sanitising.
+- **Server** (`node --test`): API tests run the real Express app against an in-memory PostgreSQL (pg-mem) built from the production schema with existing rows, then migrated. Migration tests check that every file is additive, that existing values are kept, and that re-running is safe. With `TEST_DATABASE_URL` set to a local PostgreSQL, `db/migrations.pg.test.js` also runs the migrations and the API against a real server (each test in its own throwaway database): a failed migration rolls back, and a task change and its history entry save together or not at all. They cover registration rules, login, session restore and logout; changing your username and password; creating, editing, completing and deleting tasks; due dates; priorities, notes and categories; completion times and task history; ownership and error responses; that passwords never reach the error log; and that existing records are never modified. Unit tests cover the user model, the login rate limiter, session-secret validation and log sanitising.
 - **Frontend** (`vitest`): component and page tests for the task list, editor, Settings (themes and account forms), sign-in page, mobile navigation, the auth context and date handling. They check that edits and due dates save, that failed actions show an error without blanking the page, that buttons inside draggable task cards still receive clicks, and that dates land on the right day in any time zone.
 
-GitHub Actions runs both suites and the production build on every push to `main` and every pull request.
+GitHub Actions runs both suites (the server's against a PostgreSQL 17 service) and the production build on every push to `main` and every pull request.
 
 Build the production frontend with `cd frontend && npm run build`.
 
@@ -282,6 +307,7 @@ Build the production frontend with `cd frontend && npm run build`.
 - **Themes without touching components.** The app's accent is Tailwind's cyan, and Tailwind 4 utilities read their colours from CSS variables. Each theme redefines those few variables, so every accent recolours with no per-component theme code. The saved theme is applied before the first paint, so the colours don't flash.
 - **Guarding sign-in.** Login, registration and password changes share a rate limit (20 attempts per IP per 15 minutes, with a friendly `429`), and new accounts must meet username and password rules. On Vercel each function instance keeps its own count, so the limit slows guessing rather than enforcing a global cap.
 - **Non-destructive database setup.** `npm run db:setup` uses `CREATE TABLE IF NOT EXISTS`, so it is safe to run against a database that already holds data.
+- **Additive migrations, applied before the code.** New columns and tables never replace or rewrite what exists, so the running release keeps working while a migration is applied, and old tasks show honest blanks instead of invented dates.
 
 ## Roadmap
 
