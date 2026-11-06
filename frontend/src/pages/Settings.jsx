@@ -1,4 +1,7 @@
+import { useState } from "react";
+
 import Card from "../components/ui/Card";
+import { EditProfileForm, ChangePasswordForm } from "../components/settings/AccountForms";
 import useUISettings from "../hooks/useUISettings";
 
 
@@ -8,6 +11,10 @@ import {
     Lightbulb,
     LogOut,
     SlidersHorizontal,
+    Palette,
+    Check,
+    UserPen,
+    KeyRound,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -17,6 +24,14 @@ import { useAuth } from "../hooks/useAuth";
 // =====================================================
 // DATA CONFIG
 // =====================================================
+
+// Each theme recolours every accent in the app (see THEMES in globals.css)
+const appearanceOptions = [
+    { id: "midnight", name: "Midnight", preview: "from-cyan-500/40 via-blue-500/20 to-cyan-300/30" },
+    { id: "violet", name: "Violet", preview: "from-violet-500/40 via-purple-500/20 to-violet-300/30" },
+    { id: "emerald", name: "Emerald", preview: "from-emerald-500/40 via-teal-500/20 to-emerald-300/30" },
+    { id: "sunset", name: "Sunset", preview: "from-rose-500/40 via-orange-500/20 to-rose-300/30" },
+];
 
 // Every preference here changes the app: Focus Mode dims the sidebar and
 // changes the Dashboard's focus copy; Workflow insights shows or hides the
@@ -43,10 +58,20 @@ const preferences = [
 // =====================================================
 
 function Settings() {
-    const { currentUser, signOut: logout } = useAuth();
+    const { currentUser, signOut: logout, updateUsername, changePassword } = useAuth();
+
+    // Which account form is open ("profile" | "password" | null), and the last result
+    const [openForm, setOpenForm] = useState(null);
+    const [accountMessage, setAccountMessage] = useState(null);
+    const closeForm = (message) => {
+        setOpenForm(null);
+        setAccountMessage(message);
+    };
     const { tasks = [] } = useTasks();
 
     const {
+        theme,
+        setTheme,
         aiSettings,
         toggleAI,
         quickSettings,
@@ -96,6 +121,50 @@ function Settings() {
 
                 {/* LEFT */}
                 <div className="xl:col-span-2 space-y-6">
+
+                    {/* APPEARANCE */}
+                    <Card>
+                        <div className="flex items-center gap-3 mb-6">
+                            <Palette className="text-cyan-300" size={18} />
+                            <div>
+                                <h3 className="text-lg font-semibold text-white">
+                                    Appearance
+                                </h3>
+                                <p className="text-sm text-white/45">
+                                    Accent colour for the whole app, saved in this browser
+                                </p>
+                            </div>
+                        </div>
+
+                        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {appearanceOptions.map((option) => (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={theme === option.id}
+                                    onClick={() => setTheme(option.id)}
+                                    className={`p-3 rounded-2xl border text-left transition
+                                        ${theme === option.id
+                                            ? "border-cyan-400/40 bg-cyan-400/10"
+                                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.06]"
+                                        }`}
+                                >
+                                    <div className={`h-14 rounded-xl mb-3 bg-gradient-to-br ${option.preview}`} />
+
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-white text-sm font-medium">
+                                            {option.name}
+                                        </span>
+
+                                        {theme === option.id && (
+                                            <Check size={14} className="text-cyan-300" aria-hidden="true" />
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </Card>
 
                     {/* PREFERENCES */}
                     <Card>
@@ -165,6 +234,46 @@ function Settings() {
                         </p>
 
                         <div className="mt-6 space-y-3">
+                            {accountMessage && !openForm && (
+                                <p role="status" className="text-sm text-cyan-300">
+                                    {accountMessage}
+                                </p>
+                            )}
+
+                            {openForm === "profile" && (
+                                <EditProfileForm
+                                    currentName={currentUser?.username}
+                                    onSave={updateUsername}
+                                    onDone={closeForm}
+                                />
+                            )}
+
+                            {openForm === "password" && (
+                                <ChangePasswordForm onSave={changePassword} onDone={closeForm} />
+                            )}
+
+                            {!openForm && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAccountMessage(null); setOpenForm("profile"); }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white/80 hover:bg-white/[0.07]"
+                                    >
+                                        <UserPen size={16} />
+                                        Edit Profile
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAccountMessage(null); setOpenForm("password"); }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white/80 hover:bg-white/[0.07]"
+                                    >
+                                        <KeyRound size={16} />
+                                        Change Password
+                                    </button>
+                                </>
+                            )}
+
                             <button
                                 type="button"
                                 onClick={logout}

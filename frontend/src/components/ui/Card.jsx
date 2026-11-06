@@ -15,7 +15,7 @@ function Card({
         subtle: "border-white/5 bg-white/[0.03]",
         elevated: "border-white/10 bg-black/20 shadow-lg",
         ghost: "border-transparent bg-transparent",
-        glow: "border-cyan-400/20 bg-cyan-400/5 shadow-[0_0_30px_rgba(34,211,238,0.08)]",
+        glow: "border-cyan-400/20 bg-cyan-400/5 shadow-[0_0_30px_color-mix(in_oklab,var(--color-cyan-400)_8%,transparent)]",
     };
 
     const paddingMap = {

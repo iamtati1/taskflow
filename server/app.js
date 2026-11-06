@@ -9,6 +9,8 @@ const pool = require("./db/pool");
 
 const logRoutes = require('./middleware/logRoutes');
 const authControllers = require('./controllers/authControllers');
+const userControllers = require('./controllers/userControllers');
+const checkAuthentication = require('./middleware/checkAuthentication');
 const taskRoutes = require("./routes/taskRoutes");
 const isProduction = require('./utils/isProduction');
 const sessionKeys = require('./utils/sessionKeys');
@@ -65,6 +67,13 @@ app.get('/api/auth/me', authControllers.getMe);
 app.delete('/api/auth/logout', authControllers.logout);
 
 // ====================================
+// Account routes (signed-in user only)
+// ====================================
+app.patch('/api/users/me', checkAuthentication, userControllers.updateProfile);
+// Password changes count against the same limit as logins (they check a password)
+app.post('/api/users/me/password', authLimiter, checkAuthentication, userControllers.changePassword);
+
+// ====================================
 // Task Routes
 // ====================================
 app.use("/api/tasks", taskRoutes);
@@ -92,7 +101,9 @@ app.use('/api', (req, res) => {
 // Global Error Handler
 // ====================================
 const handleError = (err, req, res, next) => {
-  logError("SERVER ERROR:", err, [req.body && req.body.password]);
+  // Never let a submitted password appear in a log line
+  const body = req.body || {};
+  logError("SERVER ERROR:", err, [body.password, body.currentPassword, body.newPassword]);
   res.status(500).send({ message: 'Internal Server Error' });
 };
 

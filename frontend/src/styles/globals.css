@@ -46,20 +46,33 @@
             var(--flow-violet));
 }
 
-[data-theme="midnight"] {
-    --accent: #22d3ee;
-}
+/* =========================================================
+   🎨 THEMES
+   The app's accent is Tailwind's cyan (text-cyan-300, bg-cyan-400/10, ...),
+   and Tailwind 4 utilities read these variables. Each theme remaps the cyan
+   shades to another palette, so every accent in the app follows the choice.
+   Midnight keeps the default cyan. Values are Tailwind's palette colours.
+========================================================= */
 
 [data-theme="violet"] {
-    --accent: #8b5cf6;
+    --color-cyan-200: oklch(89.4% 0.057 293.283);
+    --color-cyan-300: oklch(81.1% 0.111 293.571);
+    --color-cyan-400: oklch(70.2% 0.183 293.541);
+    --color-cyan-500: oklch(60.6% 0.25 292.717);
 }
 
 [data-theme="emerald"] {
-    --accent: #10b981;
+    --color-cyan-200: oklch(90.5% 0.093 164.15);
+    --color-cyan-300: oklch(84.5% 0.143 164.978);
+    --color-cyan-400: oklch(76.5% 0.177 163.223);
+    --color-cyan-500: oklch(69.6% 0.17 162.48);
 }
 
 [data-theme="sunset"] {
-    --accent: #fb7185;
+    --color-cyan-200: oklch(89.2% 0.058 10.001);
+    --color-cyan-300: oklch(81% 0.117 11.638);
+    --color-cyan-400: oklch(71.2% 0.194 13.428);
+    --color-cyan-500: oklch(64.5% 0.246 16.439);
 }
 
 /* =========================================================
@@ -87,7 +100,7 @@ body {
     background-color: var(--bg-primary);
 
     background-image:
-        radial-gradient(circle at top left, rgba(34, 211, 238, 0.08), transparent 30%),
+        radial-gradient(circle at top left, color-mix(in oklab, var(--color-cyan-400) 8%, transparent), transparent 30%),
         radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.08), transparent 35%),
         linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
@@ -142,7 +155,7 @@ body {
     left: -10%;
     width: 40rem;
     height: 40rem;
-    background: rgba(34, 211, 238, 0.12);
+    background-color: color-mix(in oklab, var(--color-cyan-400) 12%, transparent);
 }
 
 .app-glow-violet {
@@ -171,7 +184,7 @@ body {
 .surface-base:hover,
 .flow-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(34, 211, 238, 0.2);
+    border-color: color-mix(in oklab, var(--color-cyan-400) 20%, transparent);
     box-shadow: var(--shadow-hover);
 }
 
@@ -289,7 +302,7 @@ body {
 }
 
 .input-shell:focus-within {
-    border-color: rgba(34, 211, 238, 0.3);
+    border-color: color-mix(in oklab, var(--color-cyan-400) 30%, transparent);
     background: rgba(255, 255, 255, 0.05);
 }
 
@@ -407,7 +420,7 @@ body {
 }
 
 .react-calendar__tile--active {
-    background: rgba(34, 211, 238, .15) !important;
+    background-color: color-mix(in oklab, var(--color-cyan-400) 15%, transparent) !important;
     color: white !important;
 }
 
@@ -420,7 +433,7 @@ body {
 }
 
 .selected-day {
-    background: rgba(34, 211, 238, .18) !important;
+    background-color: color-mix(in oklab, var(--color-cyan-400) 18%, transparent) !important;
 }
 
 .focus-mode .app-grid {

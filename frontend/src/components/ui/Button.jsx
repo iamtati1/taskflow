@@ -16,7 +16,7 @@ function Button({
 
     const variants = {
         primary:
-            "bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 hover:bg-cyan-500/30 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]",
+            "bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 hover:bg-cyan-500/30 hover:shadow-[0_0_20px_color-mix(in_oklab,var(--color-cyan-400)_15%,transparent)]",
 
         secondary:
             "bg-white/5 text-white/80 border border-white/10 hover:bg-white/10",
