@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import Card from "../components/ui/Card";
+import LatestTasks from "../components/dashboard/LatestTasks";
 import useTasks from "../hooks/useTasks";
 import { formatDueDate, isOverdue, toDateKey } from "../utils/dates";
 
@@ -245,39 +246,43 @@ function Dashboard() {
             </div>
 
             {/* =====================================================
-                UPCOMING TASKS
+                UPCOMING + LATEST TASKS
             ===================================================== */}
 
-            <Card>
-                <div className="flex items-center gap-2 text-blue-300">
-                    <CalendarDays size={18} />
-                    Upcoming Tasks
-                </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <Card>
+                    <div className="flex items-center gap-2 text-blue-300">
+                        <CalendarDays size={18} />
+                        Upcoming Tasks
+                    </div>
 
-                <div className="mt-5 space-y-3">
-                    {upcoming.length === 0 ? (
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-white/50">
-                            No upcoming tasks scheduled.
-                        </div>
-                    ) : (
-                        upcoming.map((task) => (
-                            <div
-                                key={task.task_id}
-                                className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
-                            >
-                                <p className="font-medium text-white">
-                                    {task.title}
-                                </p>
-
-                                <p className="mt-1 text-sm text-white/50">
-                                    Due{" "}
-                                    {formatDueDate(task.due_date)}
-                                </p>
+                    <div className="mt-5 space-y-3">
+                        {upcoming.length === 0 ? (
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-white/50">
+                                No upcoming tasks scheduled.
                             </div>
-                        ))
-                    )}
-                </div>
-            </Card>
+                        ) : (
+                            upcoming.map((task) => (
+                                <div
+                                    key={task.task_id}
+                                    className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+                                >
+                                    <p className="font-medium text-white">
+                                        {task.title}
+                                    </p>
+
+                                    <p className="mt-1 text-sm text-white/50">
+                                        Due{" "}
+                                        {formatDueDate(task.due_date)}
+                                    </p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </Card>
+
+                <LatestTasks tasks={tasks} />
+            </div>
 
             {/* =====================================================
                 SYSTEM STATUS
