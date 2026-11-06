@@ -5,6 +5,8 @@ const USERNAME_PATTERN = /^[A-Za-z0-9_.-]{3,30}$/;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX_BYTES = 72; // bcrypt ignores anything past 72 bytes
 const TITLE_MAX = 200;
+const DESCRIPTION_MAX = 2000;
+const PRIORITIES = ["low", "medium", "high"];
 
 // New usernames (registration and renames). Existing accounts can still log
 // in with older usernames that don't meet these rules.
@@ -53,4 +55,38 @@ const dueDateError = (value) => {
   return "Due dates must be a real date in YYYY-MM-DD format.";
 };
 
-module.exports = { usernameError, passwordError, registrationError, titleError, dueDateError, TITLE_MAX };
+const priorityError = (value) =>
+  PRIORITIES.includes(value) ? null : "Priority must be low, medium or high.";
+
+// Notes are optional text (null = no notes)
+const descriptionError = (value) => {
+  if (value === null) return null;
+  if (typeof value !== "string") return "Notes must be text.";
+  if (value.length > DESCRIPTION_MAX) return `Notes can be at most ${DESCRIPTION_MAX} characters.`;
+  return null;
+};
+
+// Blank notes are stored as no notes; otherwise kept exactly as written
+const normalizeDescription = (value) =>
+  typeof value === "string" && !value.trim() ? null : value;
+
+// A category id is a positive integer, or null for no category. Whether the
+// category belongs to the user is checked against the database.
+const categoryIdError = (value) =>
+  value === null || (Number.isInteger(value) && value > 0)
+    ? null
+    : "Category must be one of your categories, or none.";
+
+module.exports = {
+  usernameError,
+  passwordError,
+  registrationError,
+  titleError,
+  dueDateError,
+  priorityError,
+  descriptionError,
+  normalizeDescription,
+  categoryIdError,
+  TITLE_MAX,
+  DESCRIPTION_MAX,
+};

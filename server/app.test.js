@@ -1,11 +1,13 @@
 // End-to-end API tests against an in-memory Postgres (pg-mem) shaped exactly like
-// the production schema: users(id, username, password_hash) and
-// tasks(id, user_id, title, is_complete, due_date). A query naming any other
+// production after the migrations in db/migrations: the original
+// users(id, username, password_hash) and tasks(id, user_id, title, is_complete,
+// due_date), plus the recovered columns and tables. A query naming any other
 // column fails here as it would in production.
 const { test, before, after } = require("node:test");
 const assert = require("node:assert");
 const bcrypt = require("bcrypt");
 const { newDb } = require("pg-mem");
+const { listMigrations } = require("./db/migrations");
 
 const db = newDb();
 db.public.none(`
@@ -24,6 +26,9 @@ require.cache[require.resolve("./db/pool")] = { exports: new Pool() };
 // Many tests log in from the same address; the limiter itself is tested separately
 process.env.AUTH_RATE_LIMIT = "100000";
 const app = require("./app");
+
+// Every task in the API has these fields
+const TASK_KEYS = ["category_id", "completed_at", "created_at", "description", "due_date", "is_complete", "priority", "task_id", "title", "user_id"];
 
 let server;
 let base;
@@ -44,6 +49,8 @@ before(async () => {
       (1, 'Old task two', true, NULL),
       (2, 'Someone else''s task', false, NULL);
   `);
+  // Migrated after the existing rows are in, as production will be
+  for (const { sql } of listMigrations()) db.public.none(sql);
   legacy = { user_id: 1, otherTaskId: 3 };
   snapshotBefore = snapshot();
 
@@ -136,7 +143,7 @@ test("an existing user's existing tasks are listed with task_id, newest first, a
   const titles = res.data.filter((t) => t.title.startsWith("Old")).map((t) => t.title);
   assert.deepStrictEqual(titles, ["Old task two", "Old task one"]);
   for (const t of res.data) {
-    assert.deepStrictEqual(Object.keys(t).sort(), ["due_date", "is_complete", "task_id", "title", "user_id"]);
+    assert.deepStrictEqual(Object.keys(t).sort(), TASK_KEYS);
     assert.strictEqual(t.user_id, legacy.user_id);
   }
 });
@@ -145,10 +152,11 @@ test("task CRUD: create, update, toggle, and delete", async () => {
   const api = client();
   await api("POST", "/api/auth/register", { username: "crud", password: "crud-pass" });
 
-  // Extra fields the UI sends (priority, description) are accepted and ignored
   const created = await api("POST", "/api/tasks", { title: "Write tests", priority: "high", description: "x", due_date: "2026-12-01" });
   assert.strictEqual(created.status, 201);
   assert.strictEqual(created.data.title, "Write tests");
+  assert.strictEqual(created.data.priority, "high");
+  assert.strictEqual(created.data.description, "x");
   assert.strictEqual(created.data.is_complete, false);
   assert.ok(created.data.task_id);
   const id = created.data.task_id;
@@ -160,7 +168,9 @@ test("task CRUD: create, update, toggle, and delete", async () => {
 
   const renamed = await api("PATCH", `/api/tasks/${id}`, { title: "Write more tests", priority: "low" });
   assert.strictEqual(renamed.data.title, "Write more tests");
+  assert.strictEqual(renamed.data.priority, "low");
   assert.strictEqual(renamed.data.is_complete, true, "fields not sent stay unchanged");
+  assert.strictEqual(renamed.data.description, "x");
 
   const list = await api("GET", "/api/tasks");
   assert.deepStrictEqual(list.data.map((t) => t.task_id), [id]);
@@ -237,7 +247,7 @@ test("edit: updating a title saves it and returns the task in the API shape", as
   const { api, ids } = await signedInWithTasks("editor1", ["Draft"]);
   const res = await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Final draft" });
   assert.strictEqual(res.status, 200);
-  assert.deepStrictEqual(Object.keys(res.data).sort(), ["due_date", "is_complete", "task_id", "title", "user_id"]);
+  assert.deepStrictEqual(Object.keys(res.data).sort(), TASK_KEYS);
   assert.strictEqual(res.data.task_id, ids[0]);
   assert.strictEqual(res.data.title, "Final draft");
 
@@ -253,11 +263,14 @@ test("edit: only the task with the given id changes", async () => {
   assert.deepStrictEqual(titles, { [ids[0]]: "One", [ids[1]]: "Two (edited)", [ids[2]]: "Three" });
 });
 
-test("edit: the form's extra fields (description, priority) are accepted and don't break the save", async () => {
+test("edit: description and priority are saved with the title", async () => {
   const { api, ids } = await signedInWithTasks("editor3", ["Task"]);
   const res = await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Task v2", description: "notes", priority: "high" });
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.title, "Task v2");
+  const saved = (await api("GET", "/api/tasks")).data[0];
+  assert.strictEqual(saved.description, "notes");
+  assert.strictEqual(saved.priority, "high");
 });
 
 test("edit: another user's task is rejected and left unchanged", async () => {
@@ -297,18 +310,18 @@ test("edit: the UPDATE itself is limited to the owner's rows", async () => {
 
 test("edit: the UPDATE query is sent the new title as its first parameter", async () => {
   const pool = require("./db/pool");
+  const taskModel = require("./models/taskModel");
   const { api, ids } = await signedInWithTasks("editor9", ["Before"]);
+  const userId = (await api("GET", "/api/auth/me")).data.user.user_id;
+  // Records the queries the model sends (the API runs them in a transaction)
   const seen = [];
-  const original = pool.query;
-  pool.query = function (sql, params) {
-    if (/^\s*UPDATE tasks/i.test(sql)) seen.push({ sql, params });
-    return original.apply(this, arguments);
+  const recording = {
+    query(sql, params) {
+      if (/^\s*UPDATE tasks/i.test(sql)) seen.push({ sql, params });
+      return pool.query(sql, params);
+    },
   };
-  try {
-    await api("PATCH", `/api/tasks/${ids[0]}`, { title: "After" });
-  } finally {
-    pool.query = original;
-  }
+  await taskModel.updateTask(ids[0], userId, { title: "After" }, recording);
   assert.strictEqual(seen.length, 1);
   // Only the field that was sent is written
   assert.match(seen[0].sql, /SET title = \$1\s/);
@@ -525,6 +538,169 @@ test("account: a server error during a password change never logs the passwords"
   for (const line of logged) {
     assert.ok(!line.includes("log-check-pass") && !line.includes("secret-new-pass"), line);
   }
+});
+
+// ---------- Recovered task fields (db/migrations) ----------
+
+const userIdOf = async (api) => (await api("GET", "/api/auth/me")).data.user.user_id;
+
+test("tasks from before the migration show honest defaults: no invented dates, medium priority", async () => {
+  const api = client();
+  await api("POST", "/api/auth/login", { username: "legacy", password: "legacy-password" });
+  const old = (await api("GET", "/api/tasks")).data.filter((t) => t.title.startsWith("Old"));
+  assert.strictEqual(old.length, 2);
+  for (const t of old) {
+    assert.strictEqual(t.created_at, null);
+    assert.strictEqual(t.completed_at, null);
+    assert.strictEqual(t.priority, "medium");
+    assert.strictEqual(t.description, null);
+    assert.strictEqual(t.category_id, null);
+  }
+});
+
+test("a new task records when it was created, defaults to medium priority, and isn't completed", async () => {
+  const { api } = await signedInWithTasks("fields1", []);
+  const before = Date.now();
+  const res = await api("POST", "/api/tasks", { title: "Plain" });
+  assert.strictEqual(res.status, 201);
+  assert.strictEqual(res.data.priority, "medium");
+  assert.strictEqual(res.data.description, null);
+  assert.strictEqual(res.data.category_id, null);
+  assert.strictEqual(res.data.completed_at, null);
+  const created = Date.parse(res.data.created_at);
+  assert.ok(created >= before - 5000 && created <= Date.now() + 5000, res.data.created_at);
+});
+
+test("priority must be low, medium or high, on create and edit", async () => {
+  const { api, ids } = await signedInWithTasks("fields2", ["Task"]);
+  for (const priority of ["urgent", "", null, 3, "HIGH"]) {
+    assert.strictEqual((await api("POST", "/api/tasks", { title: "x", priority })).status, 400, String(priority));
+    assert.strictEqual((await api("PATCH", `/api/tasks/${ids[0]}`, { priority })).status, 400, String(priority));
+  }
+  const list = (await api("GET", "/api/tasks")).data;
+  assert.deepStrictEqual(list.map((t) => [t.title, t.priority]), [["Task", "medium"]]);
+
+  const ok = await api("PATCH", `/api/tasks/${ids[0]}`, { priority: "high" });
+  assert.strictEqual(ok.status, 200, "a priority-only edit is a real change");
+  assert.strictEqual(ok.data.priority, "high");
+});
+
+test("notes: saved as written, blank means none, null clears, and they're limited to 2000 characters", async () => {
+  const { api, ids } = await signedInWithTasks("fields3", ["Task"]);
+  const id = ids[0];
+
+  const text = "  Call first.\nThen email.  ";
+  assert.strictEqual((await api("PATCH", `/api/tasks/${id}`, { description: text })).data.description, text);
+  assert.strictEqual((await api("PATCH", `/api/tasks/${id}`, { description: "   " })).data.description, null);
+  await api("PATCH", `/api/tasks/${id}`, { description: "again" });
+  assert.strictEqual((await api("PATCH", `/api/tasks/${id}`, { description: null })).data.description, null);
+
+  assert.strictEqual((await api("PATCH", `/api/tasks/${id}`, { description: "x".repeat(2001) })).status, 400);
+  assert.strictEqual((await api("PATCH", `/api/tasks/${id}`, { description: 42 })).status, 400);
+  assert.strictEqual((await api("POST", "/api/tasks", { title: "Long", description: "x".repeat(2001) })).status, 400);
+  assert.strictEqual((await api("PATCH", `/api/tasks/${id}`, { description: "x".repeat(2000) })).status, 200);
+});
+
+test("completed_at is set when a task is completed, kept if completed again, and cleared when reopened", async () => {
+  const { api, ids } = await signedInWithTasks("fields4", ["Task"]);
+  const id = ids[0];
+
+  const done = (await api("PATCH", `/api/tasks/${id}`, { is_complete: true })).data;
+  assert.ok(done.completed_at, "set on completion");
+
+  const again = (await api("PATCH", `/api/tasks/${id}`, { is_complete: true })).data;
+  assert.strictEqual(again.completed_at, done.completed_at, "completing again keeps the first time");
+
+  const renamed = (await api("PATCH", `/api/tasks/${id}`, { title: "Renamed" })).data;
+  assert.strictEqual(renamed.completed_at, done.completed_at, "other edits leave it alone");
+
+  const reopened = (await api("PATCH", `/api/tasks/${id}`, { is_complete: false })).data;
+  assert.strictEqual(reopened.completed_at, null);
+});
+
+test("categories: a task can use its owner's category, never someone else's", async () => {
+  const mine = await signedInWithTasks("cats1", ["Mine"]);
+  const theirs = await signedInWithTasks("cats2", []);
+  const myId = await userIdOf(mine.api);
+  const theirId = await userIdOf(theirs.api);
+  const [myCat] = db.public.many(`INSERT INTO categories (user_id, name) VALUES (${myId}, 'Work') RETURNING id`);
+  const [theirCat] = db.public.many(`INSERT INTO categories (user_id, name) VALUES (${theirId}, 'Secret') RETURNING id`);
+  const task = mine.ids[0];
+
+  assert.strictEqual((await mine.api("PATCH", `/api/tasks/${task}`, { category_id: myCat.id })).data.category_id, myCat.id);
+
+  const stolen = await mine.api("PATCH", `/api/tasks/${task}`, { category_id: theirCat.id });
+  assert.strictEqual(stolen.status, 400);
+  assert.strictEqual((await mine.api("POST", "/api/tasks", { title: "x", category_id: theirCat.id })).status, 400);
+  assert.strictEqual((await mine.api("PATCH", `/api/tasks/${task}`, { category_id: 99999 })).status, 400);
+  assert.strictEqual((await mine.api("PATCH", `/api/tasks/${task}`, { category_id: "1" })).status, 400);
+  assert.strictEqual((await mine.api("GET", "/api/tasks")).data[0].category_id, myCat.id, "unchanged by refused edits");
+
+  assert.strictEqual((await mine.api("PATCH", `/api/tasks/${task}`, { category_id: null })).data.category_id, null);
+  const created = await mine.api("POST", "/api/tasks", { title: "Filed", category_id: myCat.id });
+  assert.strictEqual(created.data.category_id, myCat.id);
+});
+
+const activityFor = (userId) =>
+  db.public.many(`SELECT task_id, task_title, action FROM task_activity WHERE user_id = ${userId} ORDER BY id`);
+
+test("activity history records creating, completing, reopening, editing and deleting", async () => {
+  const { api } = await signedInWithTasks("history1", []);
+  const userId = await userIdOf(api);
+  const id = (await api("POST", "/api/tasks", { title: "Report" })).data.task_id;
+
+  await api("PATCH", `/api/tasks/${id}`, { is_complete: true });
+  await api("PATCH", `/api/tasks/${id}`, { is_complete: false });
+  await api("PATCH", `/api/tasks/${id}`, { title: "Final report" });
+  await api("DELETE", `/api/tasks/${id}`);
+
+  // The deleted task's history stays, with its title at the time
+  assert.deepStrictEqual(activityFor(userId), [
+    { task_id: null, task_title: "Report", action: "created" },
+    { task_id: null, task_title: "Report", action: "completed" },
+    { task_id: null, task_title: "Report", action: "reopened" },
+    { task_id: null, task_title: "Final report", action: "updated" },
+    { task_id: null, task_title: "Final report", action: "deleted" },
+  ]);
+});
+
+test("activity history skips saves that change nothing and lists only the user's own actions", async () => {
+  const { api, ids } = await signedInWithTasks("history2", ["Same"]);
+  const other = await signedInWithTasks("history3", ["Theirs"]);
+  const userId = await userIdOf(api);
+  const id = ids[0];
+
+  // The edit form sends every field on save, even unchanged ones
+  await api("PATCH", `/api/tasks/${id}`, { title: "Same", due_date: null });
+  await api("PATCH", `/api/tasks/${id}`, { is_complete: false });
+  await api("PATCH", `/api/tasks/${id}`, { is_complete: true });
+  await api("PATCH", `/api/tasks/${id}`, { is_complete: true });
+  await other.api("PATCH", `/api/tasks/${other.ids[0]}`, { title: "Theirs, edited" });
+
+  assert.deepStrictEqual(activityFor(userId).map((a) => a.action), ["created", "completed"]);
+});
+
+test("one save that completes and renames a task records both", async () => {
+  const { api, ids } = await signedInWithTasks("history4", ["Both"]);
+  const userId = await userIdOf(api);
+  await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Both, done", is_complete: true });
+  assert.deepStrictEqual(activityFor(userId).map((a) => [a.action, a.task_title]), [
+    ["created", "Both"],
+    ["completed", "Both, done"],
+    ["updated", "Both, done"],
+  ]);
+});
+
+test("refused changes record no activity", async () => {
+  const { api, ids } = await signedInWithTasks("history5", ["Kept"]);
+  const userId = await userIdOf(api);
+  await api("PATCH", `/api/tasks/${ids[0]}`, { title: "" });
+  await api("PATCH", `/api/tasks/${ids[0]}`, { priority: "urgent" });
+  await api("POST", "/api/tasks", { title: "" });
+  const legacy = client();
+  await legacy("POST", "/api/auth/login", { username: "legacy", password: "legacy-password" });
+  await legacy("DELETE", `/api/tasks/${ids[0]}`);
+  assert.deepStrictEqual(activityFor(userId).map((a) => a.action), ["created"]);
 });
 
 test("existing user and task records are never modified", () => {
