@@ -132,3 +132,19 @@ test("Change Password shows a wrong-current-password error from the server", asy
 
     expect((await screen.findByRole("alert")).textContent).toBe("Your current password is incorrect.");
 });
+
+test("the theme picker is one tab stop and arrow keys change the theme", () => {
+    renderSettings();
+    const midnight = screen.getByRole("radio", { name: "Midnight" });
+    const violet = screen.getByRole("radio", { name: "Violet" });
+    fireEvent.click(midnight); // theme state is shared across tests
+    expect(midnight.tabIndex).toBe(0);
+    expect(violet.tabIndex).toBe(-1);
+
+    midnight.focus();
+    fireEvent.keyDown(midnight, { key: "ArrowRight" });
+
+    expect(violet.getAttribute("aria-checked")).toBe("true");
+    expect(document.activeElement).toBe(violet);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("violet");
+});

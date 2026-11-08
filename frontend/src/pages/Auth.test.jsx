@@ -29,6 +29,6 @@ test("a signed-in user who opens /auth is sent to their tasks", () => {
 
 test("a signed-out visitor sees the sign-in form", () => {
     renderAt({ ...base, user: null });
-    expect(screen.getByPlaceholderText("Username")).toBeTruthy();
+    expect(screen.getByLabelText("Username")).toBeTruthy();
     expect(screen.queryByText("Tasks page")).toBeNull();
 });

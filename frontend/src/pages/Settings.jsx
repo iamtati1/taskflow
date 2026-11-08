@@ -6,7 +6,6 @@ import useUISettings from "../hooks/useUISettings";
 
 
 import {
-    Sparkles,
     Moon,
     Lightbulb,
     LogOut,
@@ -85,42 +84,43 @@ function Settings() {
     const toggle = ({ group, key }) =>
         group === "ai" ? toggleAI(key) : toggleQuick(key);
 
+    // Arrow keys choose the previous/next theme and move focus with it
+    const handleThemeKeys = (e) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        const index = appearanceOptions.findIndex((option) => option.id === theme);
+        const next = appearanceOptions[(index + step + appearanceOptions.length) % appearanceOptions.length];
+        setTheme(next.id);
+        e.currentTarget.querySelector(`[data-theme-option="${next.id}"]`)?.focus();
+    };
+
     // =====================================================
     // RENDER
     // =====================================================
 
     return (
-        <section className="space-y-10">
+        <section className="space-y-6">
 
             {/* HEADER */}
-            <Card className="relative overflow-hidden">
-                <div className="absolute -top-24 -right-24 h-72 w-72 bg-cyan-400/10 blur-[120px]" />
-                <div className="absolute -bottom-24 -left-24 h-72 w-72 bg-violet-500/10 blur-[120px]" />
+            <div className="space-y-2">
+                <h1 className="text-3xl font-bold text-white sm:text-4xl">
+                    Settings
+                </h1>
 
-                <div className="relative space-y-3">
-                    <div className="flex items-center gap-2 text-cyan-300">
-                        <Sparkles size={16} />
-                        Settings
-                    </div>
-
-                    <h1 className="text-3xl font-bold text-white">
-                        Your workspace
-                    </h1>
-
-                    <p className="text-white/60">
-                        Logged in as{" "}
-                        <span className="text-white font-medium">
-                            {currentUser?.username || "Guest"}
-                        </span>
-                        {tasksLoaded && (
-                            <>
-                                {" • "}
-                                {tasks.length} {tasks.length === 1 ? "task" : "tasks"} in system
-                            </>
-                        )}
-                    </p>
-                </div>
-            </Card>
+                <p className="text-white/55">
+                    Signed in as{" "}
+                    <span className="font-semibold text-white">
+                        {currentUser?.username || "Guest"}
+                    </span>
+                    {tasksLoaded && (
+                        <>
+                            {" • "}
+                            {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+                        </>
+                    )}
+                </p>
+            </div>
 
             {/* GRID */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -133,32 +133,48 @@ function Settings() {
                         <div className="flex items-center gap-3 mb-6">
                             <Palette className="text-cyan-300" size={18} />
                             <div>
-                                <h3 className="text-lg font-semibold text-white">
+                                <h2 className="text-lg font-semibold text-white">
                                     Appearance
-                                </h3>
+                                </h2>
                                 <p className="text-sm text-white/45">
                                     Accent colour for the whole app, saved in this browser
                                 </p>
                             </div>
                         </div>
 
-                        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {/* One tab stop; arrow keys move between themes (radio group pattern) */}
+                        <div
+                            role="radiogroup"
+                            aria-label="Theme"
+                            onKeyDown={handleThemeKeys}
+                            className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"
+                        >
                             {appearanceOptions.map((option) => (
                                 <button
                                     key={option.id}
                                     type="button"
                                     role="radio"
                                     aria-checked={theme === option.id}
+                                    tabIndex={theme === option.id ? 0 : -1}
+                                    data-theme-option={option.id}
                                     onClick={() => setTheme(option.id)}
-                                    className={`p-3 rounded-2xl border text-left transition
+                                    className={`relative p-3 rounded-2xl border text-left transition-colors duration-200
                                         ${theme === option.id
-                                            ? "border-cyan-400/40 bg-cyan-400/10"
-                                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.06]"
+                                            ? "border-transparent"
+                                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
                                         }`}
                                 >
-                                    <div className={`h-14 rounded-xl mb-3 bg-gradient-to-br ${option.preview}`} />
+                                    {theme === option.id && (
+                                        <motion.span
+                                            layoutId="theme-selected"
+                                            aria-hidden="true"
+                                            transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                                            className="absolute inset-0 rounded-2xl border-2 border-cyan-400/70 bg-cyan-400/10"
+                                        />
+                                    )}
+                                    <div className={`relative h-14 rounded-xl mb-3 bg-gradient-to-br ${option.preview}`} />
 
-                                    <div className="flex justify-between items-center">
+                                    <div className="relative flex justify-between items-center">
                                         <span className="text-white text-sm font-medium">
                                             {option.name}
                                         </span>
@@ -177,9 +193,9 @@ function Settings() {
                         <div className="flex items-center gap-3 mb-6">
                             <SlidersHorizontal className="text-cyan-300" size={18} />
                             <div>
-                                <h3 className="text-lg font-semibold text-white">
+                                <h2 className="text-lg font-semibold text-white">
                                     Preferences
-                                </h3>
+                                </h2>
                                 <p className="text-sm text-white/45">
                                     Saved in this browser
                                 </p>
