@@ -271,7 +271,7 @@ function Settings() {
 
                         <div className="mt-6 space-y-3">
                             {accountMessage && !openForm && (
-                                <p role="status" className="text-sm text-cyan-300">
+                                <p role="status" className="text-sm text-emerald-300">
                                     {accountMessage}
                                 </p>
                             )}

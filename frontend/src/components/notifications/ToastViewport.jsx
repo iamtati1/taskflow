@@ -11,10 +11,10 @@ const ICONS = {
 };
 
 const ICON_COLORS = {
-    success: "text-cyan-300",
+    success: "text-emerald-300",
     info: "text-white/60",
     warning: "text-amber-300",
-    error: "text-red-300",
+    error: "text-rose-300",
 };
 
 // Shows the toasts from NotificationContext: above the mobile nav on small

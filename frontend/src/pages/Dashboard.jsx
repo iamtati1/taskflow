@@ -142,12 +142,18 @@ function Dashboard() {
                 STATS
             ===================================================== */}
             {!focusMode && (
-                <motion.div variants={stagger(0, 0.05)} className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                <motion.section
+                    variants={stagger(0, 0.05)}
+                    aria-labelledby="stats-heading"
+                    className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+                >
+                    {/* For screen readers: the numbers below are this section's h3s */}
+                    <h2 id="stats-heading" className="sr-only">Task summary</h2>
                     <StatCard icon={ListChecks} value={active} label="Active" tone="accent" />
                     <StatCard icon={CalendarClock} value={dueToday} label="Due today" tone="amber" />
                     <StatCard icon={AlertCircle} value={overdue} label="Overdue" tone="rose" />
                     <StatCard icon={CheckCircle2} value={completed} label="Completed" tone="emerald" />
-                </motion.div>
+                </motion.section>
             )}
 
             {/* =====================================================

@@ -307,6 +307,9 @@ function TaskList({
     return (
         <LayoutGroup>
             <div className="space-y-8">
+                {/* For screen readers: Active and Completed are this list's h3s */}
+                <h2 className="sr-only">Your tasks</h2>
+
                 {/* Touch screens can't drag-and-drop here, so they get their own hint */}
                 <p className="text-sm text-white/50">
                     <span className="[@media(hover:none)]:hidden">Drag to reorder, click a task to edit it.</span>

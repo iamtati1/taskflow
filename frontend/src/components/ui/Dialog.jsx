@@ -70,8 +70,13 @@ function Dialog({ open, onClose, labelledBy, children }) {
     return createPortal(
         <AnimatePresence>
             {open && (
-                // The key keeps the content mounted (not re-created) while it animates out
-                <div key="dialog" className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+                // The key keeps the content mounted (not re-created) while it
+                // animates out; once closing, it lets clicks through to the page
+                <motion.div
+                    key="dialog"
+                    exit={{ pointerEvents: "none" }}
+                    className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6"
+                >
                     <motion.div
                         aria-hidden="true"
                         className="absolute inset-0 bg-[#02030a]/60 backdrop-blur-[6px]"
@@ -96,7 +101,7 @@ function Dialog({ open, onClose, labelledBy, children }) {
                         <div aria-hidden="true" className="mx-auto mt-3 h-1.5 w-10 rounded-full bg-white/20 sm:hidden" />
                         {children}
                     </motion.div>
-                </div>
+                </motion.div>
             )}
         </AnimatePresence>,
         document.body
