@@ -305,6 +305,7 @@ test("adding, saving and deleting each confirm with a toast", async () => {
 
     const milk = screen.getByText("Buy milk").closest("div.group");
     fireEvent.click(within(milk).getByRole("button", { name: "Delete" }));
+    fireEvent.click(within(milk).getByRole("button", { name: "Yes, delete" }));
     await waitFor(() => expect(toasts().textContent).toContain('Deleted "Buy milk"'));
 });
 
@@ -331,6 +332,7 @@ test("a very long title is shortened in the toast", async () => {
 
     const card = (await screen.findByText(long)).closest("div.group");
     fireEvent.click(within(card).getByRole("button", { name: "Delete" }));
+    fireEvent.click(within(card).getByRole("button", { name: "Yes, delete" }));
 
     await waitFor(() => expect(toasts().textContent).toMatch(/^Deleted "A{60}…"/));
 });
