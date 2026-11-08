@@ -197,7 +197,7 @@ h3 {
     text-transform: uppercase;
     font-size: .68rem;
     letter-spacing: .08em;
-    color: rgba(255, 255, 255, .45);
+    color: rgba(255, 255, 255, .58);
 }
 
 .react-calendar__month-view__weekdays abbr {

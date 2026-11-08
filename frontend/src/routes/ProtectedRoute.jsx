@@ -51,7 +51,7 @@ function LoadingScreen() {
                     rounded-full
                     border border-white/10
                     bg-white/[0.04]
-                    text-white/40 text-xs
+                    text-white/50 text-xs
                     uppercase tracking-widest
                     mb-4
                 ">
@@ -64,7 +64,7 @@ function LoadingScreen() {
                     Preparing workspace
                 </h2>
 
-                <p className="text-white/45 text-sm">
+                <p className="text-white/50 text-sm">
                     Syncing authentication and system state...
                 </p>
 

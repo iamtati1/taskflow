@@ -235,7 +235,7 @@ function Auth() {
                                         onClick={() => setShowPassword(!showPassword)}
                                         aria-label={showPassword ? "Hide password" : "Show password"}
                                         aria-pressed={showPassword}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-white/50 transition-colors hover:bg-white/[0.06] hover:text-white"
                                     >
                                         {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                                     </button>

@@ -18,7 +18,7 @@ function BrandMark({ compact = false, tagline = false }) {
                         TaskFlow
                     </p>
                     {tagline && (
-                        <p className="text-xs text-white/45">
+                        <p className="text-xs text-white/50">
                             Plan · Focus · Finish
                         </p>
                     )}

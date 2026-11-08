@@ -136,7 +136,7 @@ function Settings() {
                                 <h2 className="text-lg font-semibold text-white">
                                     Appearance
                                 </h2>
-                                <p className="text-sm text-white/45">
+                                <p className="text-sm text-white/50">
                                     Accent colour for the whole app, saved in this browser
                                 </p>
                             </div>
@@ -196,7 +196,7 @@ function Settings() {
                                 <h2 className="text-lg font-semibold text-white">
                                     Preferences
                                 </h2>
-                                <p className="text-sm text-white/45">
+                                <p className="text-sm text-white/50">
                                     Saved in this browser
                                 </p>
                             </div>
@@ -216,7 +216,7 @@ function Settings() {
                                                 <p className="text-white/85 text-sm font-medium">
                                                     {label}
                                                 </p>
-                                                <p className="text-white/45 text-sm">
+                                                <p className="text-white/50 text-sm">
                                                     {description}
                                                 </p>
                                             </div>
@@ -228,6 +228,7 @@ function Settings() {
                                             aria-checked={isOn(pref)}
                                             aria-label={label}
                                             onClick={() => toggle(pref)}
+                                            className="-m-2 rounded-full p-2"
                                         >
                                             <Toggle enabled={isOn(pref)} />
                                         </button>
@@ -251,7 +252,7 @@ function Settings() {
                             {currentUser?.username || "Guest"}
                         </h2>
 
-                        <p className="text-white/45 text-sm mt-1">
+                        <p className="text-white/50 text-sm mt-1">
                             Productivity workspace
                         </p>
 

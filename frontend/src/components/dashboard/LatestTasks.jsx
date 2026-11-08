@@ -44,7 +44,7 @@ function LatestTasks({ tasks = [] }) {
 
                                 <div className="min-w-0 space-y-1.5">
                                     <p
-                                        className={`break-words font-medium ${task.is_complete ? "text-white/45 line-through" : "text-white"}`}
+                                        className={`break-words font-medium ${task.is_complete ? "text-white/50 line-through" : "text-white"}`}
                                     >
                                         {task.title}
                                     </p>
@@ -54,7 +54,7 @@ function LatestTasks({ tasks = [] }) {
                                     ) : task.due_date ? (
                                         <DueChip dueDate={task.due_date} />
                                     ) : (
-                                        <p className="text-xs text-white/40">No due date</p>
+                                        <p className="text-xs text-white/50">No due date</p>
                                     )}
                                 </div>
                             </li>

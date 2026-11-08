@@ -86,7 +86,7 @@ function Sidebar() {
                                 <Icon
                                     size={18}
                                     aria-hidden="true"
-                                    className={`relative transition-colors ${isActive ? "text-cyan-300" : "text-white/45 group-hover:text-white/80"}`}
+                                    className={`relative transition-colors ${isActive ? "text-cyan-300" : "text-white/50 group-hover:text-white/80"}`}
                                 />
                                 <span className="relative">{label}</span>
                             </>
@@ -105,7 +105,7 @@ function Sidebar() {
                         {initial}
                     </div>
                     <div className="min-w-0">
-                        <p className="text-xs text-white/45">
+                        <p className="text-xs text-white/50">
                             Signed in as
                         </p>
                         <p className="truncate text-sm font-semibold text-white">

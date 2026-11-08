@@ -30,7 +30,7 @@ function TaskSection({ title, count, tone, collapsible = false, children }) {
                         aria-expanded={open}
                         aria-controls={contentId}
                         onClick={() => setOpen((value) => !value)}
-                        className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-white/50 transition-colors hover:bg-white/[0.05] hover:text-white"
+                        className="ml-auto inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs sm:min-h-0 text-white/50 transition-colors hover:bg-white/[0.05] hover:text-white"
                     >
                         {open ? "Hide" : "Show"}
                         <motion.span animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }}>
@@ -217,8 +217,10 @@ function TaskList({
     return (
         <LayoutGroup>
             <div className="space-y-8">
-                <p className="text-sm text-white/45">
-                    Drag to reorder, click a task to edit it.
+                {/* Touch screens can't drag-and-drop here, so they get their own hint */}
+                <p className="text-sm text-white/50">
+                    <span className="[@media(hover:none)]:hidden">Drag to reorder, click a task to edit it.</span>
+                    <span className="hidden [@media(hover:none)]:inline">Tap a task to edit it.</span>
                 </p>
 
                 {active.length > 0 && (

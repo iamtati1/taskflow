@@ -89,7 +89,7 @@ function ToastViewport() {
                                 type="button"
                                 onClick={() => removeNotification(id)}
                                 aria-label="Dismiss notification"
-                                className="shrink-0 rounded-lg p-0.5 text-white/40 transition hover:text-white"
+                                className="shrink-0 rounded-lg p-0.5 text-white/50 transition hover:text-white"
                             >
                                 <X size={16} aria-hidden="true" />
                             </button>

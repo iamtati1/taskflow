@@ -215,7 +215,7 @@ function Analytics() {
                         </Card>
                     </motion.div>
 
-                    <motion.p variants={rise} className="flex items-start gap-2 text-sm text-white/40">
+                    <motion.p variants={rise} className="flex items-start gap-2 text-sm text-white/50">
                         <Info size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
                         Trends over time (when tasks were created and finished) will appear once tasks record those dates.
                     </motion.p>

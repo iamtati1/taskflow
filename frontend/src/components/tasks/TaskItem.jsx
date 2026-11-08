@@ -105,7 +105,7 @@ function TaskItem({
             <div className="min-w-0 flex-1">
                 <h3
                     className={`break-words font-sans text-[15px] font-medium leading-snug transition-colors duration-300
-                        ${isCompleted ? "text-white/40 line-through decoration-white/30" : "text-white"}`}
+                        ${isCompleted ? "text-white/50 line-through decoration-white/30" : "text-white"}`}
                 >
                     {task.title}
                 </h3>
@@ -127,7 +127,7 @@ function TaskItem({
                             e.stopPropagation();
                             onEdit(task);
                         }}
-                        className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-white/55 transition-colors hover:bg-white/[0.06] hover:text-cyan-200"
+                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 transition-colors hover:bg-white/[0.06] hover:text-cyan-200"
                     >
                         <Pencil size={12} aria-hidden="true" />
                         Edit
@@ -153,7 +153,7 @@ function TaskItem({
                                     setConfirmingDelete(false);
                                     onDelete(task.task_id);
                                 }}
-                                className="rounded-lg bg-rose-500/15 px-2.5 py-1 font-medium text-rose-300 transition-colors hover:bg-rose-500/25"
+                                className="min-h-9 rounded-lg bg-rose-500/15 px-2.5 py-1 font-medium sm:min-h-0 text-rose-300 transition-colors hover:bg-rose-500/25"
                             >
                                 Yes, delete
                             </button>
@@ -161,7 +161,7 @@ function TaskItem({
                                 ref={keepRef}
                                 type="button"
                                 onClick={() => setConfirmingDelete(false)}
-                                className="rounded-lg px-2.5 py-1 text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+                                className="min-h-9 rounded-lg px-2.5 py-1 text-white/70 sm:min-h-0 transition-colors hover:bg-white/[0.06] hover:text-white"
                             >
                                 Keep
                             </button>
@@ -174,7 +174,7 @@ function TaskItem({
                                 e.stopPropagation();
                                 setConfirmingDelete(true);
                             }}
-                            className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-white/55 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
+                            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
                         >
                             <Trash2 size={12} aria-hidden="true" />
                             Delete

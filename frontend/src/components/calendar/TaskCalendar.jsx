@@ -118,13 +118,13 @@ function TaskCalendar({ tasks = [], onDateChange }) {
                         <CalendarDays size={17} className="text-cyan-300" aria-hidden="true" />
                         Calendar
                     </h2>
-                    <p className="mt-1 text-sm text-white/45">
+                    <p className="mt-1 text-sm text-white/50">
                         Dots mark days with tasks due.
                     </p>
                 </div>
 
                 {/* LEGEND */}
-                <div className="flex flex-col gap-1 text-[11px] text-white/45">
+                <div className="flex flex-col gap-1 text-[11px] text-white/50">
                     {[
                         ["bg-cyan-400", "1–2"],
                         ["bg-amber-400", "3–4"],
@@ -158,7 +158,7 @@ function TaskCalendar({ tasks = [], onDateChange }) {
                             day: "numeric",
                         })}
                     </h3>
-                    <p className="tabular text-xs text-white/45">
+                    <p className="tabular text-xs text-white/50">
                         {selectedTasks.length}{" "}
                         {selectedTasks.length === 1 ? "task" : "tasks"}
                     </p>
@@ -166,7 +166,7 @@ function TaskCalendar({ tasks = [], onDateChange }) {
 
                 <ul className="mt-3 space-y-2">
                     {selectedTasks.length === 0 ? (
-                        <li className="rounded-xl border border-dashed border-white/10 px-4 py-4 text-sm text-white/45">
+                        <li className="rounded-xl border border-dashed border-white/10 px-4 py-4 text-sm text-white/50">
                             Nothing due this day.
                         </li>
                     ) : (
@@ -175,7 +175,7 @@ function TaskCalendar({ tasks = [], onDateChange }) {
                                 key={task.task_id}
                                 className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5"
                             >
-                                <span className={`min-w-0 break-words text-sm ${task.is_complete ? "text-white/40 line-through" : "text-white/85"}`}>
+                                <span className={`min-w-0 break-words text-sm ${task.is_complete ? "text-white/50 line-through" : "text-white/85"}`}>
                                     {task.title}
                                 </span>
                                 {task.is_complete && (

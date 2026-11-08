@@ -221,7 +221,7 @@ function Dashboard() {
                                             type="button"
                                             onClick={completeFocusTask}
                                             aria-label={`Complete "${priorityTask.title}"`}
-                                            className="group mt-1 shrink-0 rounded-full text-white/35 transition-colors hover:text-emerald-300"
+                                            className="group -m-1.5 mt-0 shrink-0 rounded-full p-1.5 text-white/35 transition-colors hover:text-emerald-300"
                                         >
                                             <Circle size={26} className="group-hover:hidden" aria-hidden="true" />
                                             <CheckCircle2 size={26} className="hidden group-hover:block" aria-hidden="true" />

@@ -113,7 +113,7 @@ function AddTaskForm({
                         type="button"
                         onClick={onCancel}
                         aria-label="Close"
-                        className="-mr-2 -mt-1 rounded-xl p-2 text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white"
+                        className="-mr-2 -mt-1 rounded-xl p-2 text-white/50 transition-colors hover:bg-white/[0.06] hover:text-white"
                     >
                         <X size={18} aria-hidden="true" />
                     </button>
