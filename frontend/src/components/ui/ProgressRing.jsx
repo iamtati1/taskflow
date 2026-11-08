@@ -23,8 +23,8 @@ function ProgressRing({ value = 0, size = 132, stroke = 10, label = "Progress", 
             <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
                 <defs>
                     <linearGradient id="progress-ring-gradient" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="var(--color-cyan-300, #67e8f9)" />
-                        <stop offset="100%" stopColor="var(--color-violet-400, #a78bfa)" />
+                        <stop offset="0%" stopColor="var(--brand-a)" />
+                        <stop offset="100%" stopColor="var(--brand-b)" />
                     </linearGradient>
                 </defs>
                 <circle

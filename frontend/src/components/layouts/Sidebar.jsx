@@ -80,13 +80,13 @@ function Sidebar() {
                                         layoutId="sidebar-active"
                                         transition={SPRING}
                                         aria-hidden="true"
-                                        className="absolute inset-0 rounded-xl border border-cyan-400/25 bg-gradient-to-r from-cyan-400/15 to-cyan-400/[0.03]"
+                                        className="absolute inset-0 rounded-xl border border-brand-a/30 bg-gradient-to-r from-brand-a/20 via-brand-b/[0.08] to-transparent shadow-[inset_2px_0_0_0_var(--brand-a)]"
                                     />
                                 )}
                                 <Icon
                                     size={18}
                                     aria-hidden="true"
-                                    className={`relative transition-colors ${isActive ? "text-cyan-300" : "text-white/50 group-hover:text-white/80"}`}
+                                    className={`relative transition-colors ${isActive ? "text-brand-a" : "text-white/50 group-hover:text-white/80"}`}
                                 />
                                 <span className="relative">{label}</span>
                             </>
@@ -100,7 +100,7 @@ function Sidebar() {
                 <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
                     <div
                         aria-hidden="true"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 text-sm font-bold text-slate-950"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-a to-brand-b text-sm font-bold text-slate-950"
                     >
                         {initial}
                     </div>

@@ -66,7 +66,7 @@ function ToastViewport() {
                                 rounded-2xl
                                 border
                                 border-white/10
-                                bg-[#050816]/95
+                                bg-raised/95
                                 px-4
                                 py-3
                                 text-sm

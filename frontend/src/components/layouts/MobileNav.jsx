@@ -17,7 +17,7 @@ function MobileNav() {
                 z-30
                 border-t
                 border-white/[0.08]
-                bg-[#050816]/85
+                bg-base/85
                 backdrop-blur-xl
                 lg:hidden
             "

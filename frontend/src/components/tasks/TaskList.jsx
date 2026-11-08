@@ -3,6 +3,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { ChevronDown, ListPlus } from "lucide-react";
 
 import TaskItem from "./TaskItem";
+import Button from "../ui/Button";
 import { listItem, SOFT_SPRING } from "../../utils/motion";
 
 // =====================================================
@@ -80,13 +81,9 @@ function EmptyState({ onCreate }) {
                 Add the first thing you want to get done. You can give it a due date and drag tasks into the order you like.
             </p>
             {onCreate && (
-                <button
-                    type="button"
-                    onClick={onCreate}
-                    className="mt-6 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 active:scale-[0.98]"
-                >
+                <Button className="mt-6" onClick={onCreate}>
                     Add your first task
-                </button>
+                </Button>
             )}
         </motion.div>
     );

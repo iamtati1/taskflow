@@ -6,6 +6,7 @@ import { BarChart3, CalendarRange, Info, ListChecks, Sparkles } from "lucide-rea
 import useTasks from "../hooks/useTasks";
 import TasksLoadState from "../components/tasks/TasksLoadState";
 import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import ProgressRing from "../components/ui/ProgressRing";
 import { parseDueDate } from "../utils/dates";
@@ -98,13 +99,9 @@ function Analytics() {
                         <p className="mt-2 max-w-sm text-sm text-white/55">
                             Charts appear here once you have tasks. Add a few, with due dates, to see your week take shape.
                         </p>
-                        <button
-                            type="button"
-                            onClick={() => navigate("/tasks", { state: { newTask: true } })}
-                            className="mt-6 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 active:scale-[0.98]"
-                        >
+                        <Button className="mt-6" onClick={() => navigate("/tasks", { state: { newTask: true } })}>
                             Add a task
-                        </button>
+                        </Button>
                     </Card>
                 </motion.div>
             ) : (

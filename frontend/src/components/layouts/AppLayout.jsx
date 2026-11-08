@@ -6,6 +6,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import MobileNav from "./MobileNav";
 import ToastViewport from "../notifications/ToastViewport";
+import AmbientBackground from "../ui/AmbientBackground";
 import useUISettings from "../../hooks/useUISettings";
 import { EASE_OUT } from "../../utils/motion";
 
@@ -35,7 +36,7 @@ function AppLayout() {
     }, [pageTitle]);
 
     return (
-        <div className="relative min-h-screen overflow-x-clip bg-[#050816] text-white">
+        <div className="relative min-h-screen overflow-x-clip bg-base text-white">
 
             {/* SKIP LINK (first stop for keyboard users) */}
             <a
@@ -45,20 +46,15 @@ function AppLayout() {
                 Skip to content
             </a>
 
-            {/* BACKGROUND */}
-            <div className="pointer-events-none fixed inset-0" aria-hidden="true">
-                <div className="app-grid" />
-                <div className="app-noise" />
-                <div className="absolute -right-48 -top-72 h-[40rem] w-[40rem] rounded-full bg-cyan-500/[0.07] blur-[160px]" />
-                <div className="absolute -bottom-72 -left-48 h-[44rem] w-[44rem] rounded-full bg-violet-500/[0.08] blur-[180px]" />
-            </div>
+            {/* BACKGROUND: the theme's ambient light */}
+            <AmbientBackground />
 
             {/* APP SHELL */}
             <div className="relative flex min-h-screen overflow-x-clip">
 
                 {/* SIDEBAR (from lg) */}
                 <aside
-                    className={`hidden w-[264px] shrink-0 border-r border-white/[0.07] bg-black/25 backdrop-blur-xl transition-opacity duration-300 lg:flex
+                    className={`hidden w-[264px] shrink-0 border-r border-white/[0.07] bg-raised/45 backdrop-blur-xl transition-opacity duration-300 lg:flex
                         ${quickSettings["Focus Mode"] ? "opacity-60 hover:opacity-100" : "opacity-100"}`}
                 >
                     <div className="sticky top-0 h-screen w-full">
@@ -69,7 +65,7 @@ function AppLayout() {
                 {/* MAIN */}
                 <div className="flex min-w-0 flex-1 flex-col">
 
-                    <div className="sticky top-0 z-20 border-b border-white/[0.07] bg-[#050816]/70 backdrop-blur-xl">
+                    <div className="sticky top-0 z-20 border-b border-white/[0.07] bg-base/70 backdrop-blur-xl">
                         <Topbar title={pageTitle} />
                     </div>
 

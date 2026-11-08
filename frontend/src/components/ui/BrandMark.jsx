@@ -7,9 +7,9 @@ function BrandMark({ compact = false, tagline = false }) {
         <div className="flex items-center gap-3">
             <div
                 aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/30 bg-gradient-to-br from-cyan-400/25 to-violet-500/20 shadow-[0_0_24px_-6px_color-mix(in_oklab,var(--color-cyan-400)_55%,transparent)]"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brand-a/35 bg-gradient-to-br from-brand-a/30 to-brand-b/20 shadow-[0_0_24px_-6px_color-mix(in_oklab,var(--brand-a)_60%,transparent)]"
             >
-                <Check size={18} strokeWidth={3} className="text-cyan-200" />
+                <Check size={18} strokeWidth={3} className="text-white" />
             </div>
 
             {!compact && (

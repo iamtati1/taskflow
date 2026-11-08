@@ -17,7 +17,8 @@ import useUISettings from "../hooks/useUISettings";
 import useTasks from "../hooks/useTasks";
 import { useNotifications } from "../context/NotificationContext";
 import Card from "../components/ui/Card";
-import AnimatedNumber from "../components/ui/AnimatedNumber";
+import Button from "../components/ui/Button";
+import StatCard from "../components/ui/StatCard";
 import ProgressRing from "../components/ui/ProgressRing";
 import DueChip from "../components/tasks/DueChip";
 import LatestTasks from "../components/dashboard/LatestTasks";
@@ -34,31 +35,6 @@ const byUrgency = (a, b) => {
     const kb = toDateKey(b.due_date) ?? "9999-99-99";
     return ka.localeCompare(kb);
 };
-
-const TILE_TONES = {
-    cyan: "text-cyan-300 bg-cyan-400/10",
-    amber: "text-amber-200 bg-amber-400/10",
-    rose: "text-rose-300 bg-rose-500/10",
-    emerald: "text-emerald-300 bg-emerald-400/10",
-};
-
-function StatTile({ icon: Icon, value, label, tone }) {
-    return (
-        <motion.div variants={rise}>
-            <Card padding="md" className="h-full sm:p-5">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${TILE_TONES[tone]}`}>
-                    <Icon size={18} aria-hidden="true" />
-                </div>
-                <h3 className="mt-4 font-display text-3xl font-bold text-white">
-                    <AnimatedNumber value={value} />
-                </h3>
-                <p className="mt-0.5 text-sm text-white/55">
-                    {label}
-                </p>
-            </Card>
-        </motion.div>
-    );
-}
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -121,8 +97,7 @@ function Dashboard() {
                 HERO
             ===================================================== */}
             <motion.div variants={rise}>
-                <Card variant="glow" padding="xl" className="relative overflow-hidden">
-                    <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-violet-500/15 blur-[90px]" />
+                <Card variant="hero" padding="xl" className="relative overflow-hidden">
 
                     <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
                         <div className="max-w-xl space-y-4">
@@ -154,26 +129,12 @@ function Dashboard() {
                             </p>
 
                             <div className="flex flex-wrap gap-3 pt-1">
-                                <motion.button
-                                    type="button"
-                                    whileHover={{ y: -1 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    onClick={() => navigate("/tasks", { state: { newTask: true } })}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-300"
-                                >
-                                    <Plus size={16} aria-hidden="true" />
+                                <Button leftIcon={Plus} onClick={() => navigate("/tasks", { state: { newTask: true } })}>
                                     New task
-                                </motion.button>
-                                <motion.button
-                                    type="button"
-                                    whileHover={{ y: -1 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    onClick={() => navigate("/tasks")}
-                                    className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/[0.09]"
-                                >
+                                </Button>
+                                <Button variant="secondary" rightIcon={ArrowRight} onClick={() => navigate("/tasks")}>
                                     Open Tasks
-                                    <ArrowRight size={16} aria-hidden="true" />
-                                </motion.button>
+                                </Button>
                             </div>
                         </div>
 
@@ -189,10 +150,10 @@ function Dashboard() {
             ===================================================== */}
             {!focusMode && (
                 <motion.div variants={stagger(0, 0.05)} className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                    <StatTile icon={ListChecks} value={active} label="Active" tone="cyan" />
-                    <StatTile icon={CalendarClock} value={dueToday} label="Due today" tone="amber" />
-                    <StatTile icon={AlertCircle} value={overdue} label="Overdue" tone="rose" />
-                    <StatTile icon={CheckCircle2} value={completed} label="Completed" tone="emerald" />
+                    <StatCard icon={ListChecks} value={active} label="Active" tone="accent" />
+                    <StatCard icon={CalendarClock} value={dueToday} label="Due today" tone="amber" />
+                    <StatCard icon={AlertCircle} value={overdue} label="Overdue" tone="rose" />
+                    <StatCard icon={CheckCircle2} value={completed} label="Completed" tone="emerald" />
                 </motion.div>
             )}
 
