@@ -110,19 +110,17 @@ function TaskItem({
                     {task.title}
                 </h3>
 
-                {(task.due_date || isUpdating) && (
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <DueChip dueDate={task.due_date} done={isCompleted} />
-                        {isUpdating && (
-                            <span className="animate-pulse text-xs text-cyan-300">
-                                syncing
-                            </span>
-                        )}
-                    </div>
-                )}
+                {/* META: due date and status, actions on the right */}
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                    <DueChip dueDate={task.due_date} done={isCompleted} />
+                    {isUpdating && (
+                        <span className="animate-pulse text-xs text-cyan-300">
+                            syncing
+                        </span>
+                    )}
 
                 {/* ACTIONS (spaced apart so a click on Edit can't land on Delete) */}
-                <div className="mt-2.5 flex items-center gap-2">
+                <div className="-my-1 ml-auto flex items-center gap-2">
                     <button
                         type="button"
                         onClick={(e) => {
@@ -182,6 +180,7 @@ function TaskItem({
                             Delete
                         </button>
                     )}
+                </div>
                 </div>
             </div>
 
