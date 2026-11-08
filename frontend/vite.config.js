@@ -6,6 +6,10 @@ const SERVER_PORT = 8080;
 export default defineConfig({
   plugins: [react()],
 
+  test: {
+    setupFiles: ["./src/test/setup.js"],
+  },
+
   server: {
     host: "localhost",
     port: 5173,
