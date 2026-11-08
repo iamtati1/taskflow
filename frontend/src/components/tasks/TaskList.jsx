@@ -1,21 +1,61 @@
-import { useRef } from "react";
+import { useId, useRef, useState } from "react";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { ChevronDown, ListPlus } from "lucide-react";
 
 import TaskItem from "./TaskItem";
+import { listItem, SOFT_SPRING } from "../../utils/motion";
 
 // =====================================================
-// SECTION COMPONENT
+// SECTION
 // =====================================================
-function TaskSection({ title, count, color, children }) {
+// A titled list. Optionally collapsible: the content folds away smoothly
+// and the toggle says whether it's open.
+function TaskSection({ title, count, tone, collapsible = false, children }) {
+    const [open, setOpen] = useState(true);
+    const contentId = useId();
+
     return (
-        <section className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className={`text-sm uppercase tracking-[0.2em] ${color}`}>
+        <section className="space-y-3">
+            <div className="flex items-center gap-2">
+                <h3 className={`text-xs font-semibold uppercase tracking-[0.18em] ${tone}`}>
                     {title}
                 </h3>
-                <span className="text-sm text-white/40">{count}</span>
+                <span className="tabular rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-white/55">
+                    {count}
+                </span>
+
+                {collapsible && (
+                    <button
+                        type="button"
+                        aria-expanded={open}
+                        aria-controls={contentId}
+                        onClick={() => setOpen((value) => !value)}
+                        className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-white/50 transition-colors hover:bg-white/[0.05] hover:text-white"
+                    >
+                        {open ? "Hide" : "Show"}
+                        <motion.span animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown size={14} aria-hidden="true" />
+                        </motion.span>
+                    </button>
+                )}
             </div>
 
-            <ul className="space-y-3">{children}</ul>
+            <AnimatePresence initial={false}>
+                {open && (
+                    <motion.div
+                        id={contentId}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
+                    >
+                        <ul className="space-y-2.5">
+                            {children}
+                        </ul>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </section>
     );
 }
@@ -23,17 +63,32 @@ function TaskSection({ title, count, color, children }) {
 // =====================================================
 // EMPTY STATE
 // =====================================================
-function EmptyState() {
+function EmptyState({ onCreate }) {
     return (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 backdrop-blur-xl text-center">
-            <h2 className="text-2xl font-semibold text-white">
+        <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center rounded-2xl border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-14 text-center"
+        >
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
+                <ListPlus size={26} aria-hidden="true" />
+            </div>
+            <h2 className="mt-5 text-xl font-semibold text-white">
                 Nothing on your plate yet
             </h2>
-
-            <p className="mt-3 max-w-md mx-auto text-sm text-white/50">
-                Create your first task and start building momentum.
+            <p className="mt-2 max-w-sm text-sm text-white/55">
+                Add the first thing you want to get done. You can give it a due date and drag tasks into the order you like.
             </p>
-        </div>
+            {onCreate && (
+                <button
+                    type="button"
+                    onClick={onCreate}
+                    className="mt-6 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 active:scale-[0.98]"
+                >
+                    Add your first task
+                </button>
+            )}
+        </motion.div>
     );
 }
 
@@ -45,6 +100,7 @@ function TaskList({
     onDelete,
     onToggle,
     onEdit,
+    onCreate,
     editingTaskId, // highlighted while it is open in the editor
     activeActions = {}, // task_id -> the action being saved
     reorderTasks,
@@ -57,24 +113,17 @@ function TaskList({
         pressedOnControl.current = !!e.target.closest("button, a, input, textarea, select");
     };
 
+    // Which card is being dragged, and which one it's over (for feedback)
+    const [draggingId, setDraggingId] = useState(null);
+    const [overId, setOverId] = useState(null);
+
     // =====================================================
     // GROUP TASKS
     // =====================================================
-    const grouped = tasks.reduce(
-        (acc, task) => {
-            if (task?.is_complete) acc.completed.push(task);
-            else acc.active.push(task);
-            return acc;
-        },
-        { active: [], completed: [] }
-    );
+    const active = tasks.filter((task) => !task?.is_complete);
+    const completed = tasks.filter((task) => task?.is_complete);
 
-    const { active, completed } = grouped;
-
-    // =====================================================
-    // EMPTY STATE
-    // =====================================================
-    if (!tasks?.length) return <EmptyState />;
+    if (!tasks?.length) return <EmptyState onCreate={onCreate} />;
 
     // =====================================================
     // DRAG HANDLERS
@@ -91,10 +140,18 @@ function TaskList({
             "text/plain",
             JSON.stringify({ taskId, type })
         );
+        e.dataTransfer.effectAllowed = "move";
+        setDraggingId(taskId);
+    };
+
+    const endDrag = () => {
+        setDraggingId(null);
+        setOverId(null);
     };
 
     const handleDrop = (e, toId, type) => {
         e.preventDefault();
+        endDrag();
 
         // Anything dropped from outside TaskFlow (text, links) is ignored
         let data;
@@ -111,101 +168,78 @@ function TaskList({
         reorderTasks(data.taskId, toId);
     };
 
-    // Props shared by every card: clicking one opens it in the editor
-    const itemProps = (task) => ({
-        task,
-        onDelete,
-        onToggle,
-        onEdit,
-        onSelect: () => onEdit(task),
-        isSelected: editingTaskId === task.task_id,
-        isActiveActionId: activeActions[task.task_id] ? task.task_id : undefined,
-    });
+    const allowDrop = (e, taskId) => {
+        e.preventDefault();
+        if (overId !== taskId) setOverId(taskId);
+    };
 
-    const allowDrop = (e) => e.preventDefault();
+    // One list row: draggable, with feedback while dragging. Rows animate in
+    // and out (a completed task leaves Active and arrives in Completed), and
+    // the others slide to close the gap. No shared layoutId across sections:
+    // that kept a second, clickable copy of the task alive mid-move.
+    const row = (task, type) => (
+        <motion.li
+            key={task.task_id}
+            layout="position"
+            transition={SOFT_SPRING}
+            variants={listItem}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            draggable
+            onPointerDown={rememberPressTarget}
+            onDragStart={(e) => handleDragStart(e, task.task_id, type)}
+            onDragEnd={endDrag}
+            onDragOver={(e) => allowDrop(e, task.task_id)}
+            onDragLeave={() => setOverId((id) => (id === task.task_id ? null : id))}
+            onDrop={(e) => handleDrop(e, task.task_id, type)}
+            className={`relative rounded-2xl transition-[opacity,box-shadow] duration-150
+                ${draggingId === task.task_id ? "opacity-40" : ""}
+                ${overId === task.task_id && draggingId !== task.task_id
+                    ? "shadow-[0_-3px_0_0_color-mix(in_oklab,var(--color-cyan-400)_80%,transparent)]"
+                    : ""}`}
+        >
+            <TaskItem
+                task={task}
+                onDelete={onDelete}
+                onToggle={onToggle}
+                onEdit={onEdit}
+                onSelect={() => onEdit(task)}
+                isSelected={editingTaskId === task.task_id}
+                isActiveActionId={activeActions[task.task_id] ? task.task_id : undefined}
+            />
+        </motion.li>
+    );
 
     // =====================================================
     // RENDER
     // =====================================================
     return (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
-
-            {/* HEADER */}
-            <div className="mb-8">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/40">
-                    Focus Workspace
+        <LayoutGroup>
+            <div className="space-y-8">
+                <p className="text-sm text-white/45">
+                    Drag to reorder, click a task to edit it.
                 </p>
 
-                <h2 className="mt-2 text-2xl font-bold text-white">
-                    Your Tasks
-                </h2>
-
-                <p className="mt-2 text-sm text-white/50">
-                    Drag to reorder, click to manage.
-                </p>
-            </div>
-
-            <div className="space-y-10">
-
-                {/* =====================================================
-                    ACTIVE TASKS
-                ===================================================== */}
                 {active.length > 0 && (
-                    <TaskSection
-                        title="Active"
-                        count={active.length}
-                        color="text-cyan-300"
-                    >
-                        {active.map((task) => (
-                            <div
-                                key={task.task_id}
-                                draggable
-                                onPointerDown={rememberPressTarget}
-                                onDragStart={(e) =>
-                                    handleDragStart(e, task.task_id, "active")
-                                }
-                                onDragOver={allowDrop}
-                                onDrop={(e) =>
-                                    handleDrop(e, task.task_id, "active")
-                                }
-                            >
-                                <TaskItem {...itemProps(task)} />
-                            </div>
-                        ))}
+                    <TaskSection title="Active" count={active.length} tone="text-cyan-300">
+                        <AnimatePresence initial={false}>
+                            {active.map((task) => row(task, "active"))}
+                        </AnimatePresence>
                     </TaskSection>
                 )}
 
-                {/* =====================================================
-                    COMPLETED TASKS
-                ===================================================== */}
                 {completed.length > 0 && (
-                    <div className="pt-6 border-t border-white/10">
-                        <TaskSection
-                            title="Completed"
-                            count={completed.length}
-                            color="text-emerald-400"
-                        >
-                            {completed.map((task) => (
-                                <div
-                                    key={task.task_id}
-                                    draggable
-                                    onPointerDown={rememberPressTarget}
-                                    onDragStart={(e) =>
-                                        handleDragStart(e, task.task_id, "completed")
-                                    }
-                                    onDragOver={allowDrop}
-                                    onDrop={(e) =>
-                                        handleDrop(e, task.task_id, "completed")
-                                    }
-                                >
-                                    <TaskItem {...itemProps(task)} />
-                                </div>
-                            ))}
+                    <div className="border-t border-white/[0.07] pt-6">
+                        <TaskSection title="Completed" count={completed.length} tone="text-emerald-300" collapsible>
+                            <AnimatePresence initial={false}>
+                                {completed.map((task) => row(task, "completed"))}
+                            </AnimatePresence>
                         </TaskSection>
                     </div>
                 )}
             </div>
-        </div>
+        </LayoutGroup>
     );
 }
 

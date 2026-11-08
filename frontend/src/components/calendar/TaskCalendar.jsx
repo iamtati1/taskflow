@@ -78,9 +78,9 @@ function TaskCalendar({ tasks = [], onDateChange }) {
 
         const color =
             data.total >= 5
-                ? "bg-red-400"
+                ? "bg-rose-400"
                 : data.total >= 3
-                    ? "bg-yellow-400"
+                    ? "bg-amber-400"
                     : "bg-cyan-400";
 
         return (
@@ -109,40 +109,37 @@ function TaskCalendar({ tasks = [], onDateChange }) {
     // UI
     // =====================================================
     return (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl space-y-6">
+        <div className="space-y-5">
 
             {/* HEADER */}
-            <div>
-                <div className="flex items-center gap-2 text-cyan-300">
-                    <CalendarDays size={16} />
-                    <span className="text-sm font-medium">
-                        Planning Horizon
-                    </span>
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h2 className="flex items-center gap-2 text-base font-semibold text-white">
+                        <CalendarDays size={17} className="text-cyan-300" aria-hidden="true" />
+                        Calendar
+                    </h2>
+                    <p className="mt-1 text-sm text-white/45">
+                        Dots mark days with tasks due.
+                    </p>
                 </div>
 
-                <p className="mt-2 text-sm text-white/40">
-                    See where your attention is needed.
-                </p>
-            </div>
-
-            {/* LEGEND */}
-            <div className="flex flex-wrap gap-4 text-xs text-white/40">
-                <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-cyan-400" />
-                    Light
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-yellow-400" />
-                    Medium
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-red-400" />
-                    Busy
+                {/* LEGEND */}
+                <div className="flex flex-col gap-1 text-[11px] text-white/45">
+                    {[
+                        ["bg-cyan-400", "1–2"],
+                        ["bg-amber-400", "3–4"],
+                        ["bg-rose-400", "5+"],
+                    ].map(([color, label]) => (
+                        <span key={label} className="flex items-center gap-1.5">
+                            <span className={`h-1.5 w-1.5 rounded-full ${color}`} aria-hidden="true" />
+                            {label}
+                        </span>
+                    ))}
                 </div>
             </div>
 
             {/* CALENDAR */}
-            <div className="rounded-2xl overflow-hidden border border-white/10 bg-black/20 p-3">
+            <div className="rounded-xl border border-white/[0.07] bg-black/20 p-2.5">
                 <Calendar
                     value={selectedDate}
                     onChange={handleDateChange}
@@ -152,53 +149,42 @@ function TaskCalendar({ tasks = [], onDateChange }) {
             </div>
 
             {/* SELECTED DAY */}
-            <div className="border-t border-white/10 pt-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/40">
-                    Selected Day
-                </p>
+            <div className="border-t border-white/[0.07] pt-4">
+                <div className="flex items-baseline justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-white">
+                        {selectedDate.toLocaleDateString(undefined, {
+                            weekday: "long",
+                            month: "long",
+                            day: "numeric",
+                        })}
+                    </h3>
+                    <p className="tabular text-xs text-white/45">
+                        {selectedTasks.length}{" "}
+                        {selectedTasks.length === 1 ? "task" : "tasks"}
+                    </p>
+                </div>
 
-                <h3 className="mt-2 text-lg font-semibold text-white">
-                    {selectedDate.toLocaleDateString(undefined, {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                    })}
-                </h3>
-
-                <p className="mt-1 text-sm text-white/50">
-                    {selectedTasks.length}{" "}
-                    {selectedTasks.length === 1 ? "task" : "tasks"} planned
-                </p>
-            </div>
-
-            {/* TASK LIST */}
-            <div className="space-y-3">
-                {selectedTasks.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-5">
-                        <p className="text-sm text-white/60">
-                            Nothing planned yet.
-                        </p>
-
-                        <p className="mt-2 text-xs text-white/40">
-                            A clear day can be used for focus, rest, or preparation.
-                        </p>
-                    </div>
-                ) : (
-                    selectedTasks.map((task) => (
-                        <div
-                            key={task.task_id}
-                            className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3 hover:bg-black/30 transition"
-                        >
-                            <span className="text-sm text-white/85">
-                                {task.title}
-                            </span>
-
-                            {task.is_complete && (
-                                <CheckCircle2 size={16} className="text-emerald-400" />
-                            )}
-                        </div>
-                    ))
-                )}
+                <ul className="mt-3 space-y-2">
+                    {selectedTasks.length === 0 ? (
+                        <li className="rounded-xl border border-dashed border-white/10 px-4 py-4 text-sm text-white/45">
+                            Nothing due this day.
+                        </li>
+                    ) : (
+                        selectedTasks.map((task) => (
+                            <li
+                                key={task.task_id}
+                                className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5"
+                            >
+                                <span className={`min-w-0 break-words text-sm ${task.is_complete ? "text-white/40 line-through" : "text-white/85"}`}>
+                                    {task.title}
+                                </span>
+                                {task.is_complete && (
+                                    <CheckCircle2 size={16} className="shrink-0 text-emerald-400" aria-label="Done" />
+                                )}
+                            </li>
+                        ))
+                    )}
+                </ul>
             </div>
         </div>
     );

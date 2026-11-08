@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { formatDueDate, isOverdue, parseDueDate, toDateKey } from "./dates";
+import { dueStatus, formatDueDate, isOverdue, parseDueDate, toDateKey } from "./dates";
 
 test("a YYYY-MM-DD due date is that local calendar day, whatever the time zone", () => {
     const date = parseDueDate("2026-11-20");
@@ -26,4 +26,18 @@ test("overdue means before today; due today is not overdue", () => {
     expect(isOverdue("2026-11-20", today)).toBe(false);
     expect(isOverdue("2026-11-21", today)).toBe(false);
     expect(isOverdue(null, today)).toBe(false);
+});
+
+test("dueStatus labels a date by urgency, relative to today", () => {
+    const today = new Date(2026, 10, 20); // Nov 20
+    expect(dueStatus("2026-11-19", today)).toEqual({ kind: "overdue", text: "Overdue · was due Nov 19" });
+    expect(dueStatus("2026-11-20", today)).toEqual({ kind: "today", text: "Due today" });
+    expect(dueStatus("2026-11-21", today)).toEqual({ kind: "tomorrow", text: "Due tomorrow" });
+    expect(dueStatus("2026-12-01", today)).toEqual({ kind: "later", text: "Due Dec 1" });
+    expect(dueStatus(null, today)).toBeNull();
+});
+
+test("dueStatus handles month and year ends", () => {
+    expect(dueStatus("2027-01-01", new Date(2026, 11, 31)).kind).toBe("tomorrow");
+    expect(dueStatus("2026-12-31", new Date(2027, 0, 1)).kind).toBe("overdue");
 });

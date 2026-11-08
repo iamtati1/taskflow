@@ -1,3 +1,5 @@
+// A text field in the app's style. Other props (id, name, aria-*,
+// autoComplete, required) pass through to the input.
 function Input({
     value,
     onChange,
@@ -5,6 +7,7 @@ function Input({
     type = "text",
     className = "",
     maxLength,
+    ...rest
 }) {
     return (
         <input
@@ -17,18 +20,19 @@ function Input({
                 w-full
                 rounded-xl
                 border border-white/10
-                bg-black/20
+                bg-black/25
                 px-4
                 py-3
                 text-white
                 placeholder-white/30
                 outline-none
                 transition
-                focus:border-cyan-400/40
-                focus:ring-2
-                focus:ring-cyan-400/10
+                focus:border-cyan-400/50
+                focus:bg-black/35
+                aria-[invalid=true]:border-rose-400/50
                 ${className}
             `}
+            {...rest}
         />
     );
 }

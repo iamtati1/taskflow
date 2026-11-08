@@ -3,6 +3,7 @@
 // click Edit -> form opens in view, prefilled -> change title -> save -> list updates.
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 vi.mock("../api/tasks", () => ({
     taskApi: {
@@ -21,10 +22,12 @@ import Tasks from "./Tasks";
 // The page with the toast area that AppLayout renders around it
 const renderTasks = () =>
     render(
-        <NotificationProvider>
-            <Tasks />
-            <ToastViewport />
-        </NotificationProvider>
+        <MemoryRouter>
+            <NotificationProvider>
+                <Tasks />
+                <ToastViewport />
+            </NotificationProvider>
+        </MemoryRouter>
     );
 
 const toasts = () => screen.getByRole("status", { name: "Notifications" });
@@ -179,7 +182,7 @@ test("a failed create keeps the form open with the error and the typed title", a
 
     renderTasks();
     await screen.findByText("Buy milk");
-    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.click(screen.getByRole("button", { name: "New Task" }));
     fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "New idea" } });
     fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
 
@@ -211,7 +214,7 @@ test("creating a task with a due date sends it as YYYY-MM-DD and keeps the task 
 
     renderTasks();
     await screen.findByText("Buy milk");
-    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.click(screen.getByRole("button", { name: "New Task" }));
     fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "File taxes" } });
     fireEvent.change(screen.getByLabelText("Due date (optional)"), { target: { value: "2027-04-15" } });
     fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
@@ -219,7 +222,7 @@ test("creating a task with a due date sends it as YYYY-MM-DD and keeps the task 
     await waitFor(() => expect(taskApi.createTask).toHaveBeenCalledWith({ title: "File taxes", due_date: "2027-04-15" }));
     // A task due on another day is still listed (the calendar shows the day view)
     expect(await screen.findByText("File taxes")).toBeTruthy();
-    expect(screen.getByText("Apr 15")).toBeTruthy();
+    expect(screen.getByText("Due Apr 15")).toBeTruthy();
 });
 
 test("editing a dated task prefills the date, and Clear date removes it", async () => {
@@ -292,7 +295,7 @@ test("adding, saving and deleting each confirm with a toast", async () => {
     renderTasks();
 
     await screen.findByText("Buy milk");
-    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.click(screen.getByRole("button", { name: "New Task" }));
     fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "File taxes" } });
     fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
     await waitFor(() => expect(toasts().textContent).toContain('Added "File taxes"'));
@@ -438,14 +441,14 @@ test("deleting the task that is open in the editor closes the editor", async () 
 test("Cancel closes the new-task form without saving and returns focus to New Task", async () => {
     renderTasks();
     await screen.findByText("Buy milk");
-    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.click(screen.getByRole("button", { name: "New Task" }));
     fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "Never mind" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(screen.queryByRole("heading", { name: "Create Task" })).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "Create Task" })).toBeNull());
     expect(taskApi.createTask).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "+ New Task" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "New Task" }));
 });
 
 test("Escape cancels an edit and leaves the task unchanged", async () => {
@@ -457,7 +460,7 @@ test("Escape cancels an edit and leaves the task unchanged", async () => {
 
     fireEvent.keyDown(input, { key: "Escape" });
 
-    expect(screen.queryByRole("heading", { name: "Edit Task" })).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "Edit Task" })).toBeNull());
     expect(taskApi.updateTask).not.toHaveBeenCalled();
     expect(screen.getByText("Write report")).toBeTruthy();
 });
@@ -465,7 +468,7 @@ test("Escape cancels an edit and leaves the task unchanged", async () => {
 test("submitting without a title explains why, and typing clears the message", async () => {
     renderTasks();
     await screen.findByText("Buy milk");
-    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.click(screen.getByRole("button", { name: "New Task" }));
     const input = screen.getByPlaceholderText("Task title...");
     fireEvent.change(input, { target: { value: "   " } });
 
@@ -475,7 +478,7 @@ test("submitting without a title explains why, and typing clears the message", a
     expect(taskApi.createTask).not.toHaveBeenCalled();
 
     fireEvent.change(input, { target: { value: "Real title" } });
-    expect(screen.queryByRole("alert")).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
 });
 
 // ---------- Loading ----------

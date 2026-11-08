@@ -30,3 +30,19 @@ export const isOverdue = (value, today = new Date()) => {
     const key = toDateKey(value);
     return key !== null && key < toDateKey(today);
 };
+
+// How a due date reads in the app, and how urgent it is:
+// { kind: "overdue" | "today" | "tomorrow" | "later", text }, or null for no date
+export const dueStatus = (value, today = new Date()) => {
+    const key = toDateKey(value);
+    if (!key) return null;
+
+    const todayKey = toDateKey(today);
+    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const day = formatDueDate(value, { month: "short", day: "numeric" });
+
+    if (key < todayKey) return { kind: "overdue", text: `Overdue · was due ${day}` };
+    if (key === todayKey) return { kind: "today", text: "Due today" };
+    if (key === toDateKey(tomorrow)) return { kind: "tomorrow", text: "Due tomorrow" };
+    return { kind: "later", text: `Due ${day}` };
+};

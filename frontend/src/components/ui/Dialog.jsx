@@ -13,10 +13,20 @@ const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select
 function Dialog({ open, onClose, labelledBy, children }) {
     const panelRef = useRef(null);
 
-    // Remember the opener and lock scrolling while open
+    // The element that had focus when the dialog opened, read during the
+    // render that opens it: before any content (autoFocus, effects) moves
+    // focus inside
+    const openerRef = useRef(null);
+    const wasOpen = useRef(false);
+    if (open && !wasOpen.current) openerRef.current = document.activeElement;
+    wasOpen.current = open;
+
+    // Lock scrolling while open; give focus back to the opener on close.
+    // A passive effect: React restores focus to whatever had it before a
+    // commit, which would undo a focus() made during the commit itself.
     useEffect(() => {
         if (!open) return undefined;
-        const opener = document.activeElement;
+        const opener = openerRef.current;
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
@@ -28,7 +38,10 @@ function Dialog({ open, onClose, labelledBy, children }) {
         return () => {
             cancelAnimationFrame(frame);
             document.body.style.overflow = previousOverflow;
-            if (opener instanceof HTMLElement && document.contains(opener)) opener.focus();
+            // Not when nothing in particular had focus (the page body)
+            if (opener instanceof HTMLElement && opener !== document.body && document.contains(opener)) {
+                opener.focus();
+            }
         };
     }, [open]);
 
@@ -56,7 +69,8 @@ function Dialog({ open, onClose, labelledBy, children }) {
     return createPortal(
         <AnimatePresence>
             {open && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+                // The key keeps the content mounted (not re-created) while it animates out
+                <div key="dialog" className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
                     <motion.div
                         aria-hidden="true"
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
