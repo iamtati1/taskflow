@@ -51,3 +51,45 @@ test("a failed load explains the problem and can be retried", async () => {
     expect((await screen.findAllByText("50%")).length).toBeGreaterThan(0);
     expect(screen.queryByRole("alert")).toBeNull();
 });
+
+// ---------- What the numbers and lists say ----------
+
+import { within } from "@testing-library/react";
+import { toDateKey } from "../utils/dates";
+
+const loaded = (tasks) => taskApi.getTasks.mockResolvedValue({ success: true, data: tasks, error: null });
+const task = (task_id, title, due_date, is_complete = false) => ({ task_id, user_id: 1, title, is_complete, due_date });
+// The card (rounded-2xl) that a heading or label belongs to
+const cardOf = (el) => el.closest("div.rounded-2xl");
+
+test("an overdue task is marked overdue in Today's Focus and Upcoming, not shown as upcoming", async () => {
+    loaded([task(1, "Renew passport", "2000-01-01"), task(2, "Plan trip", "2999-03-04")]);
+    renderPage();
+
+    const focus = cardOf(await screen.findByText("Today's Focus"));
+    expect(within(focus).getByText("Renew passport")).toBeTruthy();
+    expect(within(focus).getByText("Overdue · was due Jan 1")).toBeTruthy();
+
+    const upcoming = cardOf(screen.getByText("Upcoming Tasks"));
+    expect(within(upcoming).getByText("Overdue · was due Jan 1")).toBeTruthy();
+    expect(within(upcoming).getByText("Due Mar 4")).toBeTruthy();
+});
+
+test("the fourth tile counts tasks due today instead of repeating the completed count", async () => {
+    const today = toDateKey(new Date());
+    loaded([task(1, "Today A", today), task(2, "Today B", today), task(3, "Done today", today, true), task(4, "Later", "2999-01-01"), task(5, "Finished", null, true)]);
+    renderPage();
+
+    await screen.findAllByText("Due today");
+    expect(screen.queryByText("Momentum")).toBeNull();
+    // The stat tile is the "Due today" card whose big number is an h3
+    const tile = screen.getAllByText("Due today").map(cardOf).find((card) => /^\d+$/.test(card?.querySelector("h3")?.textContent ?? ""));
+    expect(tile.querySelector("h3").textContent).toBe("2");
+});
+
+test("counts read naturally in the singular", async () => {
+    loaded([task(1, "Only one", null), task(2, "Done", null, true)]);
+    renderPage();
+
+    expect(await screen.findByText("1 active task • 1 completed")).toBeTruthy();
+});

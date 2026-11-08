@@ -19,6 +19,14 @@ import useTasks from "../hooks/useTasks";
 import TasksLoadState from "../components/tasks/TasksLoadState";
 import { formatDueDate, isOverdue, toDateKey } from "../utils/dates";
 
+// "Overdue · was due Oct 1", "Due today" or "Due Nov 12" for a dated task
+const dueLabel = (dueDate) => {
+    const day = formatDueDate(dueDate, { month: "short", day: "numeric" });
+    if (isOverdue(dueDate)) return { text: `Overdue · was due ${day}`, overdue: true };
+    if (toDateKey(dueDate) === toDateKey(new Date())) return { text: "Due today", overdue: false };
+    return { text: `Due ${day}`, overdue: false };
+};
+
 function Dashboard() {
     const navigate = useNavigate();
     const { tasks = [], status, error, refreshTasks } = useTasks();
@@ -62,7 +70,12 @@ function Dashboard() {
             isOverdue(task.due_date)
     );
 
-    const streak = completed > 0 ? completed : 0;
+    const dueToday = tasks.filter(
+        (task) =>
+            !task.is_complete &&
+            task.due_date &&
+            toDateKey(task.due_date) === toDateKey(new Date())
+    ).length;
 
     const priorityTask = upcoming[0] || null;
 
@@ -104,8 +117,8 @@ function Dashboard() {
         },
         {
             icon: Clock3,
-            value: streak,
-            label: "Momentum",
+            value: dueToday,
+            label: "Due today",
         },
     ];
 
@@ -139,7 +152,7 @@ function Dashboard() {
                     </h1>
 
                     <p className="text-white/60 text-lg">
-                        {active} active tasks •{" "}
+                        {active} active {active === 1 ? "task" : "tasks"} •{" "}
                         {completed} completed
                     </p>
 
@@ -213,6 +226,14 @@ function Dashboard() {
                             "No priority task"}
                     </h3>
 
+                    {priorityTask?.due_date && (
+                        <p
+                            className={`mt-1 text-sm ${dueLabel(priorityTask.due_date).overdue ? "text-red-300" : "text-white/50"}`}
+                        >
+                            {dueLabel(priorityTask.due_date).text}
+                        </p>
+                    )}
+
                     <p className="mt-2 text-white/60">
                         {focusMode
                             ? "Focus Mode is active. Concentrate on a single meaningful outcome."
@@ -276,9 +297,10 @@ function Dashboard() {
                                         {task.title}
                                     </p>
 
-                                    <p className="mt-1 text-sm text-white/50">
-                                        Due{" "}
-                                        {formatDueDate(task.due_date)}
+                                    <p
+                                        className={`mt-1 text-sm ${dueLabel(task.due_date).overdue ? "text-red-300" : "text-white/50"}`}
+                                    >
+                                        {dueLabel(task.due_date).text}
                                     </p>
                                 </div>
                             ))
