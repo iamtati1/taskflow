@@ -88,7 +88,7 @@ function Dialog({ open, onClose, labelledBy, children }) {
                         aria-labelledby={labelledBy}
                         tabIndex={-1}
                         onKeyDown={handleKeyDown}
-                        className="relative w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/10 bg-raised pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_30px_80px_-20px_rgba(0,0,0,0.85)] outline-none sm:max-w-lg sm:rounded-3xl sm:pb-0"
+                        className="relative w-full max-h-[92dvh] overscroll-contain overflow-y-auto rounded-t-3xl border border-white/10 bg-raised pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_30px_80px_-20px_rgba(0,0,0,0.85)] outline-none sm:max-w-lg sm:rounded-3xl sm:pb-0"
                         initial={{ opacity: 0, y: 32, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.32, ease: EASE_OUT } }}
                         exit={{ opacity: 0, y: 24, scale: 0.98, transition: { duration: 0.18 } }}

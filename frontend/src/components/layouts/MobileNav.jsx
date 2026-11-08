@@ -28,7 +28,7 @@ function MobileNav() {
                         <NavLink
                             to={to}
                             className={({ isActive }) =>
-                                `relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${isActive
+                                `relative flex flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors ${isActive
                                     ? "text-cyan-300"
                                     : "text-white/50 hover:text-white"
                                 }`

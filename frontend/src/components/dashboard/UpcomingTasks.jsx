@@ -54,7 +54,7 @@ function UpcomingTasks({ tasks, limit = 5 }) {
             {more > 0 && (
                 <Link
                     to="/tasks"
-                    className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm text-cyan-300 transition-colors hover:bg-white/[0.05] hover:text-cyan-200"
+                    className="mt-3 inline-flex min-h-9 touch:min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-cyan-300 transition-colors hover:bg-white/[0.05] hover:text-cyan-200"
                 >
                     {more} more in Tasks
                     <ArrowRight size={14} aria-hidden="true" />

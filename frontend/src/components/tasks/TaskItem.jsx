@@ -75,7 +75,7 @@ function TaskItem({
                 onClick={handleToggle}
                 disabled={isLocked}
                 aria-label={isCompleted ? "Mark as not done" : "Mark complete"}
-                className="group/check -m-1.5 shrink-0 rounded-full p-1.5 disabled:opacity-60"
+                className="group/check -m-1.5 shrink-0 rounded-full p-1.5 disabled:opacity-60 touch:-m-2.5 touch:p-2.5"
             >
                 {/* The tick shows at once; "syncing" beside the date says it's saving */}
                 <CheckMark checked={isCompleted} />
@@ -107,7 +107,7 @@ function TaskItem({
                             e.stopPropagation();
                             onEdit(task);
                         }}
-                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 transition-colors hover:bg-white/[0.06] hover:text-cyan-200"
+                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-white/[0.06] hover:text-cyan-200"
                     >
                         <Pencil size={12} aria-hidden="true" />
                         Edit
@@ -133,7 +133,7 @@ function TaskItem({
                                     setConfirmingDelete(false);
                                     onDelete(task.task_id);
                                 }}
-                                className="min-h-9 rounded-lg bg-rose-500/15 px-2.5 py-1 font-medium sm:min-h-0 text-rose-300 transition-colors hover:bg-rose-500/25"
+                                className="min-h-9 rounded-lg bg-rose-500/15 px-2.5 py-1 font-medium sm:min-h-0 touch:min-h-11 text-rose-300 transition-colors hover:bg-rose-500/25"
                             >
                                 Yes, delete
                             </button>
@@ -141,7 +141,7 @@ function TaskItem({
                                 ref={keepRef}
                                 type="button"
                                 onClick={() => setConfirmingDelete(false)}
-                                className="min-h-9 rounded-lg px-2.5 py-1 text-white/70 sm:min-h-0 transition-colors hover:bg-white/[0.06] hover:text-white"
+                                className="min-h-9 rounded-lg px-2.5 py-1 text-white/70 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-white/[0.06] hover:text-white"
                             >
                                 Keep
                             </button>
@@ -154,7 +154,7 @@ function TaskItem({
                                 e.stopPropagation();
                                 setConfirmingDelete(true);
                             }}
-                            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
+                            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
                         >
                             <Trash2 size={12} aria-hidden="true" />
                             Delete

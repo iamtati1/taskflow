@@ -21,7 +21,7 @@ function PillGroup({ label, options, value, onChange }) {
                             type="button"
                             aria-pressed={selected}
                             onClick={() => onChange(option.value)}
-                            className={`relative min-h-9 rounded-full border px-3.5 text-xs font-medium transition-colors duration-200 sm:min-h-8
+                            className={`relative min-h-9 rounded-full border px-3.5 text-xs font-medium transition-colors duration-200 sm:min-h-8 touch:min-h-11 touch:px-4
                                 ${selected
                                     ? "border-cyan-400/50 text-cyan-100"
                                     : "border-white/10 text-white/65 hover:border-white/25 hover:text-white"}`}

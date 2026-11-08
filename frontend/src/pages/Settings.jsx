@@ -240,7 +240,7 @@ function Settings() {
                                                 aria-checked={isOn(pref)}
                                                 aria-label={label}
                                                 onClick={() => toggle(pref)}
-                                                className="-m-2 rounded-full p-2"
+                                                className="-m-2 rounded-full p-2 touch:-m-2.5 touch:p-2.5"
                                             >
                                                 <Toggle enabled={isOn(pref)} />
                                             </button>

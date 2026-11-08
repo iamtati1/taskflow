@@ -33,7 +33,7 @@ function ToastViewport() {
                 pointer-events-none
                 fixed
                 inset-x-4
-                bottom-24
+                bottom-[calc(6rem+env(safe-area-inset-bottom))]
                 z-50
                 flex
                 flex-col

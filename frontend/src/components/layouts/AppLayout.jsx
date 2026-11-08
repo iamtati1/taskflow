@@ -65,14 +65,14 @@ function AppLayout() {
                 {/* MAIN */}
                 <div className="flex min-w-0 flex-1 flex-col">
 
-                    <div className="sticky top-0 z-20 border-b border-white/[0.07] bg-base/70 backdrop-blur-xl">
+                    <div className="sticky top-0 z-20 border-b border-white/[0.07] bg-base/70 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
                         <Topbar title={pageTitle} />
                     </div>
 
                     <main
                         id="main"
                         tabIndex={-1}
-                        className="flex-1 px-4 pb-28 pt-6 outline-none sm:px-6 lg:px-10 lg:pb-12 lg:pt-8"
+                        className="flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-6 outline-none sm:px-6 lg:px-10 lg:pb-12 lg:pt-8"
                     >
                         <div className="mx-auto w-full max-w-[1280px]">
                             <AnimatePresence mode="wait" initial={false}>

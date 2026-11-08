@@ -55,7 +55,7 @@ function Topbar({ title }) {
                 <Link
                     to="/settings"
                     aria-label="Account settings"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-a to-brand-b text-sm font-bold text-slate-950 shadow-[0_8px_24px_-8px_var(--brand-b)] transition-transform duration-200 hover:scale-105 active:scale-95"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl touch:h-11 touch:w-11 bg-gradient-to-br from-brand-a to-brand-b text-sm font-bold text-slate-950 shadow-[0_8px_24px_-8px_var(--brand-b)] transition-transform duration-200 hover:scale-105 active:scale-95"
                 >
                     {name?.[0]?.toUpperCase() || "?"}
                 </Link>

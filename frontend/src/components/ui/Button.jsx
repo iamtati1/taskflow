@@ -20,8 +20,8 @@ const VARIANTS = {
 };
 
 const SIZES = {
-    sm: "min-h-8 px-3 text-xs",
-    md: "min-h-10 px-4 text-sm",
+    sm: "min-h-8 px-3 text-xs touch:min-h-11",
+    md: "min-h-10 px-4 text-sm touch:min-h-11",
     lg: "min-h-12 px-5 text-sm",
 };
 

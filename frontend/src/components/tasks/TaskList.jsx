@@ -33,7 +33,7 @@ function TaskSection({ title, icon, count, tone, collapsible = false, children }
                         aria-expanded={open}
                         aria-controls={contentId}
                         onClick={() => setOpen((value) => !value)}
-                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.05] hover:text-white sm:min-h-0"
+                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.05] hover:text-white sm:min-h-0 touch:min-h-11"
                     >
                         {open ? "Hide" : "Show"}
                         <motion.span animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }}>

@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* touch: screens driven by a finger (phones, tablets). Controls grow to a
+   44px target there; mouse layouts keep their compact sizes. */
+@custom-variant touch (@media (pointer: coarse));
+
 /* =========================================================
    TYPE
    Inter for text, Plus Jakarta Sans for headings (font-display),
@@ -137,6 +141,12 @@ body,
 body {
     margin: 0;
     overflow-x: hidden;
+
+    /* viewport-fit=cover (index.html) lets the page reach the screen edges
+       on phones with a notch or home bar; keep content clear of them. Fixed
+       bars add the bottom inset themselves. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
 
     font-family: var(--font-sans);
     font-feature-settings: "cv11", "ss01";
@@ -353,7 +363,7 @@ h3 {
 .react-calendar__month-view__weekdays {
     text-align: center;
     text-transform: uppercase;
-    font-size: .68rem;
+    font-size: .75rem;
     letter-spacing: .08em;
     color: rgba(255, 255, 255, .58);
 }
@@ -363,7 +373,7 @@ h3 {
 }
 
 .react-calendar__month-view__days__day--neighboringMonth {
-    color: rgba(255, 255, 255, .25);
+    color: rgba(255, 255, 255, .4);
 }
 
 .react-calendar__tile {

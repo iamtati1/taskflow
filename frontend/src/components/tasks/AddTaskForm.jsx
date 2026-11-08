@@ -113,7 +113,7 @@ function AddTaskForm({
                         type="button"
                         onClick={onCancel}
                         aria-label="Close"
-                        className="-mr-2 -mt-1 rounded-xl p-2 text-white/50 transition-colors hover:bg-white/[0.06] hover:text-white"
+                        className="-mr-2 -mt-1 rounded-xl p-2 text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white touch:-mr-3 touch:p-[13px]"
                     >
                         <X size={18} aria-hidden="true" />
                     </button>
@@ -151,7 +151,7 @@ function AddTaskForm({
                         <button
                             type="button"
                             onClick={() => setDueDate("")}
-                            className="rounded-lg px-2 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
+                            className="rounded-lg px-2 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white touch:min-h-11 touch:px-3"
                         >
                             Clear date
                         </button>
