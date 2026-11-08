@@ -1,8 +1,9 @@
 // The compact heading at the top of a section: an icon, a small uppercase
 // label, an optional count and an optional action on the right.
-//   tone  brand (theme light), accent (interactive), or a status colour
+//   tone  brand / brandAlt (theme light), accent (interactive), or a status colour
 const TONES = {
     brand: "text-brand-a",
+    brandAlt: "text-brand-c",
     accent: "text-cyan-300",
     amber: "text-amber-200",
     rose: "text-rose-300",

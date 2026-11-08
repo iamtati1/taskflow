@@ -1,42 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 
 import DueChip from "./DueChip";
-
-// The round checkbox: an empty ring, or a filled accent disc whose tick
-// draws itself when the task is completed
-function CheckMark({ checked, saving }) {
-    if (saving) {
-        return <Loader2 size={18} className="animate-spin text-cyan-300" aria-hidden="true" />;
-    }
-
-    return (
-        <motion.span
-            aria-hidden="true"
-            initial={false}
-            animate={checked ? { scale: [1, 1.18, 1] } : { scale: 1 }}
-            transition={{ duration: 0.35 }}
-            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors duration-200
-                ${checked
-                    ? "border-emerald-400 bg-emerald-400"
-                    : "border-white/25 group-hover/check:border-cyan-300 group-hover/check:bg-cyan-400/10"}`}
-        >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
-                <motion.path
-                    d="M5 12.5l4.5 4.5L19 7.5"
-                    stroke={checked ? "#04140d" : "transparent"}
-                    strokeWidth={3.2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    initial={false}
-                    animate={{ pathLength: checked ? 1 : 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut", delay: checked ? 0.05 : 0 }}
-                />
-            </svg>
-        </motion.span>
-    );
-}
+import CheckMark from "../ui/CheckMark";
 
 function TaskItem({
     task,

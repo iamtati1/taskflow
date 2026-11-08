@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The Dashboard page shows loading and failures as such, never as an empty workspace
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 vi.mock("../api/tasks", () => ({
@@ -110,7 +110,49 @@ test("the most urgent task can be completed from Today's Focus, and the next one
 
     expect(taskApi.updateTask).toHaveBeenCalledWith(1, { is_complete: true });
     const focus = cardOf(screen.getByText("Today's Focus"));
-    expect(await within(focus).findByText("Plan trip")).toBeTruthy();
+    // It stays a moment, ticked, so the completion is seen...
+    expect(await within(focus).findByText("Done. Nice work.")).toBeTruthy();
+    // ...then the next most urgent task takes its place
+    expect(await within(focus).findByText("Plan trip", {}, { timeout: 2000 })).toBeTruthy();
+    expect(within(focus).queryByText("Renew passport")).toBeNull();
+});
+
+test("if completing the focus task fails, it stays as the focus, still open", async () => {
+    loaded([task(1, "Renew passport", "2000-01-01"), task(2, "Plan trip", "2999-03-04")]);
+    taskApi.updateTask.mockResolvedValue({ success: false, data: null, error: { message: "Network error" } });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: 'Complete "Renew passport"' }));
+
+    const focus = cardOf(screen.getByText("Today's Focus"));
+    await waitFor(() => expect(within(focus).queryByText("Done. Nice work.")).toBeNull());
+    expect(within(focus).getByText("Renew passport")).toBeTruthy();
+    expect(within(focus).getByText("Overdue · was due Jan 1")).toBeTruthy();
+});
+
+test("Today's Focus has an honest empty state, with nothing planned or everything done", async () => {
+    loaded([]);
+    renderPage();
+    const empty = cardOf(await screen.findByText("Today's Focus"));
+    expect(within(empty).getByText("Nothing planned yet")).toBeTruthy();
+    expect(within(empty).getByRole("button", { name: "New task" })).toBeTruthy();
+
+    cleanup();
+    loaded([task(1, "Finished", null, true)]);
+    renderPage();
+    const clear = cardOf(await screen.findByText("Today's Focus"));
+    expect(within(clear).getByText("All clear")).toBeTruthy();
+});
+
+test("Upcoming lists the five most urgent dated tasks and links to the rest", async () => {
+    loaded([1, 2, 3, 4, 5, 6, 7].map((id) => task(id, `Task ${id}`, `2999-01-0${id}`)));
+    renderPage();
+
+    const upcoming = cardOf(await screen.findByText("Upcoming Tasks"));
+    expect(within(upcoming).getAllByRole("listitem")).toHaveLength(5);
+    expect(within(upcoming).getByText("Task 1")).toBeTruthy();
+    expect(within(upcoming).queryByText("Task 6")).toBeNull();
+    expect(within(upcoming).getByRole("link", { name: "2 more in Tasks" }).getAttribute("href")).toBe("/tasks");
 });
 
 test("the hero says how many tasks need attention today, or that nothing does", async () => {
