@@ -9,12 +9,15 @@ vi.mock("../api/tasks", () => ({
 }));
 
 import { taskApi } from "../api/tasks";
+import { NotificationProvider } from "../context/NotificationContext";
 import Dashboard from "./Dashboard";
 
 const renderPage = () =>
     render(
         <MemoryRouter>
-            <Dashboard />
+            <NotificationProvider>
+                <Dashboard />
+            </NotificationProvider>
         </MemoryRouter>
     );
 
@@ -92,4 +95,32 @@ test("counts read naturally in the singular", async () => {
     renderPage();
 
     expect(await screen.findByText("1 active task • 1 completed")).toBeTruthy();
+});
+
+test("the most urgent task can be completed from Today's Focus, and the next one takes its place", async () => {
+    loaded([task(1, "Renew passport", "2000-01-01"), task(2, "Plan trip", "2999-03-04")]);
+    taskApi.updateTask.mockImplementation(async (id, changes) => ({
+        success: true,
+        data: { ...task(id, id === 1 ? "Renew passport" : "Plan trip", id === 1 ? "2000-01-01" : "2999-03-04"), ...changes },
+        error: null,
+    }));
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: 'Complete "Renew passport"' }));
+
+    expect(taskApi.updateTask).toHaveBeenCalledWith(1, { is_complete: true });
+    const focus = cardOf(screen.getByText("Today's Focus"));
+    expect(await within(focus).findByText("Plan trip")).toBeTruthy();
+});
+
+test("the hero says how many tasks need attention today, or that nothing does", async () => {
+    const today = toDateKey(new Date());
+    loaded([task(1, "Late", "2000-01-01"), task(2, "Today", today)]);
+    renderPage();
+    expect(await screen.findByText("2 tasks need your attention today")).toBeTruthy();
+
+    cleanup();
+    loaded([task(3, "Later", "2999-01-01")]);
+    renderPage();
+    expect(await screen.findByText("Nothing overdue or due today")).toBeTruthy();
 });
