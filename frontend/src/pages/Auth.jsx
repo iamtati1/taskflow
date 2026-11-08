@@ -15,6 +15,8 @@ import {
 
 import { useAuth } from "../hooks/useAuth";
 import BrandMark from "../components/ui/BrandMark";
+import AmbientBackground from "../components/ui/AmbientBackground";
+import { fieldClass } from "../components/ui/Field";
 import { EASE_OUT, rise, stagger } from "../utils/motion";
 
 // What TaskFlow does, shown beside the form on large screens
@@ -23,9 +25,6 @@ const FEATURES = [
     { icon: CalendarClock, title: "Never miss a date", text: "Overdue and due-today tasks stand out everywhere." },
     { icon: BarChart3, title: "See your progress", text: "Completion and the week ahead, at a glance." },
 ];
-
-const fieldClass =
-    "h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-white outline-none transition placeholder-white/25 focus:border-cyan-400/50 focus:bg-black/40";
 
 function Auth() {
     const navigate = useNavigate();
@@ -98,22 +97,10 @@ function Auth() {
     const errorMessage = error?.message || error || (status === "error" ? "Couldn't sign you in. Please try again." : null);
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[#050816] text-white">
+        <div className="relative min-h-screen overflow-hidden bg-base text-white">
 
-            {/* BACKGROUND */}
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-                <div className="app-grid" />
-                <motion.div
-                    className="absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-cyan-500/[0.12] blur-[140px]"
-                    animate={{ x: [0, 40, 0], y: [0, 30, 0] }}
-                    transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                    className="absolute -bottom-48 -right-32 h-[38rem] w-[38rem] rounded-full bg-violet-600/[0.14] blur-[160px]"
-                    animate={{ x: [0, -50, 0], y: [0, -30, 0] }}
-                    transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-                />
-            </div>
+            {/* BACKGROUND: the same theme light as the app */}
+            <AmbientBackground />
 
             <div className="relative z-10 grid min-h-screen lg:grid-cols-2">
 
@@ -131,7 +118,7 @@ function Auth() {
                     <div className="max-w-lg space-y-8">
                         <motion.h1 variants={rise} className="text-5xl font-extrabold leading-[1.05]">
                             Plan your day.
-                            <span className="block bg-gradient-to-r from-cyan-300 to-violet-300 bg-clip-text text-transparent">
+                            <span className="block bg-gradient-to-r from-brand-a via-brand-b to-brand-c bg-clip-text text-transparent">
                                 Finish what matters.
                             </span>
                         </motion.h1>
@@ -139,19 +126,19 @@ function Auth() {
                         <ul className="space-y-4">
                             {FEATURES.map(({ icon: Icon, title, text }) => (
                                 <motion.li key={title} variants={rise} className="flex items-start gap-4">
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-cyan-300">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-a/20 bg-brand-a/10 text-brand-a">
                                         <Icon size={18} aria-hidden="true" />
                                     </span>
                                     <span>
                                         <span className="block font-semibold text-white">{title}</span>
-                                        <span className="block text-sm text-white/55">{text}</span>
+                                        <span className="block text-sm text-white/60">{text}</span>
                                     </span>
                                 </motion.li>
                             ))}
                         </ul>
                     </div>
 
-                    <motion.p variants={rise} className="text-sm text-white/30">
+                    <motion.p variants={rise} className="text-sm text-white/50">
                         Your tasks stay private to your account.
                     </motion.p>
                 </motion.div>
@@ -166,7 +153,7 @@ function Auth() {
                         initial={{ opacity: 0, y: 16, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{ duration: 0.5, ease: EASE_OUT }}
-                        className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0b1024]/80 p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_30px_80px_-30px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-9"
+                        className="relative w-full max-w-md rounded-3xl border border-white/10 bg-raised/80 p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_30px_80px_-30px_rgba(0,0,0,0.8),0_0_80px_-40px_var(--brand-a)] backdrop-blur-xl sm:p-9"
                     >
                         {/* HEADER (animates when switching forms) */}
                         <AnimatePresence mode="wait" initial={false}>
@@ -181,7 +168,7 @@ function Auth() {
                                 <h2 className="text-3xl font-bold">
                                     {isRegistering ? "Create your account" : "Welcome back"}
                                 </h2>
-                                <p className="text-white/55">
+                                <p className="text-white/60">
                                     {isRegistering
                                         ? "Start organising your tasks in a minute."
                                         : "Sign in to pick up where you left off."}
@@ -192,7 +179,7 @@ function Auth() {
                         {/* FORM */}
                         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                             <div className="space-y-2">
-                                <label htmlFor={`${ids}-username`} className="text-sm font-medium text-white/75">
+                                <label htmlFor={`${ids}-username`} className="text-sm font-medium text-white/80">
                                     Username
                                 </label>
                                 <input
@@ -213,7 +200,7 @@ function Auth() {
                             </div>
 
                             <div className="space-y-2">
-                                <label htmlFor={`${ids}-password`} className="text-sm font-medium text-white/75">
+                                <label htmlFor={`${ids}-password`} className="text-sm font-medium text-white/80">
                                     Password
                                 </label>
                                 <div className="relative">
@@ -235,7 +222,7 @@ function Auth() {
                                         onClick={() => setShowPassword(!showPassword)}
                                         aria-label={showPassword ? "Hide password" : "Show password"}
                                         aria-pressed={showPassword}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-white/50 transition-colors hover:bg-white/[0.06] hover:text-white"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
                                     >
                                         {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                                     </button>
@@ -250,7 +237,7 @@ function Auth() {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: "auto", opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        className="overflow-hidden px-1 text-sm text-white/50"
+                                        className="overflow-hidden px-1 text-sm text-white/60"
                                     >
                                         Username: 3–30 letters, numbers, dots, dashes or underscores.
                                         Password: at least 8 characters.
@@ -280,10 +267,11 @@ function Auth() {
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
                                 disabled={isLoading}
-                                className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl font-semibold transition-colors
+                                aria-busy={isLoading || undefined}
+                                className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl border font-semibold text-slate-950 transition-[background-color,box-shadow] duration-200
                                     ${status === "success"
-                                        ? "bg-emerald-400 text-slate-950"
-                                        : "bg-cyan-400 text-slate-950 hover:bg-cyan-300"}
+                                        ? "border-emerald-300/50 bg-emerald-400 shadow-[0_10px_30px_-10px_rgb(52_211_153/0.7)]"
+                                        : "border-cyan-300/50 bg-cyan-400 shadow-[0_10px_30px_-10px_color-mix(in_oklab,var(--color-cyan-400)_70%,transparent)] hover:bg-cyan-300 hover:shadow-[0_12px_36px_-8px_color-mix(in_oklab,var(--color-cyan-400)_80%,transparent)]"}
                                     ${isLoading ? "opacity-80" : ""}`}
                             >
                                 {buttonContent()}
@@ -291,7 +279,7 @@ function Auth() {
                         </form>
 
                         {/* SWITCH */}
-                        <p className="mt-6 text-center text-sm text-white/50">
+                        <p className="mt-6 text-center text-sm text-white/60">
                             {isRegistering ? "Already have an account?" : "New to TaskFlow?"}{" "}
                             <button
                                 type="button"

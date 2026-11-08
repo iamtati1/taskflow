@@ -37,8 +37,11 @@
     --color-raised: var(--bg-raised);
 }
 
-/* Midnight (default): cyan/teal light with a violet edge, deep navy */
-:root {
+/* Midnight (default): cyan/teal light with a violet edge, deep navy.
+   Also matched by [data-theme="midnight"] so a theme preview (Settings)
+   can show Midnight inside a page that is using another theme. */
+:root,
+[data-theme="midnight"] {
     --brand-a: oklch(78.9% 0.154 211.53);   /* cyan-400 */
     --brand-b: oklch(77.7% 0.152 181.91);   /* teal-400 */
     --brand-c: oklch(70.2% 0.183 293.54);   /* violet-400 */
@@ -47,6 +50,12 @@
     --ring-to: var(--brand-c);               /* cyan to violet (screenshot 6) */
     --bg-base: #050816;
     --bg-raised: #0b1024;
+
+    /* Tailwind's cyan, restated so a nested preview resets it */
+    --color-cyan-200: oklch(91.7% 0.08 205.041);
+    --color-cyan-300: oklch(86.5% 0.127 207.078);
+    --color-cyan-400: oklch(78.9% 0.154 211.53);
+    --color-cyan-500: oklch(71.5% 0.143 215.221);
 
     --text-primary: rgba(255, 255, 255, .96);
 
@@ -63,6 +72,11 @@
     --ring-to: var(--brand-c);               /* indigo to fuchsia */
     --bg-base: #07061a;
     --bg-raised: #100d2a;
+
+    --color-cyan-200: oklch(91.7% 0.08 205.041);
+    --color-cyan-300: oklch(86.5% 0.127 207.078);
+    --color-cyan-400: oklch(78.9% 0.154 211.53);
+    --color-cyan-500: oklch(71.5% 0.143 215.221);
 }
 
 /* Emerald: teal-to-emerald light; teal is the interactive colour.
