@@ -1,37 +1,39 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import { ChevronDown, ListPlus } from "lucide-react";
+import { CheckCircle2, ChevronDown, CircleDot, ListPlus } from "lucide-react";
 
 import TaskItem from "./TaskItem";
 import Button from "../ui/Button";
+import SectionHeader from "../ui/SectionHeader";
 import { listItem, SOFT_SPRING } from "../../utils/motion";
+
+// How long a just-completed task stays in Active, ticked, before it moves
+// to Completed. The save starts at once; only the move waits.
+export const SETTLE_MS = 650;
 
 // =====================================================
 // SECTION
 // =====================================================
 // A titled list. Optionally collapsible: the content folds away smoothly
 // and the toggle says whether it's open.
-function TaskSection({ title, count, tone, collapsible = false, children }) {
+function TaskSection({ title, icon, count, tone, collapsible = false, children }) {
     const [open, setOpen] = useState(true);
     const contentId = useId();
 
     return (
         <section className="space-y-3">
-            <div className="flex items-center gap-2">
-                <h3 className={`text-xs font-semibold uppercase tracking-[0.18em] ${tone}`}>
-                    {title}
-                </h3>
-                <span className="tabular rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-white/55">
-                    {count}
-                </span>
-
-                {collapsible && (
+            <SectionHeader
+                as="h3"
+                icon={icon}
+                tone={tone}
+                count={count}
+                action={collapsible && (
                     <button
                         type="button"
                         aria-expanded={open}
                         aria-controls={contentId}
                         onClick={() => setOpen((value) => !value)}
-                        className="ml-auto inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs sm:min-h-0 text-white/50 transition-colors hover:bg-white/[0.05] hover:text-white"
+                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.05] hover:text-white sm:min-h-0"
                     >
                         {open ? "Hide" : "Show"}
                         <motion.span animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }}>
@@ -39,7 +41,9 @@ function TaskSection({ title, count, tone, collapsible = false, children }) {
                         </motion.span>
                     </button>
                 )}
-            </div>
+            >
+                {title}
+            </SectionHeader>
 
             <AnimatePresence initial={false}>
                 {open && (
@@ -110,15 +114,73 @@ function TaskList({
         pressedOnControl.current = !!e.target.closest("button, a, input, textarea, select");
     };
 
-    // Which card is being dragged, and which one it's over (for feedback)
-    const [draggingId, setDraggingId] = useState(null);
+    // Which card is being dragged (and from which section), and which one
+    // it's over (for feedback)
+    const [dragging, setDragging] = useState(null); // { id, type }
     const [overId, setOverId] = useState(null);
+
+    // =====================================================
+    // COMPLETION: tick first, then move
+    // =====================================================
+    const [settling, setSettling] = useState(() => new Set());
+    const timers = useRef(new Map());
+    useEffect(() => {
+        const pending = timers.current;
+        return () => pending.forEach(clearTimeout);
+    }, []);
+
+    const settle = (id, on) => {
+        clearTimeout(timers.current.get(id));
+        timers.current.delete(id);
+        setSettling((prev) => {
+            const next = new Set(prev);
+            if (on) next.add(id); else next.delete(id);
+            return next;
+        });
+    };
+
+    const handleToggle = (id) => {
+        const task = tasks.find((t) => t.task_id === id);
+        if (task && !task.is_complete) {
+            settle(id, true);
+            timers.current.set(id, setTimeout(() => settle(id, false), SETTLE_MS));
+        } else {
+            settle(id, false);
+        }
+        return onToggle?.(id);
+    };
+
+    // =====================================================
+    // NEW TASKS glow briefly as they arrive (not the ones already there)
+    // =====================================================
+    const seen = useRef(null);
+    const [fresh, setFresh] = useState(() => new Set());
+    useEffect(() => {
+        const ids = tasks.map((task) => task.task_id);
+        if (seen.current) {
+            const added = ids.filter((id) => !seen.current.has(id));
+            if (added.length) {
+                setFresh(new Set(added));
+                const timer = setTimeout(() => setFresh(new Set()), 1600);
+                seen.current = new Set(ids);
+                return () => clearTimeout(timer);
+            }
+        }
+        seen.current = new Set(ids);
+        return undefined;
+    }, [tasks]);
 
     // =====================================================
     // GROUP TASKS
     // =====================================================
-    const active = tasks.filter((task) => !task?.is_complete);
-    const completed = tasks.filter((task) => task?.is_complete);
+    const isActive = (task) => !task?.is_complete || settling.has(task.task_id);
+    const active = tasks.filter(isActive);
+    const completed = tasks.filter((task) => !isActive(task));
+
+    // Where a dragged card will land relative to the one it's over: the
+    // reorder puts it after a card below it, before a card above it
+    const order = new Map(tasks.map((task, index) => [task.task_id, index]));
+    const dropsBelow = (overTaskId) => order.get(dragging?.id) < order.get(overTaskId);
 
     if (!tasks?.length) return <EmptyState onCreate={onCreate} />;
 
@@ -138,11 +200,11 @@ function TaskList({
             JSON.stringify({ taskId, type })
         );
         e.dataTransfer.effectAllowed = "move";
-        setDraggingId(taskId);
+        setDragging({ id: taskId, type });
     };
 
     const endDrag = () => {
-        setDraggingId(null);
+        setDragging(null);
         setOverId(null);
     };
 
@@ -165,7 +227,12 @@ function TaskList({
         reorderTasks(data.taskId, toId);
     };
 
-    const allowDrop = (e, taskId) => {
+    // Only cards in the dragged card's own section accept it
+    const allowDrop = (e, taskId, type) => {
+        if (dragging && dragging.type !== type) {
+            e.dataTransfer.dropEffect = "none";
+            return;
+        }
         e.preventDefault();
         if (overId !== taskId) setOverId(taskId);
     };
@@ -174,39 +241,65 @@ function TaskList({
     // and out (a completed task leaves Active and arrives in Completed), and
     // the others slide to close the gap. No shared layoutId across sections:
     // that kept a second, clickable copy of the task alive mid-move.
-    const row = (task, type) => (
-        <motion.li
-            key={task.task_id}
-            layout="position"
-            transition={SOFT_SPRING}
-            variants={listItem}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            draggable
-            onPointerDown={rememberPressTarget}
-            onDragStart={(e) => handleDragStart(e, task.task_id, type)}
-            onDragEnd={endDrag}
-            onDragOver={(e) => allowDrop(e, task.task_id)}
-            onDragLeave={() => setOverId((id) => (id === task.task_id ? null : id))}
-            onDrop={(e) => handleDrop(e, task.task_id, type)}
-            className={`relative rounded-2xl transition-[opacity,box-shadow] duration-150
-                ${draggingId === task.task_id ? "opacity-40" : ""}
-                ${overId === task.task_id && draggingId !== task.task_id
-                    ? "shadow-[0_-3px_0_0_color-mix(in_oklab,var(--color-cyan-400)_80%,transparent)]"
-                    : ""}`}
-        >
-            <TaskItem
-                task={task}
-                onDelete={onDelete}
-                onToggle={onToggle}
-                onEdit={onEdit}
-                onSelect={() => onEdit(task)}
-                isSelected={editingTaskId === task.task_id}
-                isActiveActionId={activeActions[task.task_id] ? task.task_id : undefined}
-            />
-        </motion.li>
-    );
+    const row = (task, type) => {
+        const isDragged = dragging?.id === task.task_id;
+        const isTarget = overId === task.task_id && dragging && !isDragged;
+
+        return (
+            <motion.li
+                key={task.task_id}
+                layout="position"
+                transition={SOFT_SPRING}
+                variants={listItem}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                draggable
+                onPointerDown={rememberPressTarget}
+                onDragStart={(e) => handleDragStart(e, task.task_id, type)}
+                onDragEnd={endDrag}
+                onDragOver={(e) => allowDrop(e, task.task_id, type)}
+                onDragLeave={() => setOverId((id) => (id === task.task_id ? null : id))}
+                onDrop={(e) => handleDrop(e, task.task_id, type)}
+                className={`relative rounded-2xl transition-[opacity,outline-color] duration-150
+                    ${isDragged ? "opacity-45 outline-2 outline-dashed outline-offset-2 outline-cyan-400/40" : "outline-transparent"}`}
+            >
+                {/* Drop line: where the dragged card will land */}
+                {isTarget && (
+                    <motion.span
+                        aria-hidden="true"
+                        layoutId="drop-line"
+                        transition={{ duration: 0.12 }}
+                        className={`pointer-events-none absolute inset-x-3 z-10 h-[3px] rounded-full bg-cyan-400 shadow-[0_0_12px_var(--color-cyan-400)]
+                            ${dropsBelow(task.task_id) ? "-bottom-[7px]" : "-top-[7px]"}`}
+                    />
+                )}
+
+                {/* A brief glow on a task that has just been added */}
+                <AnimatePresence>
+                    {fresh.has(task.task_id) && (
+                        <motion.span
+                            aria-hidden="true"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0, transition: { duration: 0.8 } }}
+                            className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-cyan-400/50 shadow-[0_0_24px_-6px_var(--color-cyan-400)]"
+                        />
+                    )}
+                </AnimatePresence>
+
+                <TaskItem
+                    task={task}
+                    onDelete={onDelete}
+                    onToggle={handleToggle}
+                    onEdit={onEdit}
+                    onSelect={() => onEdit(task)}
+                    isSelected={editingTaskId === task.task_id}
+                    isActiveActionId={activeActions[task.task_id] ? task.task_id : undefined}
+                />
+            </motion.li>
+        );
+    };
 
     // =====================================================
     // RENDER
@@ -221,7 +314,7 @@ function TaskList({
                 </p>
 
                 {active.length > 0 && (
-                    <TaskSection title="Active" count={active.length} tone="text-cyan-300">
+                    <TaskSection title="Active" icon={CircleDot} count={active.length} tone="accent">
                         <AnimatePresence initial={false}>
                             {active.map((task) => row(task, "active"))}
                         </AnimatePresence>
@@ -230,7 +323,7 @@ function TaskList({
 
                 {completed.length > 0 && (
                     <div className="border-t border-white/[0.07] pt-6">
-                        <TaskSection title="Completed" count={completed.length} tone="text-emerald-300" collapsible>
+                        <TaskSection title="Completed" icon={CheckCircle2} count={completed.length} tone="emerald" collapsible>
                             <AnimatePresence initial={false}>
                                 {completed.map((task) => row(task, "completed"))}
                             </AnimatePresence>

@@ -4,6 +4,14 @@ import { GripVertical, Pencil, Trash2 } from "lucide-react";
 
 import DueChip from "./DueChip";
 import CheckMark from "../ui/CheckMark";
+import { dueStatus } from "../../utils/dates";
+
+// An open task that is overdue or due today carries a thin edge in its
+// status colour, so urgent cards stand out while scanning the list
+const EDGES = {
+    overdue: "before:bg-rose-400/80",
+    today: "before:bg-amber-300/80",
+};
 
 function TaskItem({
     task,
@@ -31,6 +39,7 @@ function TaskItem({
     const isUpdating = isActiveActionId === task.task_id;
     const isCompleted = task.is_complete;
     const isLocked = isUpdating;
+    const edge = !isCompleted && EDGES[dueStatus(task.due_date)?.kind];
 
     const handleSelect = () => {
         if (isLocked) return;
@@ -50,11 +59,14 @@ function TaskItem({
         <div
             onClick={handleSelect}
             className={`group relative flex items-start gap-3 rounded-2xl border p-4 transition-colors duration-200 cursor-pointer
-                ${isSelected
-                    ? "border-cyan-400/45 bg-cyan-400/[0.08] shadow-[0_0_0_1px_color-mix(in_oklab,var(--color-cyan-400)_25%,transparent)]"
-                    : isCompleted
-                        ? "border-white/[0.06] bg-white/[0.02] hover:border-white/15"
-                        : "border-white/[0.09] bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.055]"}
+                ${edge ? `before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:rounded-r-full ${edge}` : ""}
+                ${confirmingDelete
+                    ? "border-rose-400/35 bg-rose-500/[0.06]"
+                    : isSelected
+                        ? "border-cyan-400/45 bg-cyan-400/[0.08] shadow-[0_0_0_1px_color-mix(in_oklab,var(--color-cyan-400)_25%,transparent)]"
+                        : isCompleted
+                            ? "border-white/[0.06] bg-white/[0.02] hover:border-white/15"
+                            : "border-white/[0.09] bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.055]"}
                 ${isUpdating ? "ring-1 ring-cyan-400/30" : ""}`}
         >
             {/* CHECK (first control in the card) */}
@@ -65,7 +77,8 @@ function TaskItem({
                 aria-label={isCompleted ? "Mark as not done" : "Mark complete"}
                 className="group/check -m-1.5 shrink-0 rounded-full p-1.5 disabled:opacity-60"
             >
-                <CheckMark checked={isCompleted} saving={isUpdating} />
+                {/* The tick shows at once; "syncing" beside the date says it's saving */}
+                <CheckMark checked={isCompleted} />
             </button>
 
             {/* CONTENT */}
@@ -151,10 +164,11 @@ function TaskItem({
                 </div>
             </div>
 
-            {/* DRAG HANDLE (a cue; the whole card is draggable, see TaskList) */}
+            {/* DRAG HANDLE (a cue; the whole card is draggable, see TaskList).
+                Shown only with a mouse: touch screens can't drag here. */}
             <div
                 aria-hidden="true"
-                className="hidden self-center text-white/25 transition-colors group-hover:text-white/55 sm:block cursor-grab active:cursor-grabbing"
+                className="hidden self-center rounded-md p-0.5 text-white/30 transition-colors group-hover:bg-white/[0.05] group-hover:text-white/70 [@media(hover:hover)]:block cursor-grab active:cursor-grabbing"
             >
                 <GripVertical size={16} />
             </div>
