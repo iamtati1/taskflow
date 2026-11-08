@@ -2,7 +2,7 @@
 // the production schema: users(id, username, password_hash) and
 // tasks(id, user_id, title, is_complete, due_date). A query naming any other
 // column fails here as it would in production.
-const { test, before, after } = require("node:test");
+const { test, before, after, mock } = require("node:test");
 const assert = require("node:assert");
 const bcrypt = require("bcrypt");
 const { newDb } = require("pg-mem");
@@ -23,6 +23,10 @@ require.cache[require.resolve("./db/pool")] = { exports: new Pool() };
 
 // Many tests log in from the same address; the limiter itself is tested separately
 process.env.AUTH_RATE_LIMIT = "100000";
+// Fast hashing for the many test accounts. Existing accounts below are hashed
+// at the same cost, so signing in doesn't upgrade (rewrite) their hashes;
+// the upgrade is tested in models/userModel.test.js.
+process.env.BCRYPT_COST = "4";
 const app = require("./app");
 
 let server;
@@ -525,6 +529,85 @@ test("account: a server error during a password change never logs the passwords"
   for (const line of logged) {
     assert.ok(!line.includes("log-check-pass") && !line.includes("secret-new-pass"), line);
   }
+});
+
+// ---------- Phase 1: sign-in, sessions and request errors ----------
+
+test("sign-in works with another capitalisation or surrounding spaces", async () => {
+  await client()("POST", "/api/auth/register", { username: "MixedCase", password: "mixed-pass-1" });
+  for (const typed of ["mixedcase", "MIXEDCASE", " MixedCase  "]) {
+    const res = await client()("POST", "/api/auth/login", { username: typed, password: "mixed-pass-1" });
+    assert.strictEqual(res.status, 200, typed);
+    assert.strictEqual(res.data.user.username, "MixedCase");
+  }
+  const wrong = await client()("POST", "/api/auth/login", { username: "mixedcase", password: "Mixed-pass-1" });
+  assert.strictEqual(wrong.status, 401);
+});
+
+test("a body that isn't valid JSON is a 400 with a clear message, not a logged server error", async () => {
+  const logged = [];
+  const quiet = console.error;
+  console.error = (...args) => logged.push(args.join(" "));
+  let res;
+  try {
+    res = await fetch(`${base}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: '{"username":',
+    });
+  } finally {
+    console.error = quiet;
+  }
+  assert.strictEqual(res.status, 400);
+  assert.deepStrictEqual(await res.json(), { error: "The request body must be valid JSON." });
+  assert.ok(!logged.some((line) => line.includes("SERVER ERROR")), logged.join("\n"));
+});
+
+const sessionCookieExpiry = (res) => {
+  const cookie = res.headers.getSetCookie().find((c) => c.startsWith("session="));
+  const match = cookie && /expires=([^;]+)/i.exec(cookie);
+  return match ? Date.parse(match[1]) : null;
+};
+
+test("activity keeps a session alive: the 24-hour limit counts from the last request", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", { username: "rolling", password: "rolling-pass" });
+
+  // The first request records the minute; later ones within it send no new cookie
+  await api("GET", "/api/auth/me");
+  assert.strictEqual(sessionCookieExpiry(await api("GET", "/api/auth/me")), null);
+
+  const realNow = Date.now;
+  const later = realNow() + 3 * 60 * 60 * 1000; // three hours of use later
+  mock.method(Date, "now", () => later);
+  try {
+    const res = await api("GET", "/api/tasks");
+    assert.strictEqual(res.status, 200);
+    const expires = sessionCookieExpiry(res);
+    assert.ok(expires, "a refreshed cookie was sent");
+    // Expires a day after this request (cookies carry whole seconds)
+    assert.ok(Math.abs(expires - (later + 24 * 60 * 60 * 1000)) < 2000, new Date(expires).toISOString());
+  } finally {
+    mock.restoreAll();
+  }
+  assert.strictEqual((await api("GET", "/api/auth/me")).status, 200);
+});
+
+test("signed-out requests never get a session cookie", async () => {
+  const res = await client()("GET", "/api/auth/me");
+  assert.strictEqual(res.status, 401);
+  assert.deepStrictEqual(res.headers.getSetCookie(), []);
+});
+
+test("a session whose account no longer exists is cleared", async () => {
+  const api = client();
+  const reg = await api("POST", "/api/auth/register", { username: "goner", password: "goner-pass" });
+  db.public.none(`DELETE FROM users WHERE id = ${reg.data.user.user_id}`);
+
+  const first = await api("GET", "/api/auth/me");
+  assert.strictEqual(first.status, 401);
+  assert.ok(first.headers.getSetCookie().some((c) => /^session=;/.test(c)), "the cookie is cleared");
+  assert.deepStrictEqual((await api("GET", "/api/auth/me")).data, { error: "Not authenticated" });
 });
 
 test("existing user and task records are never modified", () => {
