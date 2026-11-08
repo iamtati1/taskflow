@@ -167,6 +167,8 @@ test("a failed delete shows a notice and puts the task back", async () => {
     renderTasks();
     const card = (await screen.findByText("Buy milk")).closest("div.group");
     fireEvent.click(within(card).getByRole("button", { name: "Delete" }));
+    expect(taskApi.deleteTask).not.toHaveBeenCalled(); // asks first
+    fireEvent.click(within(card).getByRole("button", { name: "Yes, delete" }));
 
     expect((await screen.findByRole("alert")).textContent).toMatch(/Couldn't delete that task: Server unavailable/);
     expect(await screen.findByText("Buy milk")).toBeTruthy();

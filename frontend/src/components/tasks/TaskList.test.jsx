@@ -65,3 +65,14 @@ test("a drag after an earlier click on a control is not blocked", () => {
     fireEvent.pointerDown(title);
     expect(dragStart(title)).toBe(true);
 });
+
+test("the delete confirmation's buttons can't start a drag either", () => {
+    renderList();
+    const [del] = screen.getAllByRole("button", { name: "Delete" });
+    fireEvent.click(del);
+    for (const name of ["Yes, delete", "Keep"]) {
+        const control = screen.getByRole("button", { name });
+        fireEvent.pointerDown(control);
+        expect(dragStart(control)).toBe(false);
+    }
+});
