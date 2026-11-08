@@ -92,3 +92,18 @@ test("Edit and Delete sit in the spaced actions row, not jammed together", () =>
     expect(edit.parentElement).toBe(del.parentElement);
     expect(edit.parentElement.className).toMatch(/\bgap-2\b/);
 });
+
+// ---------- Double-clicks on the checkbox ----------
+
+test("the second click of a double-click doesn't toggle (it may land on the next task)", () => {
+    const handlers = { onEdit: vi.fn(), onDelete: vi.fn(), onSelect: vi.fn(), onToggle: vi.fn() };
+    render(<TaskItem task={task} {...handlers} />);
+    const box = screen.getByRole("button", { name: "Mark complete" });
+
+    fireEvent.click(box, { detail: 2 }); // the second click of a double-click
+    expect(handlers.onToggle).not.toHaveBeenCalled();
+    expect(handlers.onSelect).not.toHaveBeenCalled();
+
+    fireEvent.click(box, { detail: 1 });
+    expect(handlers.onToggle).toHaveBeenCalledWith(7);
+});

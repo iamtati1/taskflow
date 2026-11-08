@@ -1,27 +1,29 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
-    Sparkles,
-    Home,
-    CheckSquare,
+    LayoutDashboard,
+    ListChecks,
     BarChart3,
     Settings,
     LogOut,
 } from "lucide-react";
 
 import { useAuth } from "../../hooks/useAuth";
+import BrandMark from "../ui/BrandMark";
+import { SPRING } from "../../utils/motion";
 
 // Shared with MobileNav so both navigations list the same pages
 export const links = [
     {
         to: "/dashboard",
         label: "Dashboard",
-        icon: Home,
+        icon: LayoutDashboard,
     },
     {
         to: "/tasks",
         label: "Tasks",
-        icon: CheckSquare,
+        icon: ListChecks,
     },
     {
         to: "/analytics",
@@ -50,144 +52,78 @@ function Sidebar() {
         }
     };
 
+    const initial = currentUser?.username?.[0]?.toUpperCase() || "?";
+
     return (
-        <div className="flex h-full flex-col px-5 py-6">
+        <div className="flex h-full flex-col px-4 py-6">
 
             {/* BRAND */}
-            <div className="pb-8 border-b border-white/10">
-
-                <div className="flex items-center gap-3">
-                    <div
-                        className="
-                            flex
-                            h-10
-                            w-10
-                            items-center
-                            justify-center
-                            rounded-xl
-                            border
-                            border-cyan-400/20
-                            bg-cyan-400/10
-                        "
-                    >
-                        <Sparkles
-                            size={18}
-                            className="text-cyan-300"
-                        />
-                    </div>
-
-                    <div>
-                        <h1 className="font-semibold text-white">
-                            TaskFlow
-                        </h1>
-
-                        <p className="text-xs text-white/40">
-                            Plan · Focus · Finish
-                        </p>
-                    </div>
-                </div>
-
+            <div className="px-2 pb-6">
+                <BrandMark tagline />
             </div>
 
-            {/* NAVIGATION */}
-            <nav className="mt-8 flex flex-col gap-2">
-
-                {links.map(
-                    ({ to, label, icon: Icon }) => (
-                        <NavLink
-                            key={to}
-                            to={to}
-                            className={({ isActive }) =>
-                                `
-                                group
-                                flex
-                                items-center
-                                gap-3
-                                rounded-2xl
-                                px-4
-                                py-3
-                                border
-                                transition-all
-                                duration-200
-
-                                ${isActive
-                                    ? `
-                                        bg-cyan-400/10
-                                        border-cyan-400/20
-                                        text-white
-                                        `
-                                    : `
-                                        border-transparent
-                                        text-white/50
-                                        hover:bg-white/5
-                                        hover:text-white
-                                        `
-                                }
-                                `
-                            }
-                        >
-                            <Icon size={18} />
-
-                            <span className="text-sm font-medium">
-                                {label}
-                            </span>
-                        </NavLink>
-                    )
-                )}
-
+            {/* NAVIGATION: the highlight slides to the current page */}
+            <nav aria-label="Main" className="flex flex-col gap-1">
+                {links.map(({ to, label, icon: Icon }) => (
+                    <NavLink
+                        key={to}
+                        to={to}
+                        className={({ isActive }) =>
+                            `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200
+                            ${isActive ? "text-white" : "text-white/55 hover:bg-white/[0.04] hover:text-white"}`
+                        }
+                    >
+                        {({ isActive }) => (
+                            <>
+                                {isActive && (
+                                    <motion.span
+                                        layoutId="sidebar-active"
+                                        transition={SPRING}
+                                        aria-hidden="true"
+                                        className="absolute inset-0 rounded-xl border border-brand-a/30 bg-gradient-to-r from-brand-a/20 via-brand-b/[0.08] to-transparent shadow-[inset_2px_0_0_0_var(--brand-a)]"
+                                    />
+                                )}
+                                <Icon
+                                    size={18}
+                                    aria-hidden="true"
+                                    className={`relative transition-colors ${isActive ? "text-brand-a" : "text-white/50 group-hover:text-white/80"}`}
+                                />
+                                <span className="relative">{label}</span>
+                            </>
+                        )}
+                    </NavLink>
+                ))}
             </nav>
 
             {/* ACCOUNT */}
             <div className="mt-auto space-y-2">
-
-                <div
-                    className="
-                        rounded-2xl
-                        border
-                        border-white/10
-                        bg-white/[0.03]
-                        p-4
-                    "
-                >
-                    <p className="text-xs text-white/40">
-                        Signed in as
-                    </p>
-
-                    <p className="mt-1 truncate text-sm font-medium text-white">
-                        {currentUser?.username}
-                    </p>
+                <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+                    <div
+                        aria-hidden="true"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-a to-brand-b text-sm font-bold text-slate-950"
+                    >
+                        {initial}
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-xs text-white/50">
+                            Signed in as
+                        </p>
+                        <p className="truncate text-sm font-semibold text-white">
+                            {currentUser?.username}
+                        </p>
+                    </div>
                 </div>
 
                 <button
                     type="button"
                     onClick={handleSignOut}
                     disabled={signingOut}
-                    className="
-                        flex
-                        w-full
-                        items-center
-                        gap-3
-                        rounded-2xl
-                        border
-                        border-transparent
-                        px-4
-                        py-3
-                        text-sm
-                        font-medium
-                        text-white/50
-                        transition-all
-                        duration-200
-                        hover:bg-red-500/10
-                        hover:text-red-300
-                        disabled:opacity-50
-                    "
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/55 transition-colors duration-200 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-50"
                 >
                     <LogOut size={18} aria-hidden="true" />
                     {signingOut ? "Logging out…" : "Log Out"}
                 </button>
-
             </div>
-
         </div>
     );
 }

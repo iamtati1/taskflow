@@ -1,86 +1,134 @@
 @import "tailwindcss";
 
+/* touch: screens driven by a finger (phones, tablets). Controls grow to a
+   44px target there; mouse layouts keep their compact sizes. */
+@custom-variant touch (@media (pointer: coarse));
+
 /* =========================================================
-   🌌 FLOW DESIGN SYSTEM (CLEAN CORE)
+   TYPE
+   Inter for text, Plus Jakarta Sans for headings (font-display),
+   both loaded in index.html
 ========================================================= */
 
-/* ================= COLORS ================= */
-:root {
-    --accent: #22d3ee;
-    --accent-secondary: #3b82f6;
-    --accent-tertiary: #8b5cf6;
+@theme {
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
 
-    --bg-primary: #050816;
-    --bg-secondary: #0b1120;
-    --bg-tertiary: #111827;
+/* =========================================================
+   COLOUR ROLES
+   Every theme sets three coordinated roles; status colours never change.
 
-    --surface-1: rgba(255, 255, 255, .03);
-    --surface-2: rgba(255, 255, 255, .05);
-    --surface-3: rgba(255, 255, 255, .08);
+   Brand light   --brand-a/-b/-c   the atmosphere: hero glow, completion
+                                   ring, active sidebar item, selection
+                                   markers, ambient background
+   Interactive   Tailwind's cyan   buttons, focus ring, selected controls,
+                                   bottom-nav selection (cyan or teal in
+                                   most themes, magenta-pink on Sunset)
+   Surfaces      --bg-base/-raised the page and its raised panels, tinted
+                                   towards the theme
+   Status        rose = overdue, amber = due today/soon, emerald = done
+                 (Tailwind's own colours, identical in every theme)
 
-    --border-subtle: rgba(255, 255, 255, .06);
-    --border-default: rgba(255, 255, 255, .1);
+   Use them in classes as bg-brand-a/15, from-brand-a, bg-base, bg-raised.
+========================================================= */
+
+@theme inline {
+    --color-brand-a: var(--brand-a);
+    --color-brand-b: var(--brand-b);
+    --color-brand-c: var(--brand-c);
+    --color-base: var(--bg-base);
+    --color-raised: var(--bg-raised);
+}
+
+/* Midnight (default): cyan/teal light with a violet edge, deep navy.
+   Also matched by [data-theme="midnight"] so a theme preview (Settings)
+   can show Midnight inside a page that is using another theme. */
+:root,
+[data-theme="midnight"] {
+    --brand-a: oklch(78.9% 0.154 211.53);   /* cyan-400 */
+    --brand-b: oklch(77.7% 0.152 181.91);   /* teal-400 */
+    --brand-c: oklch(70.2% 0.183 293.54);   /* violet-400 */
+    /* The completion ring keeps each reference's gradient */
+    --ring-from: var(--brand-a);
+    --ring-to: var(--brand-c);               /* cyan to violet (screenshot 6) */
+    --bg-base: #050816;
+    --bg-raised: #0b1024;
+
+    /* Tailwind's cyan, restated so a nested preview resets it */
+    --color-cyan-200: oklch(91.7% 0.08 205.041);
+    --color-cyan-300: oklch(86.5% 0.127 207.078);
+    --color-cyan-400: oklch(78.9% 0.154 211.53);
+    --color-cyan-500: oklch(71.5% 0.143 215.221);
 
     --text-primary: rgba(255, 255, 255, .96);
-    --text-secondary: rgba(255, 255, 255, .68);
-    --text-muted: rgba(255, 255, 255, .42);
 
-    --radius-sm: 12px;
-    --radius-md: 18px;
-    --radius-lg: 24px;
-    --radius-xl: 32px;
-
-    --flow-cyan: #22d3ee;
-    --flow-blue: #3b82f6;
-    --flow-violet: #8b5cf6;
-
-    --glass: rgba(255, 255, 255, .045);
-    --glass-border: rgba(255, 255, 255, .08);
-
-    --shadow-soft: 0 10px 30px rgba(0, 0, 0, .25);
-    --shadow-hover: 0 25px 80px rgba(0, 0, 0, .45);
-
-    --gradient-flow: linear-gradient(135deg,
-            var(--flow-cyan),
-            var(--flow-blue),
-            var(--flow-violet));
+    color-scheme: dark;
 }
 
-/* =========================================================
-   🎨 THEMES
-   The app's accent is Tailwind's cyan (text-cyan-300, bg-cyan-400/10, ...),
-   and Tailwind 4 utilities read these variables. Each theme remaps the cyan
-   shades to another palette, so every accent in the app follows the choice.
-   Midnight keeps the default cyan. Values are Tailwind's palette colours.
-========================================================= */
-
+/* Violet: indigo-to-violet light with a fuchsia edge; cyan stays the
+   interactive colour, so buttons never read as "progress" purple */
 [data-theme="violet"] {
-    --color-cyan-200: oklch(89.4% 0.057 293.283);
-    --color-cyan-300: oklch(81.1% 0.111 293.571);
-    --color-cyan-400: oklch(70.2% 0.183 293.541);
-    --color-cyan-500: oklch(60.6% 0.25 292.717);
+    --brand-a: oklch(67.3% 0.182 276.94);   /* indigo-400 */
+    --brand-b: oklch(70.2% 0.183 293.54);   /* violet-400 */
+    --brand-c: oklch(74% 0.238 322.16);     /* fuchsia-400 */
+    --ring-from: var(--brand-a);
+    --ring-to: var(--brand-c);               /* indigo to fuchsia */
+    --bg-base: #07061a;
+    --bg-raised: #100d2a;
+
+    --color-cyan-200: oklch(91.7% 0.08 205.041);
+    --color-cyan-300: oklch(86.5% 0.127 207.078);
+    --color-cyan-400: oklch(78.9% 0.154 211.53);
+    --color-cyan-500: oklch(71.5% 0.143 215.221);
 }
 
+/* Emerald: teal-to-emerald light; teal is the interactive colour.
+   Completed work keeps its tick and "Done" label, so it never relies on
+   green alone here */
 [data-theme="emerald"] {
-    --color-cyan-200: oklch(90.5% 0.093 164.15);
-    --color-cyan-300: oklch(84.5% 0.143 164.978);
-    --color-cyan-400: oklch(76.5% 0.177 163.223);
-    --color-cyan-500: oklch(69.6% 0.17 162.48);
+    --brand-a: oklch(77.7% 0.152 181.91);   /* teal-400 */
+    --brand-b: oklch(76.5% 0.177 163.22);   /* emerald-400 */
+    --brand-c: oklch(78.9% 0.154 211.53);   /* cyan-400 */
+    --ring-from: var(--brand-b);
+    --ring-to: var(--brand-c);               /* emerald to cyan */
+    --bg-base: #03100f;
+    --bg-raised: #08201f;
+
+    --color-cyan-200: oklch(91% 0.096 180.43);   /* teal shades */
+    --color-cyan-300: oklch(85.5% 0.138 181.07);
+    --color-cyan-400: oklch(77.7% 0.152 181.91);
+    --color-cyan-500: oklch(70.4% 0.14 182.5);
 }
 
+/* Sunset: violet-to-pink light on a plum navy (screenshots 1 and 7).
+   The interactive pink leans magenta, away from the rose of "overdue" */
 [data-theme="sunset"] {
-    --color-cyan-200: oklch(89.2% 0.058 10.001);
-    --color-cyan-300: oklch(81% 0.117 11.638);
-    --color-cyan-400: oklch(71.2% 0.194 13.428);
-    --color-cyan-500: oklch(64.5% 0.246 16.439);
+    --brand-a: oklch(70.2% 0.183 293.54);   /* violet-400 */
+    --brand-b: oklch(71.8% 0.202 349.76);   /* pink-400 */
+    --brand-c: oklch(74% 0.238 322.16);     /* fuchsia-400 */
+    --ring-from: var(--brand-b);
+    --ring-to: var(--brand-a);               /* pink to violet (screenshots 1 and 7) */
+    --bg-base: #0b0616;
+    --bg-raised: #170c26;
+
+    --color-cyan-200: oklch(90% 0.07 340);   /* magenta-pink shades */
+    --color-cyan-300: oklch(82.5% 0.13 340);
+    --color-cyan-400: oklch(73% 0.19 340);
+    --color-cyan-500: oklch(65% 0.22 340);
 }
 
 /* =========================================================
-   🌍 GLOBAL RESET
+   BASE
 ========================================================= */
 
-* {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
+}
+
+html {
     scroll-behavior: smooth;
 }
 
@@ -94,289 +142,194 @@ body {
     margin: 0;
     overflow-x: hidden;
 
-    font-family: Inter, system-ui, sans-serif;
+    /* viewport-fit=cover (index.html) lets the page reach the screen edges
+       on phones with a notch or home bar; keep content clear of them. Fixed
+       bars add the bottom inset themselves. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
 
     color: var(--text-primary);
-    background-color: var(--bg-primary);
+    background-color: var(--bg-base);
+}
 
-    background-image:
-        radial-gradient(circle at top left, color-mix(in oklab, var(--color-cyan-400) 8%, transparent), transparent 30%),
-        radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.08), transparent 35%),
-        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+h1,
+h2,
+h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+}
 
-    background-size: auto, auto, 40px 40px, 40px 40px;
-    background-attachment: fixed;
+::selection {
+    background: color-mix(in oklab, var(--color-cyan-400) 35%, transparent);
+    color: white;
+}
+
+/* Numbers that change (counts, percentages) don't jitter */
+.tabular {
+    font-variant-numeric: tabular-nums;
 }
 
 /* =========================================================
-   📦 LAYOUT HELPERS
+   KEYBOARD FOCUS
+   Every control shows a ring in the accent colour when reached by
+   keyboard (mouse clicks don't show it). Important, because several
+   components remove the browser's outline.
 ========================================================= */
 
-.container-flow {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 4rem 1.5rem;
+:focus-visible {
+    outline: 2px solid var(--color-cyan-400) !important;
+    outline-offset: 2px !important;
 }
 
 /* =========================================================
-   🌌 BACKGROUND EFFECTS
+   REDUCED MOTION
+   Framer Motion follows the same preference (MotionConfig in main.jsx)
 ========================================================= */
 
-.app-background {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
+
+/* =========================================================
+   AMBIENT BACKGROUND (components/ui/AmbientBackground.jsx)
+   Theme-tinted light that drifts slowly behind every screen. Static for
+   reduced motion (the rule above stops the animation).
+========================================================= */
 
 .app-grid {
     position: absolute;
     inset: 0;
-    opacity: 0.2;
+    opacity: 0.35;
 
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 
-    background-size: 72px 72px;
-    mask-image: radial-gradient(circle at center, black, transparent 80%);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at top, black, transparent 75%);
 }
 
-.app-glow-cyan,
-.app-glow-violet {
+.app-noise {
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.ambient-light {
     position: absolute;
     border-radius: 9999px;
     filter: blur(140px);
+    will-change: transform;
+    transition: background-color 0.6s ease;
 }
 
-.app-glow-cyan {
-    top: -20%;
-    left: -10%;
-    width: 40rem;
-    height: 40rem;
-    background-color: color-mix(in oklab, var(--color-cyan-400) 12%, transparent);
+.ambient-a {
+    top: -20rem;
+    right: -14rem;
+    width: 44rem;
+    height: 44rem;
+    background-color: color-mix(in oklab, var(--brand-b) 13%, transparent);
+    animation: ambient-drift-a 28s ease-in-out infinite;
 }
 
-.app-glow-violet {
-    right: -10%;
-    bottom: -25%;
-    width: 42rem;
-    height: 42rem;
-    background: rgba(139, 92, 246, 0.12);
+.ambient-b {
+    bottom: -22rem;
+    left: -16rem;
+    width: 46rem;
+    height: 46rem;
+    background-color: color-mix(in oklab, var(--brand-a) 11%, transparent);
+    animation: ambient-drift-b 34s ease-in-out infinite;
+}
+
+.ambient-c {
+    top: 30%;
+    left: 35%;
+    width: 30rem;
+    height: 30rem;
+    background-color: color-mix(in oklab, var(--brand-c) 6%, transparent);
+    animation: ambient-drift-c 40s ease-in-out infinite;
+}
+
+@keyframes ambient-drift-a {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(-6%, 5%, 0) scale(1.08); }
+}
+
+@keyframes ambient-drift-b {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(7%, -5%, 0) scale(1.06); }
+}
+
+@keyframes ambient-drift-c {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(-10%, 8%, 0); }
+}
+
+/* Focus Mode quiets the background */
+.focus-mode .app-grid {
+    opacity: 0.1;
+}
+
+.focus-mode .ambient-light {
+    opacity: 0.45;
 }
 
 /* =========================================================
-   🧊 SURFACES (GLASS SYSTEM)
+   SURFACES
+   Card variants (components/ui/Card.jsx) and list rows share these, so
+   every raised element has the same border, light and depth.
 ========================================================= */
 
-.surface-base {
-    border-radius: 2rem;
-    border: 1px solid var(--glass-border);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-
-    transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
+/* A row inside a card (task rows, list items, mini panels) */
+@utility surface-row {
+    border: 1px solid rgb(255 255 255 / 0.07);
+    background-color: rgb(255 255 255 / 0.03);
+    border-radius: 0.75rem;
 }
 
-.surface-base:hover,
-.flow-card:hover {
-    transform: translateY(-4px);
-    border-color: color-mix(in oklab, var(--color-cyan-400) 20%, transparent);
-    box-shadow: var(--shadow-hover);
-}
-
-.page-padding {
-    padding: 2rem;
-}
-
-.section-spacing {
-    margin-top: 2rem;
-}
-
-.stack-sm>*+* {
-    margin-top: .75rem;
-}
-
-.stack-md>*+* {
-    margin-top: 1rem;
-}
-
-.stack-lg>*+* {
-    margin-top: 1.5rem;
-}
-
-.flow-card {
-    border-radius: 2rem;
-    border: 1px solid var(--glass-border);
-
-    background: linear-gradient(180deg,
-            rgba(255, 255, 255, .06),
-            rgba(255, 255, 255, .03));
-
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-
+/* The brand-lit hero: theme light from the top right and bottom left */
+@utility surface-hero {
+    border: 1px solid color-mix(in oklab, var(--brand-a) 22%, transparent);
+    background:
+        radial-gradient(110% 130% at 100% 0%, color-mix(in oklab, var(--brand-b) 20%, transparent), transparent 55%),
+        radial-gradient(90% 120% at 0% 100%, color-mix(in oklab, var(--brand-a) 14%, transparent), transparent 60%),
+        linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.015)),
+        color-mix(in oklab, var(--bg-raised) 70%, transparent);
     box-shadow:
-        var(--shadow-soft),
-        inset 0 1px 0 rgba(255, 255, 255, .04);
+        inset 0 1px 0 rgb(255 255 255 / 0.07),
+        0 24px 60px -28px color-mix(in oklab, var(--brand-b) 45%, transparent);
+}
 
-    transition:
-        transform 300ms ease,
-        box-shadow 300ms ease,
-        border-color 300ms ease;
+/* The one thing to look at: a softly lit brand-gradient border */
+@utility surface-focus {
+    border: 1px solid transparent;
+    background:
+        linear-gradient(180deg, color-mix(in oklab, var(--bg-raised) 92%, white 4%), var(--bg-raised)) padding-box,
+        linear-gradient(135deg, color-mix(in oklab, var(--brand-a) 65%, transparent), color-mix(in oklab, var(--brand-b) 35%, transparent) 60%, rgb(255 255 255 / 0.08)) border-box;
+    box-shadow: 0 18px 50px -24px color-mix(in oklab, var(--brand-a) 45%, transparent);
+}
+
+/* Theme changes crossfade (see useUISettings) */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.35s;
 }
 
 /* =========================================================
-   🔘 BUTTON SYSTEM
-========================================================= */
-
-.btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    /* replaces gap-2 */
-
-    min-height: 48px;
-    padding: 0.85rem 1.35rem;
-    border-radius: 1rem;
-
-    font-weight: 600;
-    color: white;
-
-    background: var(--gradient-flow);
-    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.25);
-
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 18px 45px rgba(59, 130, 246, 0.35);
-}
-
-.btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-
-    min-height: 48px;
-    padding: 0.85rem 1.35rem;
-
-    border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.9);
-
-    transition: all 0.25s ease;
-}
-
-.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.16);
-    transform: translateY(-2px);
-}
-
-/* =========================================================
-   ✨ INPUT SYSTEM (FIXED — SINGLE SOURCE OF TRUTH)
-========================================================= */
-
-.input-shell {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-
-    height: 3.5rem;
-    padding: 0 1rem;
-
-    border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-
-    background: rgba(255, 255, 255, 0.035);
-    transition: all 0.3s ease;
-}
-
-.input-shell:focus-within {
-    border-color: color-mix(in oklab, var(--color-cyan-400) 30%, transparent);
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.input-flow {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: white;
-}
-
-.input-flow::placeholder {
-    color: rgba(255, 255, 255, 0.25);
-}
-
-/* =========================================================
-   🧠 TYPOGRAPHY
-========================================================= */
-
-.text-hero {
-    font-size: clamp(3rem, 8vw, 5rem);
-    line-height: 0.95;
-    font-weight: 800;
-    letter-spacing: -0.05em;
-}
-
-.text-body {
-    color: var(--text-secondary);
-}
-
-.text-muted {
-    color: var(--text-muted);
-}
-
-/* =========================================================
-   📇 CARD HELPERS
-========================================================= */
-
-.metric-card,
-.panel-card,
-.dashboard-card {
-    padding: 1.5rem;
-}
-
-/* =========================================================
-   ✨ UTILITIES
-========================================================= */
-
-.hover-lift:hover {
-    transform: translateY(-5px);
-}
-
-.hover-scale:hover {
-    transform: scale(1.03);
-}
-
-.fade-in {
-    animation: fadeIn 0.6s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* =========================================================
-   📅 FLOW CALENDAR
+   CALENDAR (react-calendar, TaskCalendar)
 ========================================================= */
 
 .react-calendar {
@@ -388,105 +341,61 @@ body {
 }
 
 .react-calendar__navigation {
-    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
 }
 
 .react-calendar__navigation button {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
     color: white;
     background: transparent;
-    border-radius: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: background-color .15s ease;
 }
 
-.react-calendar__navigation button:hover {
+.react-calendar__navigation button:enabled:hover {
     background: rgba(255, 255, 255, .06);
 }
 
 .react-calendar__month-view__weekdays {
+    text-align: center;
     text-transform: uppercase;
-    font-size: .7rem;
-    color: rgba(255, 255, 255, .45);
+    font-size: .75rem;
+    letter-spacing: .08em;
+    color: rgba(255, 255, 255, .58);
+}
+
+.react-calendar__month-view__weekdays abbr {
+    text-decoration: none;
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+    color: rgba(255, 255, 255, .4);
 }
 
 .react-calendar__tile {
+    min-height: 46px;
+    padding: 6px 0;
     background: transparent;
-    color: white;
-    border-radius: 12px;
-    min-height: 52px;
-    transition: all .2s ease;
+    color: inherit;
+    border-radius: 10px;
+    font-variant-numeric: tabular-nums;
+    transition: background-color .15s ease, color .15s ease;
 }
 
-.react-calendar__tile:hover {
-    background: rgba(255, 255, 255, .05);
-}
-
-.react-calendar__tile--active {
-    background-color: color-mix(in oklab, var(--color-cyan-400) 15%, transparent) !important;
-    color: white !important;
+.react-calendar__tile:enabled:hover {
+    background: rgba(255, 255, 255, .06);
 }
 
 .react-calendar__tile--now {
-    background: rgba(139, 92, 246, .15);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-cyan-400) 45%, transparent);
 }
 
-.has-task {
-    position: relative;
-}
-
-.selected-day {
+.react-calendar__tile--active,
+.calendar-selected {
     background-color: color-mix(in oklab, var(--color-cyan-400) 18%, transparent) !important;
-}
-
-.focus-mode .app-grid {
-    opacity: 0.05;
-}
-
-.focus-mode .app-glow-cyan,
-.focus-mode .app-glow-violet {
-    opacity: 0.3;
-}
-
-.focus-mode .surface-base,
-.focus-mode .flow-card {
-    backdrop-filter: blur(40px);
-}
-
-.focus-mode {
-    --text-secondary: rgba(255, 255, 255, .55);
-}
-
-.focus-mode .app-grid {
-    opacity: 0.08;
-}
-
-.focus-mode .app-glow-cyan,
-.focus-mode .app-glow-violet {
-    opacity: 0.35;
-}
-
-.focus-mode .surface-base {
-    backdrop-filter: blur(40px);
-}
-
-.focus-mode .app-grid {
-    opacity: 0.08;
-}
-
-.focus-mode .app-glow-cyan,
-.focus-mode .app-glow-violet {
-    opacity: 0.35;
-}
-
-.focus-mode .surface-base {
-    backdrop-filter: blur(40px);
-}
-
-
-/* =========================================================
-   📱 RESPONSIVE
-========================================================= */
-
-@media (max-width: 768px) {
-    .container-flow {
-        padding: 2rem 1rem;
-    }
+    color: white !important;
 }

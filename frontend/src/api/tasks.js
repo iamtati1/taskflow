@@ -1,4 +1,4 @@
-import { API_BASE } from "./config";
+import { API_BASE, SESSION_ENDED_EVENT } from "./config";
 
 // =====================================================
 // CORE FETCH WRAPPER
@@ -15,6 +15,10 @@ const handleFetch = async (url, options = {}) => {
     const isJson = contentType?.includes("application/json");
 
     const data = isJson ? await response.json() : null;
+
+    if (response.status === 401) {
+      window.dispatchEvent(new Event(SESSION_ENDED_EVENT));
+    }
 
     if (!response.ok) {
       return {

@@ -1,7 +1,10 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Circle, ListTodo } from "lucide-react";
 
 import Card from "../ui/Card";
-import { formatDueDate, isOverdue } from "../../utils/dates";
+import SectionHeader from "../ui/SectionHeader";
+import DueChip from "../tasks/DueChip";
+import { listItem } from "../../utils/motion";
 
 // Newest first. Task ids grow as tasks are created, so id order is creation
 // order; tasks don't record when they were created or completed yet, so this
@@ -12,61 +15,56 @@ export const latestTasks = (tasks, limit = 5) =>
         .sort((a, b) => Number(b.task_id) - Number(a.task_id))
         .slice(0, limit);
 
-const statusOf = (task) => {
-    if (task.is_complete) return { label: "Done", className: "text-cyan-300" };
-    if (!task.due_date) return { label: "No due date", className: "text-white/40" };
-
-    const due = formatDueDate(task.due_date, { month: "short", day: "numeric" });
-    return isOverdue(task.due_date)
-        ? { label: `Overdue · was due ${due}`, className: "text-red-300" }
-        : { label: `Due ${due}`, className: "text-white/50" };
-};
-
 function LatestTasks({ tasks = [] }) {
     const latest = latestTasks(tasks);
 
     return (
-        <Card>
-            <h2 className="flex items-center gap-2 text-base font-normal text-blue-300">
-                <ListTodo size={18} aria-hidden="true" />
-                Latest tasks
-            </h2>
+        <Card className="h-full">
+            <SectionHeader icon={ListTodo}>Latest tasks</SectionHeader>
 
             {latest.length === 0 ? (
-                <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-white/50">
+                <div className="mt-4 rounded-xl border border-dashed border-white/10 px-4 py-5 text-sm text-white/60">
                     No tasks yet. New tasks will show up here.
                 </div>
             ) : (
-                <ul className="mt-5 space-y-3">
-                    {latest.map((task) => {
-                        const status = statusOf(task);
-                        const Icon = task.is_complete ? CheckCircle2 : Circle;
+                <ul className="mt-4 space-y-2">
+                    <AnimatePresence initial={false}>
+                        {latest.map((task) => {
+                            const Icon = task.is_complete ? CheckCircle2 : Circle;
 
-                        return (
-                            <li
-                                key={task.task_id}
-                                className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4"
-                            >
-                                <Icon
-                                    size={18}
-                                    aria-hidden="true"
-                                    className={`mt-0.5 shrink-0 ${task.is_complete ? "text-cyan-300" : "text-white/30"}`}
-                                />
+                            return (
+                                <motion.li
+                                    key={task.task_id}
+                                    layout="position"
+                                    {...listItem}
+                                    className={`flex items-start gap-3 rounded-xl border px-4 py-3 transition-colors duration-300
+                                        ${task.is_complete ? "border-white/[0.05] bg-white/[0.015]" : "border-white/[0.07] bg-white/[0.03]"}`}
+                                >
+                                    <Icon
+                                        size={18}
+                                        aria-hidden="true"
+                                        className={`mt-0.5 shrink-0 ${task.is_complete ? "text-emerald-400" : "text-white/30"}`}
+                                    />
 
-                                <div className="min-w-0">
-                                    <p
-                                        className={`break-words font-medium ${task.is_complete ? "text-white/50 line-through" : "text-white"}`}
-                                    >
-                                        {task.title}
-                                    </p>
+                                    <div className="min-w-0 space-y-1.5">
+                                        <p
+                                            className={`break-words font-medium ${task.is_complete ? "text-white/60 line-through decoration-white/30" : "text-white"}`}
+                                        >
+                                            {task.title}
+                                        </p>
 
-                                    <p className={`mt-1 text-sm ${status.className}`}>
-                                        {status.label}
-                                    </p>
-                                </div>
-                            </li>
-                        );
-                    })}
+                                        {task.is_complete ? (
+                                            <p className="text-xs font-medium text-emerald-300">Done</p>
+                                        ) : task.due_date ? (
+                                            <DueChip dueDate={task.due_date} />
+                                        ) : (
+                                            <p className="text-xs text-white/55">No due date</p>
+                                        )}
+                                    </div>
+                                </motion.li>
+                            );
+                        })}
+                    </AnimatePresence>
                 </ul>
             )}
         </Card>

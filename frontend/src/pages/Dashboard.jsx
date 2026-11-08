@@ -1,26 +1,43 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import useUISettings from "../hooks/useUISettings";
-
 import {
-    Sparkles,
-    CheckCircle2,
-    Clock3,
-    Lightbulb,
+    AlertCircle,
     ArrowRight,
-    CalendarDays,
-    Zap,
-    Target,
+    CalendarClock,
+    CheckCircle2,
+    ListChecks,
+    Plus,
 } from "lucide-react";
 
-import Card from "../components/ui/Card";
-import LatestTasks from "../components/dashboard/LatestTasks";
+import useUISettings from "../hooks/useUISettings";
 import useTasks from "../hooks/useTasks";
-import { formatDueDate, isOverdue, toDateKey } from "../utils/dates";
+import { useNotifications } from "../context/NotificationContext";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import StatCard from "../components/ui/StatCard";
+import ProgressRing from "../components/ui/ProgressRing";
+import TodaysFocus from "../components/dashboard/TodaysFocus";
+import WorkflowInsight from "../components/dashboard/WorkflowInsight";
+import UpcomingTasks from "../components/dashboard/UpcomingTasks";
+import LatestTasks from "../components/dashboard/LatestTasks";
+import TasksLoadState from "../components/tasks/TasksLoadState";
+import { dueStatus, toDateKey } from "../utils/dates";
+import { rise, stagger } from "../utils/motion";
+
+const greetingFor = (hour) =>
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+// Most urgent first: overdue, then by due date; undated tasks last
+const byUrgency = (a, b) => {
+    const ka = toDateKey(a.due_date) ?? "9999-99-99";
+    const kb = toDateKey(b.due_date) ?? "9999-99-99";
+    return ka.localeCompare(kb);
+};
 
 function Dashboard() {
     const navigate = useNavigate();
-    const { tasks = [] } = useTasks();
+    const { tasks = [], status, error, refreshTasks, toggleTask } = useTasks();
+    const { addNotification } = useNotifications();
 
     const { aiSettings, quickSettings } = useUISettings();
 
@@ -30,301 +47,149 @@ function Dashboard() {
     // =====================================================
     // TASK METRICS
     // =====================================================
-
     const total = tasks.length;
-
-    const completed = tasks.filter(
-        (task) => Boolean(task.is_complete)
-    ).length;
-
+    const completed = tasks.filter((task) => Boolean(task.is_complete)).length;
     const active = total - completed;
+    const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
 
-    const progress =
-        total === 0
-            ? 0
-            : Math.round((completed / total) * 100);
+    const open = tasks.filter((task) => !task.is_complete);
+    const kindOf = (task) => dueStatus(task.due_date)?.kind;
+    const overdue = open.filter((task) => kindOf(task) === "overdue").length;
+    const dueToday = open.filter((task) => kindOf(task) === "today").length;
+    const needsAttention = overdue + dueToday;
 
-    const upcoming = tasks
-        .filter(
-            (task) =>
-                task.due_date &&
-                !task.is_complete
-        )
-        .sort((a, b) =>
-            toDateKey(a.due_date).localeCompare(toDateKey(b.due_date))
-        )
-        .slice(0, 3);
+    const upcoming = open
+        .filter((task) => task.due_date)
+        .sort(byUrgency);
 
-    const overdue = tasks.filter(
-        (task) =>
-            !task.is_complete &&
-            isOverdue(task.due_date)
-    );
+    // The single most urgent task (any open task if none has a date)
+    const priorityTask = [...open].sort(byUrgency)[0] || null;
 
-    const streak = completed > 0 ? completed : 0;
+    const newTask = () => navigate("/tasks", { state: { newTask: true } });
 
-    const priorityTask = upcoming[0] || null;
+    const completeFocusTask = async (task) => {
+        const result = await toggleTask(task.task_id);
+        if (result?.success) addNotification(`Completed "${task.title}"`, "success");
+        return Boolean(result?.success);
+    };
 
-    // =====================================================
-    // INSIGHTS
-    // =====================================================
-
-    const momentum =
-        progress >= 75
-            ? "You are operating with strong momentum."
-            : progress >= 40
-                ? "Steady progress is building."
-                : "Focus on completing a few key tasks first.";
-
-    const aiInsight =
-        active > completed
-            ? "Your workload is heavier than your completion rate. Consider reducing active tasks before adding new work."
-            : "Your task distribution is healthy and sustainable.";
-
-    // =====================================================
-    // STATS
-    // =====================================================
-
-    const stats = [
-        {
-            icon: CheckCircle2,
-            value: completed,
-            label: "Completed",
-        },
-        {
-            icon: Target,
-            value: active,
-            label: "Active",
-        },
-        {
-            icon: Zap,
-            value: `${progress}%`,
-            label: "Progress",
-        },
-        {
-            icon: Clock3,
-            value: streak,
-            label: "Momentum",
-        },
-    ];
+    if (status === "loading" || error) {
+        return <TasksLoadState status={status} error={error} onRetry={refreshTasks} />;
+    }
 
     return (
-        <motion.section
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-8"
-        >
+        <motion.section variants={stagger()} initial="hidden" animate="show" className="space-y-6">
+
             {/* =====================================================
                 HERO
             ===================================================== */}
+            <motion.div variants={rise}>
+                <Card variant="hero" padding="xl" className="relative overflow-hidden">
 
-            <Card className="relative overflow-hidden">
-                <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-blue-500/10 blur-[100px]" />
+                    <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+                        <div className="max-w-xl space-y-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-a">
+                                {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+                            </p>
 
-                <div className="relative max-w-3xl space-y-5">
-                    <div className="flex items-center gap-2 text-blue-300">
-                        <Sparkles size={16} />
-                        Your workspace
+                            <h1 className="text-3xl font-extrabold leading-tight text-white sm:text-4xl">
+                                {focusMode ? "Focus session" : greetingFor(new Date().getHours())}
+                            </h1>
+
+                            <p className="text-lg text-white/70">
+                                {active} active {active === 1 ? "task" : "tasks"} •{" "}
+                                {completed} completed
+                            </p>
+
+                            <p className={`flex items-center gap-2 text-sm ${needsAttention > 0 ? "text-amber-200" : "text-emerald-300"}`}>
+                                {needsAttention > 0 ? (
+                                    <>
+                                        <AlertCircle size={16} aria-hidden="true" />
+                                        {needsAttention} {needsAttention === 1 ? "task needs" : "tasks need"} your attention today
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 size={16} aria-hidden="true" />
+                                        Nothing overdue or due today
+                                    </>
+                                )}
+                            </p>
+
+                            <div className="flex flex-wrap gap-3 pt-1">
+                                <Button leftIcon={Plus} onClick={newTask}>
+                                    New task
+                                </Button>
+                                <Button variant="secondary" rightIcon={ArrowRight} onClick={() => navigate("/tasks")}>
+                                    Open Tasks
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Beside its summary on phones, above it on wider screens */}
+                        <div className="flex items-center gap-5 border-t border-white/[0.06] pt-6 md:flex-col md:gap-3 md:border-0 md:pt-0">
+                            <ProgressRing value={progress} label="Tasks completed" caption="done" />
+                            <p className="text-sm text-white/60 md:text-center">
+                                <span className="tabular font-semibold text-white">{completed}</span> of{" "}
+                                <span className="tabular">{total}</span> {total === 1 ? "task" : "tasks"}
+                                <br className="hidden md:block" /> complete
+                            </p>
+                        </div>
                     </div>
-
-                    <h1 className="text-4xl font-bold text-white leading-tight">
-                        {focusMode
-                            ? "Focus Session Active"
-                            : "Welcome back"}
-                    </h1>
-
-                    <p className="text-white/60 text-lg">
-                        {active} active tasks •{" "}
-                        {completed} completed
-                    </p>
-
-                    <p className="text-white/50">
-                        {momentum}
-                    </p>
-
-                    <div className="flex flex-wrap gap-3">
-                        <button
-                            onClick={() =>
-                                navigate("/tasks")
-                            }
-                            className="inline-flex items-center gap-2 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-5 py-3 text-white transition hover:bg-blue-500/20"
-                        >
-                            Open Tasks
-                            <ArrowRight size={16} />
-                        </button>
-
-                        <button
-                            onClick={() =>
-                                navigate("/analytics")
-                            }
-                            className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-white/80 transition hover:bg-white/[0.06]"
-                        >
-                            Analytics
-                        </button>
-                    </div>
-                </div>
-            </Card>
+                </Card>
+            </motion.div>
 
             {/* =====================================================
                 STATS
             ===================================================== */}
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat) => {
-                    const Icon = stat.icon;
-
-                    return (
-                        <Card key={stat.label}>
-                            <Icon
-                                size={18}
-                                className="text-blue-300"
-                            />
-
-                            <h3 className="mt-4 text-3xl font-bold text-white">
-                                {stat.value}
-                            </h3>
-
-                            <p className="mt-1 text-sm text-white/50">
-                                {stat.label}
-                            </p>
-                        </Card>
-                    );
-                })}
-            </div>
+            {!focusMode && (
+                <motion.section
+                    variants={stagger(0, 0.05)}
+                    aria-labelledby="stats-heading"
+                    className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+                >
+                    {/* For screen readers: the numbers below are this section's h3s */}
+                    <h2 id="stats-heading" className="sr-only">Task summary</h2>
+                    <StatCard icon={ListChecks} value={active} label="Active" tone="accent" />
+                    <StatCard icon={CalendarClock} value={dueToday} label="Due today" tone="amber" />
+                    <StatCard icon={AlertCircle} value={overdue} label="Overdue" tone="rose" />
+                    <StatCard icon={CheckCircle2} value={completed} label="Completed" tone="emerald" />
+                </motion.section>
+            )}
 
             {/* =====================================================
-                FOCUS + INSIGHT
+                FOCUS + INSIGHT, then UPCOMING + LATEST
+                Rows, so each pair lines up; one column on phones.
             ===================================================== */}
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+                <motion.div variants={rise} className={focusMode ? "lg:col-span-2" : ""}>
+                    <TodaysFocus
+                        task={priorityTask}
+                        total={total}
+                        focusMode={focusMode}
+                        onComplete={completeFocusTask}
+                        onNewTask={newTask}
+                    />
+                </motion.div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <Card>
-                    <div className="flex items-center gap-2 text-indigo-300">
-                        <Target size={18} />
-                        Today's Focus
-                    </div>
+                {!focusMode && (
+                    <>
+                        <motion.div variants={rise}>
+                            <WorkflowInsight
+                                enabled={aiEnabled}
+                                counts={{ total, active, completed, overdue, dueToday }}
+                            />
+                        </motion.div>
 
-                    <h3 className="mt-4 text-xl font-semibold text-white">
-                        {priorityTask?.title ||
-                            "No priority task"}
-                    </h3>
+                        <motion.div variants={rise}>
+                            <UpcomingTasks tasks={upcoming} />
+                        </motion.div>
 
-                    <p className="mt-2 text-white/60">
-                        {focusMode
-                            ? "Focus Mode is active. Concentrate on a single meaningful outcome."
-                            : "Choose the next task that moves your work forward."}
-                    </p>
-                </Card>
-
-                {aiEnabled ? (
-                    <Card>
-                        <div className="flex items-center gap-2 text-blue-300">
-                            <Lightbulb size={18} />
-                            Workflow Insight
-                        </div>
-
-                        <h3 className="mt-4 text-xl font-semibold text-white">
-                            Your workload
-                        </h3>
-
-                        <p className="mt-2 text-white/60">
-                            {aiInsight}
-                        </p>
-                    </Card>
-                ) : (
-                    <Card>
-                        <div className="flex items-center gap-2 text-white/60">
-                            <Lightbulb size={18} />
-                            Insights are off
-                        </div>
-
-                        <p className="mt-4 text-white/50">
-                            Turn on Workflow insights in Settings
-                            to see a note about your workload.
-                        </p>
-                    </Card>
+                        <motion.div variants={rise}>
+                            <LatestTasks tasks={tasks} />
+                        </motion.div>
+                    </>
                 )}
             </div>
-
-            {/* =====================================================
-                UPCOMING + LATEST TASKS
-            ===================================================== */}
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <Card>
-                    <div className="flex items-center gap-2 text-blue-300">
-                        <CalendarDays size={18} />
-                        Upcoming Tasks
-                    </div>
-
-                    <div className="mt-5 space-y-3">
-                        {upcoming.length === 0 ? (
-                            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-white/50">
-                                No upcoming tasks scheduled.
-                            </div>
-                        ) : (
-                            upcoming.map((task) => (
-                                <div
-                                    key={task.task_id}
-                                    className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
-                                >
-                                    <p className="font-medium text-white">
-                                        {task.title}
-                                    </p>
-
-                                    <p className="mt-1 text-sm text-white/50">
-                                        Due{" "}
-                                        {formatDueDate(task.due_date)}
-                                    </p>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </Card>
-
-                <LatestTasks tasks={tasks} />
-            </div>
-
-            {/* =====================================================
-                SYSTEM STATUS
-            ===================================================== */}
-
-            <Card>
-                <h3 className="text-lg font-semibold text-white">
-                    Workspace Status
-                </h3>
-
-                <div className="mt-5 grid md:grid-cols-3 gap-4">
-                    <div className="rounded-2xl border border-white/10 p-4">
-                        <p className="text-sm text-white/50">
-                            Total Tasks
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold text-white">
-                            {total}
-                        </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-white/10 p-4">
-                        <p className="text-sm text-white/50">
-                            Overdue
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold text-white">
-                            {overdue.length}
-                        </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-white/10 p-4">
-                        <p className="text-sm text-white/50">
-                            Completion Rate
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold text-white">
-                            {progress}%
-                        </p>
-                    </div>
-                </div>
-            </Card>
         </motion.section>
     );
 }

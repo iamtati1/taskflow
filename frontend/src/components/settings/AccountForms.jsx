@@ -12,7 +12,7 @@ function FormShell({ title, onSubmit, onCancel, saving, error, submitLabel, chil
             <p className="text-sm font-medium text-white">{title}</p>
             {children}
             {error && (
-                <p role="alert" className="text-sm text-red-300">
+                <p role="alert" className="text-sm text-rose-300">
                     {error}
                 </p>
             )}
@@ -65,7 +65,7 @@ export function EditProfileForm({ currentName, onSave, onDone }) {
                     autoFocus
                 />
             </label>
-            <p className="text-xs text-white/40">3–30 letters, numbers, dots, dashes or underscores.</p>
+            <p className="text-xs text-white/50">3–30 letters, numbers, dots, dashes or underscores.</p>
         </FormShell>
     );
 }
@@ -106,7 +106,7 @@ export function ChangePasswordForm({ onSave, onDone }) {
                 Confirm new password
                 <input type="password" className={fieldClass} value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
             </label>
-            <p className="text-xs text-white/40">At least 8 characters.</p>
+            <p className="text-xs text-white/50">At least 8 characters.</p>
         </FormShell>
     );
 }

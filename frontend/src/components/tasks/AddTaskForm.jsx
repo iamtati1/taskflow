@@ -1,24 +1,41 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, CheckCircle2 } from "lucide-react";
+import { useState, useEffect, useId, useRef } from "react";
+import { Sparkles, X } from "lucide-react";
 
 import Button from "../ui/Button";
 import Input from "../ui/Input";
-import Card from "../ui/Card";
+import Field, { describedBy, fieldClass } from "../ui/Field";
+import PillGroup from "../ui/PillGroup";
 import { toDateKey } from "../../utils/dates";
 
+// One-tap due dates, relative to today
+const daysFromToday = (days) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return toDateKey(date);
+};
+const QUICK_DATES = [
+    { label: "Today", days: 0 },
+    { label: "Tomorrow", days: 1 },
+    { label: "Next week", days: 7 },
+];
+
+// The task editor, shown in a Dialog (see Tasks). `titleId` labels the dialog.
 function AddTaskForm({
     addTask,
     updateTask,
-    initialData = null
+    onCancel,
+    initialData = null,
+    titleId,
 }) {
     const isEditMode = !!initialData;
+    const fieldId = useId();
+    const titleInputId = `${fieldId}-title`;
+    const dateInputId = `${fieldId}-date`;
 
     // The task fields the database stores (completion is the checkbox)
     const [title, setTitle] = useState("");
     const [dueDate, setDueDate] = useState(""); // "YYYY-MM-DD" or "" for none
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [success, setSuccess] = useState(false);
     const [submitError, setSubmitError] = useState(null);
     const formRef = useRef(null);
 
@@ -32,9 +49,8 @@ function AddTaskForm({
     }, [initialData]);
 
     // =========================
-    // BRING THE FORM INTO VIEW
+    // FOCUS THE TITLE
     // =========================
-    // It renders below the task list, so without this Edit looks like it did nothing
     useEffect(() => {
         formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
         formRef.current?.querySelector("input")?.focus({ preventScroll: true });
@@ -43,32 +59,29 @@ function AddTaskForm({
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!title.trim() || isSubmitting) return;
+        if (isSubmitting) return;
+
+        if (!title.trim()) {
+            setSubmitError("Enter a title for the task.");
+            return;
+        }
 
         setIsSubmitting(true);
-        setSuccess(false);
         setSubmitError(null);
 
         try {
-            let result;
-
             // An empty date field means "no due date" (null clears an existing one)
             const fields = { title, due_date: dueDate || null };
 
-            if (isEditMode) {
-                result = await updateTask(initialData.task_id, fields);
-            } else {
-                result = await addTask(fields);
-            }
+            const result = isEditMode
+                ? await updateTask(initialData.task_id, fields)
+                : await addTask(fields);
 
             if (result?.success) {
                 if (!isEditMode) {
                     setTitle("");
                     setDueDate("");
                 }
-
-                setSuccess(true);
-                setTimeout(() => setSuccess(false), 1200);
             } else if (result) {
                 setSubmitError(result.error || "Couldn't save the task. Please try again.");
             }
@@ -78,15 +91,16 @@ function AddTaskForm({
     };
 
     return (
-        <motion.div layout ref={formRef}>
-            <Card className="space-y-6">
-
-                {/* HEADER */}
+        <div
+            ref={formRef}
+            className="p-6 sm:p-7"
+        >
+            {/* HEADER */}
+            <div className="mb-6 flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                    <h2 className="text-lg font-semibold text-white">
+                    <h2 id={titleId} className="text-xl font-bold text-white">
                         {isEditMode ? "Edit Task" : "Create Task"}
                     </h2>
-
                     <p className="text-sm text-white/50">
                         {isEditMode
                             ? "Update your task details."
@@ -94,77 +108,99 @@ function AddTaskForm({
                     </p>
                 </div>
 
-                {/* FORM */}
-                <form onSubmit={handleSubmit} className="space-y-4">
+                {onCancel && (
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        aria-label="Close"
+                        className="-mr-2 -mt-1 rounded-xl p-2 text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white touch:-mr-3 touch:p-[13px]"
+                    >
+                        <X size={18} aria-hidden="true" />
+                    </button>
+                )}
+            </div>
 
+            {/* FORM */}
+            <form
+                onSubmit={handleSubmit}
+                onKeyDown={(e) => {
+                    if (e.key === "Escape") onCancel?.();
+                }}
+                className="space-y-5"
+            >
+                <Field id={titleInputId} label="Title" error={submitError}>
                     <Input
+                        id={titleInputId}
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        onChange={(e) => {
+                            setTitle(e.target.value);
+                            setSubmitError(null);
+                        }}
                         placeholder="Task title..."
                         maxLength={200}
+                        autoComplete="off"
+                        aria-invalid={submitError ? true : undefined}
+                        aria-describedby={describedBy(titleInputId, null, submitError)}
+                    />
+                </Field>
+
+                <Field
+                    id={dateInputId}
+                    label="Due date (optional)"
+                    action={dueDate && (
+                        <button
+                            type="button"
+                            onClick={() => setDueDate("")}
+                            className="rounded-lg px-2 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white touch:min-h-11 touch:px-3"
+                        >
+                            Clear date
+                        </button>
+                    )}
+                >
+                    <input
+                        id={dateInputId}
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        className={fieldClass}
                     />
 
-                    <label className="flex flex-col gap-2 text-sm text-white/60 sm:flex-row sm:items-center sm:gap-3">
-                        Due date (optional)
-                        <input
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                            className="rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none [color-scheme:dark] focus:border-cyan-400/40"
-                        />
-                        {dueDate && (
-                            <button
-                                type="button"
-                                onClick={() => setDueDate("")}
-                                className="self-start text-xs text-white/50 hover:text-white sm:self-auto"
-                            >
-                                Clear date
-                            </button>
-                        )}
-                    </label>
+                    <PillGroup
+                        label="Quick due dates"
+                        value={dueDate}
+                        onChange={setDueDate}
+                        options={QUICK_DATES.map(({ label, days }) => ({ label, value: daysFromToday(days) }))}
+                    />
+                </Field>
 
-                    {/* FOOTER */}
-                    <div className="flex items-center justify-between pt-2">
-
-                        {/* SUCCESS / ERROR */}
-                        <div className="text-sm text-cyan-300 min-h-[20px]">
-                            {submitError && (
-                                <div role="alert" className="text-red-300">
-                                    {submitError}
-                                </div>
-                            )}
-                            <AnimatePresence>
-                                {success && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 4 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0 }}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <CheckCircle2 size={14} />
-                                        {isEditMode ? "Task updated" : "Task created"}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        {/* SUBMIT */}
+                {/* CANCEL + SUBMIT */}
+                <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+                    {onCancel && (
                         <Button
-                            type="submit"
-                            variant="primary"
+                            type="button"
+                            variant="ghost"
+                            onClick={onCancel}
                             disabled={isSubmitting}
                         >
-                            <Sparkles size={14} className="inline mr-1" />
-                            {isSubmitting
-                                ? "Saving..."
-                                : isEditMode
-                                    ? "Update Task"
-                                    : "Add Task"}
+                            Cancel
                         </Button>
-                    </div>
-                </form>
-            </Card>
-        </motion.div>
+                    )}
+
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        loading={isSubmitting}
+                        leftIcon={Sparkles}
+                    >
+                        {isSubmitting
+                            ? "Saving..."
+                            : isEditMode
+                                ? "Update Task"
+                                : "Add Task"}
+                    </Button>
+                </div>
+            </form>
+        </div>
     );
 }
 

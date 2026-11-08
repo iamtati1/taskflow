@@ -1,33 +1,35 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-    Eye,
-    EyeOff,
-    Sparkles,
+    AlertCircle,
     ArrowRight,
     BarChart3,
-    Layers3,
-    Loader2,
+    CalendarClock,
     CheckCircle2,
+    Eye,
+    EyeOff,
+    Loader2,
+    Target,
 } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
+import BrandMark from "../components/ui/BrandMark";
+import AmbientBackground from "../components/ui/AmbientBackground";
+import { fieldClass } from "../components/ui/Field";
+import { EASE_OUT, rise, stagger } from "../utils/motion";
 
-// =====================================================
-// SHARED CARD SYSTEM (aligned with app)
-// =====================================================
-function Card({ children, className = "" }) {
-    return (
-        <div className={`rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl ${className}`}>
-            {children}
-        </div>
-    );
-}
+// What TaskFlow does, shown beside the form on large screens
+const FEATURES = [
+    { icon: Target, title: "Know what's next", text: "Today's Focus picks the most urgent task for you." },
+    { icon: CalendarClock, title: "Never miss a date", text: "Overdue and due-today tasks stand out everywhere." },
+    { icon: BarChart3, title: "See your progress", text: "Completion and the week ahead, at a glance." },
+];
 
 function Auth() {
     const navigate = useNavigate();
-    const { signIn, register, error, user, loading } = useAuth();
+    const { signIn, register, error, clearError, user, loading } = useAuth();
+    const ids = useId();
 
     const [isRegistering, setIsRegistering] = useState(false);
     const [username, setUsername] = useState("");
@@ -42,6 +44,13 @@ function Auth() {
     if (!loading && user && status === "idle") {
         return <Navigate to="/tasks" replace />;
     }
+
+    // An error belongs to the attempt that caused it: editing or switching
+    // between sign-in and registration clears it
+    const clearMessages = () => {
+        clearError?.();
+        if (status === "error") setStatus("idle");
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -60,182 +69,230 @@ function Auth() {
         }
     };
 
-    const getButtonContent = () => {
+    const buttonContent = () => {
         if (status === "loading") {
             return (
                 <>
-                    <Loader2 className="animate-spin" size={18} />
-                    Processing...
+                    <Loader2 className="animate-spin" size={18} aria-hidden="true" />
+                    {isRegistering ? "Creating account..." : "Signing in..."}
                 </>
             );
         }
-
         if (status === "success") {
             return (
                 <>
-                    <CheckCircle2 size={18} />
-                    Entering System...
+                    <CheckCircle2 size={18} aria-hidden="true" />
+                    Welcome!
                 </>
             );
         }
-
         return (
             <>
-                {isRegistering ? "Create System" : "Enter Workspace"}
-                <ArrowRight size={18} />
+                {isRegistering ? "Create account" : "Sign in"}
+                <ArrowRight size={18} aria-hidden="true" />
             </>
         );
     };
 
+    const errorMessage = error?.message || error || (status === "error" ? "Couldn't sign you in. Please try again." : null);
+
     return (
-        <div className="relative min-h-screen overflow-hidden bg-black text-white">
+        <div className="relative min-h-screen overflow-hidden bg-base text-white">
 
-            {/* BACKGROUND */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#050816] via-black to-[#0a0f1f]" />
+            {/* BACKGROUND: the same theme light as the app */}
+            <AmbientBackground />
 
-            {/* MAIN */}
-            <div className="relative z-10 min-h-screen grid lg:grid-cols-2">
+            <div className="relative z-10 grid min-h-screen lg:grid-cols-2">
 
-                {/* LEFT PANEL (kept, but slightly aligned tone) */}
-                <div className="hidden lg:flex flex-col justify-between p-14">
+                {/* LEFT: what TaskFlow is (large screens) */}
+                <motion.div
+                    variants={stagger(0.1, 0.08)}
+                    initial="hidden"
+                    animate="show"
+                    className="hidden flex-col justify-between p-14 lg:flex"
+                >
+                    <motion.div variants={rise}>
+                        <BrandMark tagline />
+                    </motion.div>
 
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5">
-                        <Sparkles size={16} className="text-cyan-300" />
-                        <span className="text-sm text-white/70">TaskFlow</span>
-                    </div>
-
-                    <div className="max-w-xl space-y-6">
-
-                        <h1 className="text-5xl font-black leading-tight">
-                            Build your
-                            <span className="block text-cyan-300">
-                                productivity system
+                    <div className="max-w-lg space-y-8">
+                        <motion.h1 variants={rise} className="text-5xl font-extrabold leading-[1.05]">
+                            Plan your day.
+                            <span className="block bg-gradient-to-r from-brand-a via-brand-b to-brand-c bg-clip-text text-transparent">
+                                Finish what matters.
                             </span>
-                        </h1>
+                        </motion.h1>
 
-                        <p className="text-white/50 text-lg">
-                            A focused environment for execution, clarity, and momentum.
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-4">
-
-                            <Card className="p-5">
-                                <BarChart3 className="text-cyan-300 mb-3" />
-                                <h3 className="font-semibold">Progress Insights</h3>
-                                <p className="text-sm text-white/40">See what you've finished</p>
-                            </Card>
-
-                            <Card className="p-5">
-                                <Layers3 className="text-violet-300 mb-3" />
-                                <h3 className="font-semibold">Task Engine</h3>
-                                <p className="text-sm text-white/40">Structured flow</p>
-                            </Card>
-
-                        </div>
+                        <ul className="space-y-4">
+                            {FEATURES.map(({ icon: Icon, title, text }) => (
+                                <motion.li key={title} variants={rise} className="flex items-start gap-4">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-a/20 bg-brand-a/10 text-brand-a">
+                                        <Icon size={18} aria-hidden="true" />
+                                    </span>
+                                    <span>
+                                        <span className="block font-semibold text-white">{title}</span>
+                                        <span className="block text-sm text-white/60">{text}</span>
+                                    </span>
+                                </motion.li>
+                            ))}
+                        </ul>
                     </div>
 
-                    <div className="text-white/20 text-sm">
-                        Designed for focus-driven creators
+                    <motion.p variants={rise} className="text-sm text-white/50">
+                        Your tasks stay private to your account.
+                    </motion.p>
+                </motion.div>
+
+                {/* RIGHT: the form */}
+                <div className="flex flex-col items-center justify-center px-5 py-10 sm:px-8">
+                    <div className="mb-8 lg:hidden">
+                        <BrandMark tagline />
                     </div>
-                </div>
 
-                {/* RIGHT PANEL */}
-                <div className="flex items-center justify-center px-6">
-
-                    <Card className="w-full max-w-md">
-
-                        {/* HEADER */}
-                        <div className="mb-8 space-y-3">
-
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-xs text-white/40 uppercase tracking-widest">
-                                <Sparkles size={12} />
-                                Authentication
-                            </div>
-
-                            <h2 className="text-3xl font-bold">
-                                {isRegistering ? "Create System" : "Welcome Back"}
-                            </h2>
-
-                            <p className="text-white/45">
-                                {isRegistering
-                                    ? "Initialize your productivity workspace"
-                                    : "Continue your execution flow"}
-                            </p>
-
-                        </div>
+                    <motion.div
+                        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.5, ease: EASE_OUT }}
+                        className="relative w-full max-w-md rounded-3xl border border-white/10 bg-raised/80 p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_30px_80px_-30px_rgba(0,0,0,0.8),0_0_80px_-40px_var(--brand-a)] backdrop-blur-xl sm:p-9"
+                    >
+                        {/* HEADER (animates when switching forms) */}
+                        <AnimatePresence mode="wait" initial={false}>
+                            <motion.div
+                                key={isRegistering ? "register" : "sign-in"}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -6 }}
+                                transition={{ duration: 0.2 }}
+                                className="mb-7 space-y-2"
+                            >
+                                <h2 className="text-3xl font-bold">
+                                    {isRegistering ? "Create your account" : "Welcome back"}
+                                </h2>
+                                <p className="text-white/60">
+                                    {isRegistering
+                                        ? "Start organising your tasks in a minute."
+                                        : "Sign in to pick up where you left off."}
+                                </p>
+                            </motion.div>
+                        </AnimatePresence>
 
                         {/* FORM */}
-                        <form onSubmit={handleSubmit} className="space-y-5">
-
-                            <input
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                placeholder="Username"
-                                className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/[0.04] focus:border-cyan-400/40 outline-none"
-                            />
-
-                            <div className="relative">
+                        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                            <div className="space-y-2">
+                                <label htmlFor={`${ids}-username`} className="text-sm font-medium text-white/80">
+                                    Username
+                                </label>
                                 <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Password"
-                                    className="w-full h-14 px-5 pr-14 rounded-2xl border border-white/10 bg-white/[0.04] focus:border-violet-400/40 outline-none"
+                                    id={`${ids}-username`}
+                                    name="username"
+                                    value={username}
+                                    onChange={(e) => {
+                                        setUsername(e.target.value);
+                                        clearMessages();
+                                    }}
+                                    autoComplete="username"
+                                    autoCapitalize="none"
+                                    autoCorrect="off"
+                                    spellCheck={false}
+                                    aria-describedby={isRegistering ? `${ids}-rules` : undefined}
+                                    className={fieldClass}
                                 />
+                            </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
-                                >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
+                            <div className="space-y-2">
+                                <label htmlFor={`${ids}-password`} className="text-sm font-medium text-white/80">
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        id={`${ids}-password`}
+                                        name="password"
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                            clearMessages();
+                                        }}
+                                        autoComplete={isRegistering ? "new-password" : "current-password"}
+                                        aria-describedby={isRegistering ? `${ids}-rules` : undefined}
+                                        className={`${fieldClass} pr-12`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                        aria-pressed={showPassword}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
+                                    >
+                                        {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* RULES (registration only; the server enforces them) */}
-                            {isRegistering && (
-                                <p className="px-1 text-sm text-white/45">
-                                    Username: 3–30 letters, numbers, dots, dashes or underscores.
-                                    Password: at least 8 characters.
-                                </p>
-                            )}
+                            <AnimatePresence initial={false}>
+                                {isRegistering && (
+                                    <motion.p
+                                        id={`${ids}-rules`}
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden px-1 text-sm text-white/60"
+                                    >
+                                        Username: 3–30 letters, numbers, dots, dashes or underscores.
+                                        Password: at least 8 characters.
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
 
                             {/* ERROR */}
-                            {(error || status === "error") && (
-                                <div className="p-4 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                                    {error?.message || error || "Authentication failed"}
-                                </div>
-                            )}
+                            <AnimatePresence>
+                                {errorMessage && (
+                                    <motion.div
+                                        role="alert"
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0, x: [0, -6, 6, -3, 3, 0] }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.35 }}
+                                        className="flex items-start gap-2 rounded-xl border border-rose-400/25 bg-rose-500/10 p-3.5 text-sm text-rose-200"
+                                    >
+                                        <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                                        {errorMessage}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
-                            {/* BUTTON */}
+                            {/* SUBMIT */}
                             <motion.button
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
                                 disabled={isLoading}
-                                className={`w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-3 transition
+                                aria-busy={isLoading || undefined}
+                                className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl border font-semibold text-slate-950 transition-[background-color,box-shadow] duration-200
                                     ${status === "success"
-                                        ? "bg-emerald-500/20 border border-emerald-400/30"
-                                        : "bg-cyan-400/10 border border-cyan-400/20 hover:bg-cyan-400/15"
-                                    }
-                                    ${isLoading ? "opacity-80" : "opacity-100"}
-                                `}
+                                        ? "border-emerald-300/50 bg-emerald-400 shadow-[0_10px_30px_-10px_rgb(52_211_153/0.7)]"
+                                        : "border-cyan-300/50 bg-cyan-400 shadow-[0_10px_30px_-10px_color-mix(in_oklab,var(--color-cyan-400)_70%,transparent)] hover:bg-cyan-300 hover:shadow-[0_12px_36px_-8px_color-mix(in_oklab,var(--color-cyan-400)_80%,transparent)]"}
+                                    ${isLoading ? "opacity-80" : ""}`}
                             >
-                                {getButtonContent()}
+                                {buttonContent()}
                             </motion.button>
-
                         </form>
 
                         {/* SWITCH */}
-                        <button
-                            onClick={() => setIsRegistering(!isRegistering)}
-                            className="mt-6 w-full text-sm text-white/40 hover:text-cyan-300"
-                        >
-                            {isRegistering
-                                ? "Already have an account? Login"
-                                : "Need an account? Register"}
-                        </button>
-
-                    </Card>
+                        <p className="mt-6 text-center text-sm text-white/60">
+                            {isRegistering ? "Already have an account?" : "New to TaskFlow?"}{" "}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsRegistering(!isRegistering);
+                                    clearMessages();
+                                }}
+                                className="font-semibold text-cyan-300 underline-offset-4 hover:underline"
+                            >
+                                {isRegistering ? "Sign in" : "Create an account"}
+                            </button>
+                        </p>
+                    </motion.div>
                 </div>
             </div>
         </div>

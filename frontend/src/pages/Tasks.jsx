@@ -1,29 +1,25 @@
-import { useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { AlertCircle, Plus, X } from "lucide-react";
 
 import TaskCalendar from "../components/calendar/TaskCalendar";
 import TaskList from "../components/tasks/TaskList";
 import AddTaskForm from "../components/tasks/AddTaskForm";
+import TasksLoadState from "../components/tasks/TasksLoadState";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Dialog from "../components/ui/Dialog";
 import useTasks from "../hooks/useTasks";
 import { useNotifications } from "../context/NotificationContext";
-
-import { CheckCircle2, ListTodo } from "lucide-react";
+import { dueStatus } from "../utils/dates";
+import { rise, stagger } from "../utils/motion";
 
 // A task title for a toast, shortened so the toast stays small
 const quoted = (title = "") =>
     `"${title.length > 60 ? `${title.slice(0, 60)}…` : title}"`;
 
-// =====================================================
-// CARD
-// =====================================================
-function Card({ children, className = "" }) {
-    return (
-        <div
-            className={`rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl ${className}`}
-        >
-            {children}
-        </div>
-    );
-}
+const FORM_TITLE_ID = "task-form-title";
 
 function Tasks() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,22 +32,18 @@ function Tasks() {
         notice,
         dismissNotice,
         refreshTasks,
-        selectedTaskId,
-        onSelect,
         addTask,
         editTask,
         toggleTask,
         removeTask,
         reorderTasks,
+        activeActions,
     } = useTasks();
 
     // Success is confirmed with a toast; failures keep their inline errors,
     // which stay until dismissed
     const { addNotification } = useNotifications();
 
-    // ===============================
-    // FIX: safe loading state
-    // ===============================
     const isLoading = status === "loading";
 
     // ===============================
@@ -104,184 +96,155 @@ function Tasks() {
         const task = tasks.find((t) => t.task_id === id);
         const result = await removeTask(id);
         if (result?.success && task) {
+            // Don't leave the editor open on a task that no longer exists
+            if (editingTask?.task_id === id) closeModal();
             addNotification(`Deleted ${quoted(task.title)}`, "success");
         }
         return result;
     };
 
     // ===============================
-    // EDIT
+    // EDITOR
     // ===============================
     const handleEdit = (task) => {
         setEditingTask(task);
         setIsModalOpen(true);
     };
 
-    // ===============================
-    // CLOSE MODAL
-    // ===============================
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingTask(null);
     };
 
-    // ===============================
-    // OPEN NEW TASK (IMPORTANT FIX)
-    // ===============================
     const openNewTask = () => {
         setEditingTask(null);
         setIsModalOpen(true);
     };
 
+    // Closing without saving puts focus back where new tasks start (the
+    // dialog returns it to the opener instead when that was a button)
+    const newTaskButton = useRef(null);
+    const cancelForm = () => {
+        closeModal();
+        newTaskButton.current?.focus();
+    };
+
+    // The Dashboard's "New task" arrives here with { newTask: true }
+    const location = useLocation();
+    const navigate = useNavigate();
+    useEffect(() => {
+        if (location.state?.newTask) {
+            openNewTask();
+            navigate(location.pathname, { replace: true, state: null });
+        }
+    }, [location.state, location.pathname, navigate]);
 
     // ===============================
-    // STATS
+    // SUMMARY
     // ===============================
-    const completedTasks = tasks.filter(
-        (task) => task.is_complete
-    ).length;
+    const activeCount = tasks.filter((task) => !task.is_complete).length;
+    const completedCount = tasks.length - activeCount;
+    const urgency = (kind) =>
+        tasks.filter((task) => !task.is_complete && dueStatus(task.due_date)?.kind === kind).length;
+    const overdueCount = urgency("overdue");
+    const todayCount = urgency("today");
 
-    const stats = useMemo(
-        () => [
-            {
-                icon: ListTodo,
-                label: "Total",
-                value: tasks.length,
-            },
-            {
-                icon: CheckCircle2,
-                label: "Completed",
-                value: completedTasks,
-            },
-        ],
-        [tasks, completedTasks]
-    );
-
-    // ===============================
-    // LOADING / ERROR STATES
-    // ===============================
-    if (isLoading) {
-        return (
-            <div className="p-6 text-white/60">
-                Loading tasks...
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div role="alert" className="space-y-4 p-6">
-                <p className="text-red-300">Couldn&apos;t load your tasks: {error}</p>
-                <button
-                    type="button"
-                    onClick={() => refreshTasks()}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-white hover:bg-white/10"
-                >
-                    Try again
-                </button>
-            </div>
-        );
+    if (isLoading || error) {
+        return <TasksLoadState status={status} error={error} onRetry={refreshTasks} />;
     }
 
     return (
-        <div className="space-y-10">
+        <motion.div variants={stagger()} initial="hidden" animate="show" className="space-y-6">
 
             {/* HEADER */}
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-
+            <motion.div variants={rise} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-cyan-300">
-                        <ListTodo size={16} />
-                        Task System
-                    </div>
-
-                    <h1 className="text-3xl font-bold text-white">
-                        Your tasks, structured
+                    <h1 className="text-3xl font-bold text-white sm:text-4xl">
+                        Tasks
                     </h1>
 
-                    <p className="text-white/60 max-w-xl">
-                        Plan, organize, and execute your work with clarity and momentum.
+                    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/55">
+                        <span><span className="tabular font-semibold text-white">{activeCount}</span> active</span>
+                        <span aria-hidden="true" className="text-white/20">•</span>
+                        <span><span className="tabular font-semibold text-white">{completedCount}</span> completed</span>
+                        {todayCount > 0 && (
+                            <>
+                                <span aria-hidden="true" className="text-white/20">•</span>
+                                <span className="text-amber-200"><span className="tabular font-semibold">{todayCount}</span> due today</span>
+                            </>
+                        )}
+                        {overdueCount > 0 && (
+                            <>
+                                <span aria-hidden="true" className="text-white/20">•</span>
+                                <span className="text-rose-300"><span className="tabular font-semibold">{overdueCount}</span> overdue</span>
+                            </>
+                        )}
                     </p>
                 </div>
 
-                <button
-                    onClick={openNewTask}
-                    className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-white transition hover:bg-cyan-400/15"
-                >
-                    + New Task
-                </button>
-            </div>
-
-            {/* STATS */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {stats.map((stat) => {
-                    const Icon = stat.icon;
-
-                    return (
-                        <Card key={stat.label}>
-                            <Icon size={18} className="text-cyan-300" />
-
-                            <h3 className="mt-4 text-3xl font-bold text-white">
-                                {stat.value}
-                            </h3>
-
-                            <p className="mt-1 text-sm text-white/50">
-                                {stat.label}
-                            </p>
-                        </Card>
-                    );
-                })}
-            </div>
+                <Button ref={newTaskButton} size="lg" leftIcon={Plus} onClick={openNewTask}>
+                    New Task
+                </Button>
+            </motion.div>
 
             {/* ACTION ERRORS (the list stays visible) */}
             {notice && (
-                <div
+                <motion.div
                     role="alert"
-                    className="flex items-start justify-between gap-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start justify-between gap-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
                 >
-                    <span>{notice}</span>
+                    <span className="flex items-start gap-2">
+                        <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        <span>{notice}</span>
+                    </span>
                     <button
                         type="button"
                         onClick={dismissNotice}
-                        className="shrink-0 text-red-200/80 hover:text-white"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-0.5 text-rose-200/80 hover:bg-rose-500/10 hover:text-white"
                     >
+                        <X size={14} aria-hidden="true" />
                         Dismiss
                     </button>
-                </div>
+                </motion.div>
             )}
 
-            {/* MAIN GRID */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* LIST FIRST, CALENDAR BESIDE IT (BELOW ON SMALLER SCREENS) */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                <motion.div variants={rise}>
+                    <Card>
+                        <TaskList
+                            tasks={tasks}
+                            editingTaskId={isModalOpen ? editingTask?.task_id : undefined}
+                            activeActions={activeActions}
+                            onDelete={handleDelete}
+                            onToggle={handleToggle}
+                            onEdit={handleEdit}
+                            onCreate={openNewTask}
+                            reorderTasks={reorderTasks}
+                        />
+                    </Card>
+                </motion.div>
 
-                <Card className="xl:col-span-1">
-                    <TaskCalendar
-                        tasks={tasks}
-                    />
-                </Card>
-
-                <Card className="xl:col-span-2">
-                    <TaskList
-                        tasks={tasks}
-                        selectedTaskId={selectedTaskId}
-                        onDelete={handleDelete}
-                        onToggle={handleToggle}
-                        onSelect={onSelect}
-                        onEdit={handleEdit}
-                        reorderTasks={reorderTasks}
-                    />
-                </Card>
+                <motion.div variants={rise}>
+                    <Card>
+                        <TaskCalendar tasks={tasks} />
+                    </Card>
+                </motion.div>
             </div>
 
-            {/* MODAL */}
-            {isModalOpen && (
+            {/* EDITOR */}
+            <Dialog open={isModalOpen} onClose={cancelForm} labelledBy={FORM_TITLE_ID}>
                 <AddTaskForm
                     addTask={handleCreate}
                     updateTask={handleUpdate}
+                    onCancel={cancelForm}
                     initialData={editingTask}
+                    titleId={FORM_TITLE_ID}
                 />
-            )}
-
-        </div>
+            </Dialog>
+        </motion.div>
     );
 }
 

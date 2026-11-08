@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { MotionConfig } from "framer-motion";
 
 import App from "./App";
 
@@ -20,12 +21,13 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <NotificationProvider>
-        <App />
-      </NotificationProvider>
-    </AuthProvider>
+    {/* Follows the system's reduced-motion setting: no movement, fades only */}
+    <MotionConfig reducedMotion="user">
+      <AuthProvider>
+        <NotificationProvider>
+          <App />
+        </NotificationProvider>
+      </AuthProvider>
+    </MotionConfig>
   </React.StrictMode>
-
-
 );

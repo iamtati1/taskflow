@@ -1,10 +1,14 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { useLocation, useOutlet } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import MobileNav from "./MobileNav";
 import ToastViewport from "../notifications/ToastViewport";
-import { motion } from "framer-motion";
+import AmbientBackground from "../ui/AmbientBackground";
 import useUISettings from "../../hooks/useUISettings";
+import { EASE_OUT } from "../../utils/motion";
 
 // =====================================================
 // ROUTE CONFIG
@@ -18,49 +22,40 @@ const PAGE_TITLES = {
 
 function AppLayout() {
     const location = useLocation();
+    // The current page, kept as-is while it animates out
+    const outlet = useOutlet();
 
     const ui = useUISettings() || {};
-
     const quickSettings = ui.quickSettings || { "Focus Mode": false };
-    // =====================================================
-    // PAGE TITLE RESOLUTION
-    // =====================================================
-    const getPageTitle = () => {
-        const path = location.pathname;
 
-        if (PAGE_TITLES[path]) return PAGE_TITLES[path];
+    const pageTitle = PAGE_TITLES[location.pathname] || "Workspace";
 
-        if (path.includes("tasks")) return "Tasks";
-        if (path.includes("analytics")) return "Analytics";
-        if (path.includes("dashboard")) return "Dashboard";
-
-        return "Workspace";
-    };
-
-    // =====================================================
-    // THEME CLASS SYSTEM
-    // =====================================================
-    const themeClass = "bg-[#050816]";
+    // The browser tab names the page (and screen readers announce it)
+    useEffect(() => {
+        document.title = `${pageTitle} · TaskFlow`;
+    }, [pageTitle]);
 
     return (
-        <div className={`relative min-h-screen text-white overflow-x-clip transition-colors duration-300 ${themeClass}`}>
+        <div className="relative min-h-screen overflow-x-clip bg-base text-white">
 
-            {/* BACKGROUND SYSTEM */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="app-grid" />
-                <div className="app-noise" />
+            {/* SKIP LINK (first stop for keyboard users) */}
+            <a
+                href="#main"
+                className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-xl focus:bg-cyan-400 focus:px-4 focus:py-2 focus:font-semibold focus:text-slate-950"
+            >
+                Skip to content
+            </a>
 
-                <div className="absolute top-[-18rem] right-[-12rem] h-[40rem] w-[40rem] rounded-full bg-blue-500/10 blur-[160px]" />
-                <div className="absolute bottom-[-18rem] left-[-12rem] h-[44rem] w-[44rem] rounded-full bg-indigo-500/10 blur-[180px]" />
-            </div>
+            {/* BACKGROUND: the theme's ambient light */}
+            <AmbientBackground />
 
             {/* APP SHELL */}
-            <div className="relative min-h-screen text-white overflow-x-clip flex">
+            <div className="relative flex min-h-screen overflow-x-clip">
 
-                {/* SIDEBAR */}
+                {/* SIDEBAR (from lg) */}
                 <aside
-                    className={`hidden lg:flex w-[280px] border-r border-white/10 bg-black/20 backdrop-blur-xl transition-opacity
-                        ${quickSettings["Focus Mode"] ? "opacity-60" : "opacity-100"}`}
+                    className={`hidden w-[264px] shrink-0 border-r border-white/[0.07] bg-raised/45 backdrop-blur-xl transition-opacity duration-300 lg:flex
+                        ${quickSettings["Focus Mode"] ? "opacity-60 hover:opacity-100" : "opacity-100"}`}
                 >
                     <div className="sticky top-0 h-screen w-full">
                         <Sidebar />
@@ -68,30 +63,30 @@ function AppLayout() {
                 </aside>
 
                 {/* MAIN */}
-                <div className="flex-1 flex flex-col min-w-0">
+                <div className="flex min-w-0 flex-1 flex-col">
 
-                    {/* TOPBAR */}
-                    <div className="sticky top-0 z-20 border-b border-white/10 bg-black/20 backdrop-blur-xl">
-                        <Topbar title={getPageTitle()} />
+                    <div className="sticky top-0 z-20 border-b border-white/[0.07] bg-base/70 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+                        <Topbar title={pageTitle} />
                     </div>
 
-                    {/* CONTENT */}
-                    <main className="flex-1 overflow-y-auto px-6 pt-8 pb-28 lg:pb-8">
-                        <div className="mx-auto w-full max-w-[1400px]">
-
-                            <motion.div
-                                key={location.pathname}
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.25 }}
-                                className="space-y-8"
-                            >
-                                <Outlet />
-                            </motion.div>
-
+                    <main
+                        id="main"
+                        tabIndex={-1}
+                        className="flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-6 outline-none sm:px-6 lg:px-10 lg:pb-12 lg:pt-8"
+                    >
+                        <div className="mx-auto w-full max-w-[1280px]">
+                            <AnimatePresence mode="wait" initial={false}>
+                                <motion.div
+                                    key={location.pathname}
+                                    initial={{ opacity: 0, y: 14 }}
+                                    animate={{ opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE_OUT } }}
+                                    exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+                                >
+                                    {outlet}
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
                     </main>
-
                 </div>
             </div>
 

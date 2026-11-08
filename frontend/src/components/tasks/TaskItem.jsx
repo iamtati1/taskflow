@@ -1,223 +1,179 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { formatDueDate } from "../../utils/dates";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 
-import {
-  CheckCircle2,
-  Circle,
-  Calendar,
-  GripVertical,
-  Loader2,
-} from "lucide-react";
+import DueChip from "./DueChip";
+import CheckMark from "../ui/CheckMark";
+import { dueStatus } from "../../utils/dates";
+
+// An open task that is overdue or due today carries a thin edge in its
+// status colour, so urgent cards stand out while scanning the list
+const EDGES = {
+    overdue: "before:bg-rose-400/80",
+    today: "before:bg-amber-300/80",
+};
 
 function TaskItem({
-  task,
-  onSelect = () => { },
-  onToggle = () => { },
-  onEdit = () => { },
-  onDelete = () => { },
-  isSelected = false,
-  isActiveActionId,
+    task,
+    onSelect = () => { },
+    onToggle = () => { },
+    onEdit = () => { },
+    onDelete = () => { },
+    isSelected = false,
+    isActiveActionId,
 }) {
-  // Deleting is permanent, so Delete first asks (inline, focus on Keep)
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const deleteRef = useRef(null);
-  const keepRef = useRef(null);
-  const wasConfirming = useRef(false);
+    // Deleting is permanent, so Delete first asks (inline, focus on Keep)
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
+    const deleteRef = useRef(null);
+    const keepRef = useRef(null);
+    const wasConfirming = useRef(false);
 
-  useEffect(() => {
-    if (confirmingDelete) keepRef.current?.focus();
-    else if (wasConfirming.current) deleteRef.current?.focus();
-    wasConfirming.current = confirmingDelete;
-  }, [confirmingDelete]);
+    useEffect(() => {
+        if (confirmingDelete) keepRef.current?.focus();
+        else if (wasConfirming.current) deleteRef.current?.focus();
+        wasConfirming.current = confirmingDelete;
+    }, [confirmingDelete]);
 
-  if (!task?.task_id) return null;
+    if (!task?.task_id) return null;
 
-  // =====================================================
-  // DERIVED STATE (clean + explicit)
-  // =====================================================
-  const isUpdating = isActiveActionId === task.task_id;
-  const isCompleted = task.is_complete;
+    const isUpdating = isActiveActionId === task.task_id;
+    const isCompleted = task.is_complete;
+    const isLocked = isUpdating;
+    const edge = !isCompleted && EDGES[dueStatus(task.due_date)?.kind];
 
-  const isLocked = isUpdating;
+    const handleSelect = () => {
+        if (isLocked) return;
+        onSelect(task.task_id);
+    };
 
-  // =====================================================
-  // DATE FORMAT
-  // =====================================================
-  const dueDateLabel = task.due_date
-    ? formatDueDate(task.due_date, { month: "short", day: "numeric" })
-    : null;
+    const handleToggle = (e) => {
+        e.stopPropagation();
+        if (isLocked) return;
+        // A completed task moves to the other section at once, so the second
+        // click of a double-click would land on (and toggle) the next task
+        if (e.detail > 1) return;
+        onToggle(task.task_id);
+    };
 
-  // =====================================================
-  // INTERACTION HANDLERS (guarded)
-  // =====================================================
-  const handleSelect = () => {
-    if (isLocked) return;
-    onSelect(task.task_id);
-  };
-
-  const handleToggle = (e) => {
-    e.stopPropagation();
-    if (isLocked) return;
-    onToggle(task.task_id);
-  };
-
-  // =====================================================
-  // VISUAL STATES (clean separation)
-  // =====================================================
-  const base =
-    "group relative rounded-2xl border p-5 transition-all cursor-pointer";
-
-  const state = [
-    isSelected
-      ? "border-cyan-400/40 bg-cyan-400/10"
-      : "border-white/10 bg-black/20 hover:border-white/20",
-
-    isCompleted ? "opacity-80" : "",
-
-    isUpdating ? "ring-1 ring-cyan-400/30 opacity-90" : "",
-  ].join(" ");
-
-  // =====================================================
-  // UI
-  // =====================================================
-  return (
-    <motion.div
-      layout
-      onClick={handleSelect}
-      whileHover={!isLocked ? { y: -2 } : {}}
-      className={`${base} ${state}`}
-    >
-      <div className="flex gap-4">
-
-        {/* CHECK */}
-        <button
-          type="button"
-          onClick={handleToggle}
-          disabled={isLocked}
-          aria-label={isCompleted ? "Mark as not done" : "Mark complete"}
-          className="mt-1 shrink-0 transition-transform hover:scale-105 disabled:opacity-50"
+    return (
+        <div
+            onClick={handleSelect}
+            className={`group relative flex items-start gap-3 rounded-2xl border p-4 transition-colors duration-200 cursor-pointer
+                ${edge ? `before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:rounded-r-full ${edge}` : ""}
+                ${confirmingDelete
+                    ? "border-rose-400/35 bg-rose-500/[0.06]"
+                    : isSelected
+                        ? "border-cyan-400/45 bg-cyan-400/[0.08] shadow-[0_0_0_1px_color-mix(in_oklab,var(--color-cyan-400)_25%,transparent)]"
+                        : isCompleted
+                            ? "border-white/[0.06] bg-white/[0.02] hover:border-white/15"
+                            : "border-white/[0.09] bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.055]"}
+                ${isUpdating ? "ring-1 ring-cyan-400/30" : ""}`}
         >
-          {isUpdating ? (
-            <Loader2 size={18} className="text-cyan-300 animate-spin" />
-          ) : isCompleted ? (
-            <CheckCircle2 size={20} className="text-emerald-400" />
-          ) : (
-            <Circle size={20} className="text-white/30 hover:text-white/60" />
-          )}
-        </button>
-
-        {/* CONTENT */}
-        <div className="min-w-0 flex-1">
-          <h3
-            className={`text-sm font-medium transition-all ${isCompleted
-              ? "line-through text-white/30"
-              : "text-white"
-              }`}
-          >
-            {task.title}
-          </h3>
-
-          {/* ACTIONS (spaced apart so a click on Edit can't land on Delete) */}
-          <div className="flex items-center gap-2">
-            {/* EDIT BUTTON */}
+            {/* CHECK (first control in the card) */}
             <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(task);
-              }}
-              className="text-xs text-cyan-300 hover:text-cyan-200"
+                type="button"
+                onClick={handleToggle}
+                disabled={isLocked}
+                aria-label={isCompleted ? "Mark as not done" : "Mark complete"}
+                className="group/check -m-1.5 shrink-0 rounded-full p-1.5 disabled:opacity-60 touch:-m-2.5 touch:p-2.5"
             >
-              Edit
+                {/* The tick shows at once; "syncing" beside the date says it's saving */}
+                <CheckMark checked={isCompleted} />
             </button>
 
-            {/* DELETE BUTTON, then a confirmation in its place */}
-            {confirmingDelete ? (
-              <div
-                role="group"
-                aria-label="Delete this task?"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setConfirmingDelete(false);
-                }}
-                className="flex items-center gap-2 text-xs"
-              >
-                <span className="text-white/60">Delete this task?</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfirmingDelete(false);
-                    onDelete(task.task_id);
-                  }}
-                  className="rounded-lg bg-red-500/15 px-2 py-0.5 text-red-300 hover:bg-red-500/25"
+            {/* CONTENT */}
+            <div className="min-w-0 flex-1">
+                <h3
+                    className={`break-words font-sans text-[15px] font-medium leading-snug transition-colors duration-300
+                        ${isCompleted ? "text-white/50 line-through decoration-white/30" : "text-white"}`}
                 >
-                  Yes, delete
-                </button>
-                <button
-                  ref={keepRef}
-                  type="button"
-                  onClick={() => setConfirmingDelete(false)}
-                  className="rounded-lg px-2 py-0.5 text-white/70 hover:text-white"
-                >
-                  Keep
-                </button>
-              </div>
-            ) : (
-              <button
-                ref={deleteRef}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirmingDelete(true);
-                }}
-                className="text-xs text-red-400 hover:text-red-300"
-              >
-                Delete
-              </button>
-            )}
-          </div>
+                    {task.title}
+                </h3>
 
+                {/* META: due date and status, actions on the right */}
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                    <DueChip dueDate={task.due_date} done={isCompleted} />
+                    {isUpdating && (
+                        <span className="animate-pulse text-xs text-cyan-300">
+                            syncing
+                        </span>
+                    )}
 
-          {/* META ROW */}
-          {(dueDateLabel || isUpdating) && (
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+                {/* ACTIONS (spaced apart so a click on Edit can't land on Delete) */}
+                <div className="-my-1 ml-auto flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(task);
+                        }}
+                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-white/[0.06] hover:text-cyan-200"
+                    >
+                        <Pencil size={12} aria-hidden="true" />
+                        Edit
+                    </button>
 
-            {/* DUE DATE */}
-            {dueDateLabel && (
-              <div className="flex items-center gap-1 text-xs text-white/50">
-                <Calendar size={12} />
-                {dueDateLabel}
-              </div>
-            )}
+                    {/* DELETE, then a confirmation in its place */}
+                    {confirmingDelete ? (
+                        <motion.div
+                            role="group"
+                            aria-label="Delete this task?"
+                            initial={{ opacity: 0, x: -6 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => {
+                                if (e.key === "Escape") setConfirmingDelete(false);
+                            }}
+                            className="flex flex-wrap items-center gap-2 text-xs"
+                        >
+                            <span className="text-white/60">Delete this task?</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setConfirmingDelete(false);
+                                    onDelete(task.task_id);
+                                }}
+                                className="min-h-9 rounded-lg bg-rose-500/15 px-2.5 py-1 font-medium sm:min-h-0 touch:min-h-11 text-rose-300 transition-colors hover:bg-rose-500/25"
+                            >
+                                Yes, delete
+                            </button>
+                            <button
+                                ref={keepRef}
+                                type="button"
+                                onClick={() => setConfirmingDelete(false)}
+                                className="min-h-9 rounded-lg px-2.5 py-1 text-white/70 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-white/[0.06] hover:text-white"
+                            >
+                                Keep
+                            </button>
+                        </motion.div>
+                    ) : (
+                        <button
+                            ref={deleteRef}
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirmingDelete(true);
+                            }}
+                            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
+                        >
+                            <Trash2 size={12} aria-hidden="true" />
+                            Delete
+                        </button>
+                    )}
+                </div>
+                </div>
+            </div>
 
-            {/* STATUS TEXT (micro-feedback layer) */}
-            {isUpdating && (
-              <div className="text-xs text-cyan-300 animate-pulse">
-                syncing
-              </div>
-            )}
-          </div>
-          )}
+            {/* DRAG HANDLE (a cue; the whole card is draggable, see TaskList).
+                Shown only with a mouse: touch screens can't drag here. */}
+            <div
+                aria-hidden="true"
+                className="hidden self-center rounded-md p-0.5 text-white/30 transition-colors group-hover:bg-white/[0.05] group-hover:text-white/70 [@media(hover:hover)]:block cursor-grab active:cursor-grabbing"
+            >
+                <GripVertical size={16} />
+            </div>
         </div>
-
-
-        {/* DRAG HANDLE (visual cue; the card itself is draggable, see TaskList) */}
-        <div
-          aria-hidden="true"
-          className="
-                        self-center
-                        opacity-0 group-hover:opacity-100
-                        transition-opacity
-                        text-white/30
-                        cursor-grab active:cursor-grabbing
-                    "
-        >
-          <GripVertical size={16} />
-        </div>
-      </div>
-    </motion.div>
-  );
+    );
 }
 
 export default TaskItem;
