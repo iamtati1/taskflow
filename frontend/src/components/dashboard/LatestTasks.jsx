@@ -1,7 +1,7 @@
 import { CheckCircle2, Circle, ListTodo } from "lucide-react";
 
 import Card from "../ui/Card";
-import { formatDueDate, isOverdue } from "../../utils/dates";
+import { formatDueDate, isOverdue, toDateKey } from "../../utils/dates";
 
 // Newest first. Task ids grow as tasks are created, so id order is creation
 // order; tasks don't record when they were created or completed yet, so this
@@ -15,6 +15,10 @@ export const latestTasks = (tasks, limit = 5) =>
 const statusOf = (task) => {
     if (task.is_complete) return { label: "Done", className: "text-cyan-300" };
     if (!task.due_date) return { label: "No due date", className: "text-white/40" };
+
+    if (toDateKey(task.due_date) === toDateKey(new Date())) {
+        return { label: "Due today", className: "text-white/50" };
+    }
 
     const due = formatDueDate(task.due_date, { month: "short", day: "numeric" });
     return isOverdue(task.due_date)

@@ -59,6 +59,9 @@ function TaskItem({
   const handleToggle = (e) => {
     e.stopPropagation();
     if (isLocked) return;
+    // A completed task moves to the other section at once, so the second
+    // click of a double-click would land on (and toggle) the next task
+    if (e.detail > 1) return;
     onToggle(task.task_id);
   };
 

@@ -3,6 +3,7 @@ import { afterEach, expect, test } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 
 import LatestTasks, { latestTasks } from "./LatestTasks";
+import { toDateKey } from "../../utils/dates";
 
 afterEach(cleanup);
 
@@ -58,4 +59,10 @@ test("with no tasks it says so", () => {
 
     expect(screen.getByText(/No tasks yet/)).toBeTruthy();
     expect(screen.queryByRole("list")).toBeNull();
+});
+
+test("a task due today says so, like the Dashboard's Upcoming list", () => {
+    render(<LatestTasks tasks={[task(1, "Today's one", { due_date: toDateKey(new Date()) })]} />);
+
+    expect(screen.getByText("Due today")).toBeTruthy();
 });
