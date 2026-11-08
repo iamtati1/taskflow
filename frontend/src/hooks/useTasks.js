@@ -28,7 +28,8 @@ function useTasks() {
     useEffect(() => {
         tasksRef.current = tasks;
     }, [tasks]);
-    const [status, setStatus] = useState("idle");
+    // Starts as loading: the first render happens before the request does
+    const [status, setStatus] = useState("loading");
     // error: loading the list failed (the page can't show tasks)
     // notice: one action failed; the list is still shown
     const [error, setError] = useState(null);

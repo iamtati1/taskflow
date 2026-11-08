@@ -64,3 +64,21 @@ test("a failed rename keeps the current name and reports the error", async () =>
     await vi.waitFor(() => expect(result).toEqual({ success: false, error: "Username already taken." }));
     expect(screen.getByText("name: jordan")).toBeTruthy();
 });
+
+test("when the session ends mid-use, the user is signed out with an explanation", async () => {
+    const { SESSION_ENDED_EVENT } = await import("../api/config");
+    function Status() {
+        const { currentUser, error } = useContext(AuthContext);
+        return <p>{currentUser ? `signed in as ${currentUser.username}` : `signed out: ${error}`}</p>;
+    }
+    render(
+        <AuthProvider>
+            <Status />
+        </AuthProvider>
+    );
+    await screen.findByText("signed in as jordan");
+
+    window.dispatchEvent(new Event(SESSION_ENDED_EVENT));
+
+    expect(await screen.findByText("signed out: Your session has ended. Please sign in again.")).toBeTruthy();
+});

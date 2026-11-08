@@ -477,3 +477,13 @@ test("submitting without a title explains why, and typing clears the message", a
     fireEvent.change(input, { target: { value: "Real title" } });
     expect(screen.queryByRole("alert")).toBeNull();
 });
+
+// ---------- Loading ----------
+
+test("while tasks load it says so, instead of showing an empty list", () => {
+    taskApi.getTasks.mockReturnValue(new Promise(() => {})); // never answers
+    renderTasks();
+
+    expect(screen.getByText("Loading tasks...")).toBeTruthy();
+    expect(screen.queryByText(/Nothing on your plate yet/)).toBeNull();
+});

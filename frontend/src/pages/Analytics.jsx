@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import useTasks from "../hooks/useTasks";
+import TasksLoadState from "../components/tasks/TasksLoadState";
 
 import {
     BarChart3,
@@ -23,7 +24,7 @@ function Card({ children, className = "" }) {
 }
 
 function Analytics() {
-    const { tasks = [] } = useTasks();
+    const { tasks = [], status, error, refreshTasks } = useTasks();
 
     // =====================================================
     // DERIVED ENGINE
@@ -101,6 +102,10 @@ function Analytics() {
             color: "text-orange-300",
         },
     ];
+
+    if (status === "loading" || error) {
+        return <TasksLoadState status={status} error={error} onRetry={refreshTasks} />;
+    }
 
     return (
         <section className="space-y-10">

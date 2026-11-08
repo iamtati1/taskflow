@@ -67,7 +67,9 @@ function Settings() {
         setOpenForm(null);
         setAccountMessage(message);
     };
-    const { tasks = [] } = useTasks();
+    const { tasks = [], status, error } = useTasks();
+    // The count is only shown once it's real (not while loading or after a failure)
+    const tasksLoaded = status !== "loading" && !error;
 
     const {
         theme,
@@ -110,8 +112,12 @@ function Settings() {
                         <span className="text-white font-medium">
                             {currentUser?.username || "Guest"}
                         </span>
-                        {" • "}
-                        {tasks.length} tasks in system
+                        {tasksLoaded && (
+                            <>
+                                {" • "}
+                                {tasks.length} {tasks.length === 1 ? "task" : "tasks"} in system
+                            </>
+                        )}
                     </p>
                 </div>
             </Card>

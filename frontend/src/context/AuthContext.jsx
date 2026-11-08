@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 
 import { getMe, login, register, logout, updateProfile, changePassword } from "../api/auth";
+import { SESSION_ENDED_EVENT } from "../api/config";
 
 export const AuthContext = createContext(null);
 
@@ -90,6 +91,20 @@ export function AuthProvider({ children }) {
         };
 
         checkSession();
+    }, []);
+
+    // ================================
+    // SESSION ENDED WHILE IN USE
+    // ================================
+    // A task request came back 401 (e.g. the session expired in an open tab):
+    // drop the user so ProtectedRoute shows sign-in, and say why
+    useEffect(() => {
+        const handleSessionEnded = () => {
+            setCurrentUser(null);
+            setError("Your session has ended. Please sign in again.");
+        };
+        window.addEventListener(SESSION_ENDED_EVENT, handleSessionEnded);
+        return () => window.removeEventListener(SESSION_ENDED_EVENT, handleSessionEnded);
     }, []);
 
     // ================================

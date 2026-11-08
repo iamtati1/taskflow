@@ -16,11 +16,12 @@ import {
 import Card from "../components/ui/Card";
 import LatestTasks from "../components/dashboard/LatestTasks";
 import useTasks from "../hooks/useTasks";
+import TasksLoadState from "../components/tasks/TasksLoadState";
 import { formatDueDate, isOverdue, toDateKey } from "../utils/dates";
 
 function Dashboard() {
     const navigate = useNavigate();
-    const { tasks = [] } = useTasks();
+    const { tasks = [], status, error, refreshTasks } = useTasks();
 
     const { aiSettings, quickSettings } = useUISettings();
 
@@ -107,6 +108,10 @@ function Dashboard() {
             label: "Momentum",
         },
     ];
+
+    if (status === "loading" || error) {
+        return <TasksLoadState status={status} error={error} onRetry={refreshTasks} />;
+    }
 
     return (
         <motion.section

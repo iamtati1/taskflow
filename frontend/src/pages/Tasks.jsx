@@ -3,6 +3,7 @@ import { useState, useMemo, useRef } from "react";
 import TaskCalendar from "../components/calendar/TaskCalendar";
 import TaskList from "../components/tasks/TaskList";
 import AddTaskForm from "../components/tasks/AddTaskForm";
+import TasksLoadState from "../components/tasks/TasksLoadState";
 import useTasks from "../hooks/useTasks";
 import { useNotifications } from "../context/NotificationContext";
 
@@ -168,27 +169,8 @@ function Tasks() {
     // ===============================
     // LOADING / ERROR STATES
     // ===============================
-    if (isLoading) {
-        return (
-            <div className="p-6 text-white/60">
-                Loading tasks...
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div role="alert" className="space-y-4 p-6">
-                <p className="text-red-300">Couldn&apos;t load your tasks: {error}</p>
-                <button
-                    type="button"
-                    onClick={() => refreshTasks()}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-white hover:bg-white/10"
-                >
-                    Try again
-                </button>
-            </div>
-        );
+    if (isLoading || error) {
+        return <TasksLoadState status={status} error={error} onRetry={refreshTasks} />;
     }
 
     return (
