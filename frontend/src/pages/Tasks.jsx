@@ -36,13 +36,12 @@ function Tasks() {
         notice,
         dismissNotice,
         refreshTasks,
-        selectedTaskId,
-        onSelect,
         addTask,
         editTask,
         toggleTask,
         removeTask,
         reorderTasks,
+        activeActions,
     } = useTasks();
 
     // Success is confirmed with a toast; failures keep their inline errors,
@@ -104,6 +103,8 @@ function Tasks() {
         const task = tasks.find((t) => t.task_id === id);
         const result = await removeTask(id);
         if (result?.success && task) {
+            // Don't leave the editor open on a task that no longer exists
+            if (editingTask?.task_id === id) closeModal();
             addNotification(`Deleted ${quoted(task.title)}`, "success");
         }
         return result;
@@ -262,10 +263,10 @@ function Tasks() {
                 <Card className="xl:col-span-2">
                     <TaskList
                         tasks={tasks}
-                        selectedTaskId={selectedTaskId}
+                        editingTaskId={editingTask?.task_id}
+                        activeActions={activeActions}
                         onDelete={handleDelete}
                         onToggle={handleToggle}
-                        onSelect={onSelect}
                         onEdit={handleEdit}
                         reorderTasks={reorderTasks}
                     />

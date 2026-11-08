@@ -44,10 +44,10 @@ function TaskList({
     tasks = [],
     onDelete,
     onToggle,
-    onSelect,
     onEdit,
-    selectedTaskId,
-    reorderTasks, // ⭐ REQUIRED
+    editingTaskId, // highlighted while it is open in the editor
+    activeActions = {}, // task_id -> the action being saved
+    reorderTasks,
 }) {
     // A press that starts on a control (Edit, Delete, the checkbox) must stay
     // a click: in a draggable card, moving a few pixels during the click
@@ -79,7 +79,9 @@ function TaskList({
     // =====================================================
     // DRAG HANDLERS
     // =====================================================
-    const handleDragStart = (e, index, type) => {
+    // Drags carry the task's id: a position within one section isn't a
+    // position in the full list
+    const handleDragStart = (e, taskId, type) => {
         if (pressedOnControl.current) {
             e.preventDefault();
             return;
@@ -87,21 +89,38 @@ function TaskList({
 
         e.dataTransfer.setData(
             "text/plain",
-            JSON.stringify({ index, type })
+            JSON.stringify({ taskId, type })
         );
     };
 
-    const handleDrop = (e, toIndex, type) => {
+    const handleDrop = (e, toId, type) => {
         e.preventDefault();
 
-        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-        const { index: fromIndex, type: fromType } = data;
+        // Anything dropped from outside TaskFlow (text, links) is ignored
+        let data;
+        try {
+            data = JSON.parse(e.dataTransfer.getData("text/plain"));
+        } catch {
+            return;
+        }
+        if (!data || data.taskId === undefined) return;
 
-        // prevent cross-section drag (for now)
-        if (fromType !== type) return;
+        // Tasks move within their own section only
+        if (data.type !== type) return;
 
-        reorderTasks(fromIndex, toIndex);
+        reorderTasks(data.taskId, toId);
     };
+
+    // Props shared by every card: clicking one opens it in the editor
+    const itemProps = (task) => ({
+        task,
+        onDelete,
+        onToggle,
+        onEdit,
+        onSelect: () => onEdit(task),
+        isSelected: editingTaskId === task.task_id,
+        isActiveActionId: activeActions[task.task_id] ? task.task_id : undefined,
+    });
 
     const allowDrop = (e) => e.preventDefault();
 
@@ -137,29 +156,20 @@ function TaskList({
                         count={active.length}
                         color="text-cyan-300"
                     >
-                        {active.map((task, index) => (
+                        {active.map((task) => (
                             <div
                                 key={task.task_id}
                                 draggable
                                 onPointerDown={rememberPressTarget}
                                 onDragStart={(e) =>
-                                    handleDragStart(e, index, "active")
+                                    handleDragStart(e, task.task_id, "active")
                                 }
                                 onDragOver={allowDrop}
                                 onDrop={(e) =>
-                                    handleDrop(e, index, "active")
+                                    handleDrop(e, task.task_id, "active")
                                 }
                             >
-                                <TaskItem
-                                    task={task}
-                                    onDelete={onDelete}
-                                    onToggle={onToggle}
-                                    onSelect={onSelect}
-                                    onEdit={onEdit}
-                                    isSelected={
-                                        selectedTaskId === task.task_id
-                                    }
-                                />
+                                <TaskItem {...itemProps(task)} />
                             </div>
                         ))}
                     </TaskSection>
@@ -175,34 +185,20 @@ function TaskList({
                             count={completed.length}
                             color="text-emerald-400"
                         >
-                            {completed.map((task, index) => (
+                            {completed.map((task) => (
                                 <div
                                     key={task.task_id}
                                     draggable
                                     onPointerDown={rememberPressTarget}
                                     onDragStart={(e) =>
-                                        handleDragStart(
-                                            e,
-                                            index,
-                                            "completed"
-                                        )
+                                        handleDragStart(e, task.task_id, "completed")
                                     }
                                     onDragOver={allowDrop}
                                     onDrop={(e) =>
-                                        handleDrop(e, index, "completed")
+                                        handleDrop(e, task.task_id, "completed")
                                     }
                                 >
-                                    <TaskItem
-                                        task={task}
-                                        onDelete={onDelete}
-                                        onToggle={onToggle}
-                                        onSelect={onSelect}
-                                        onEdit={onEdit}
-                                        isSelected={
-                                            selectedTaskId ===
-                                            task.task_id
-                                        }
-                                    />
+                                    <TaskItem {...itemProps(task)} />
                                 </div>
                             ))}
                         </TaskSection>

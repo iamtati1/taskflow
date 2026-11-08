@@ -37,20 +37,13 @@ function useTasks() {
     const [lastUpdated, setLastUpdated] = useState(null);
     const [loading, setLoading] = useState(true);
     // =====================================================
-    // SELECTION
-    // =====================================================
-    const [selectedTaskId, setSelectedTaskId] = useState(null);
-
-    const onSelect = useCallback((taskId) => {
-        setSelectedTaskId((prev) =>
-            prev === taskId ? null : taskId
-        );
-    }, []);
-
-    // =====================================================
     // ACTION TRACKING
     // =====================================================
     const [activeActions, setActiveActions] = useState({});
+
+    // Tasks whose completion is being saved. A ref, so a second click that
+    // lands before React re-renders is ignored too.
+    const togglingIds = useRef(new Set());
 
     const setAction = (taskId, action) => {
         setActiveActions((prev) => ({
@@ -181,6 +174,11 @@ function useTasks() {
             };
         }
 
+        if (togglingIds.current.has(taskId)) {
+            return { success: false, error: "Already saving" };
+        }
+        togglingIds.current.add(taskId);
+
         const is_complete = !task.is_complete;
 
         setAction(taskId, "toggle");
@@ -218,6 +216,7 @@ function useTasks() {
             };
 
         } finally {
+            togglingIds.current.delete(taskId);
             clearAction(taskId);
         }
     }, []);
@@ -342,20 +341,19 @@ function useTasks() {
     // =====================================================
     // DRAG + DROP
     // =====================================================
+    // Moves one task to another task's place. Takes ids, not positions: the
+    // list shows Active and Completed separately, so a position within one
+    // section isn't a position in the full list. (Order isn't saved.)
     const reorderTasks = useCallback(
-        (fromIndex, toIndex) => {
+        (fromId, toId) => {
             setTasks((prev) => {
+                const fromIndex = prev.findIndex((task) => task.task_id === fromId);
+                const toIndex = prev.findIndex((task) => task.task_id === toId);
+                if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return prev;
+
                 const copy = [...prev];
-
-                const [moved] =
-                    copy.splice(fromIndex, 1);
-
-                copy.splice(
-                    toIndex,
-                    0,
-                    moved
-                );
-
+                const [moved] = copy.splice(fromIndex, 1);
+                copy.splice(toIndex, 0, moved);
                 return copy;
             });
         },
@@ -413,9 +411,6 @@ function useTasks() {
         notice,
         dismissNotice,
         lastUpdated,
-
-        selectedTaskId,
-        onSelect,
 
         addTask,
         editTask,

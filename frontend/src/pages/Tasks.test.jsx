@@ -336,3 +336,99 @@ test("a very long title is shortened in the toast", async () => {
 
     await waitFor(() => expect(toasts().textContent).toMatch(/^Deleted "A{60}…"/));
 });
+
+// ---------- Task list: reordering, saving lock, clicking a card ----------
+
+// A drag carries data between dragstart and drop, like the browser's DataTransfer
+const dragData = () => {
+    const store = {};
+    return {
+        setData: (type, value) => { store[type] = value; },
+        getData: (type) => store[type] ?? "",
+    };
+};
+const cardFor = (title) => screen.getByText(title).closest("[draggable='true']");
+const titlesIn = (heading) =>
+    within(screen.getByRole("heading", { name: heading }).closest("section"))
+        .getAllByRole("heading", { level: 3 })
+        .map((h) => h.textContent)
+        .filter((text) => text !== heading); // the section's own title
+
+test("dragging an active task above another moves that task, even with a completed task between them", async () => {
+    taskApi.getTasks.mockResolvedValue({
+        success: true,
+        data: [
+            { task_id: 3, user_id: 1, title: "Charlie", is_complete: false, due_date: null },
+            { task_id: 2, user_id: 1, title: "Bravo", is_complete: true, due_date: null },
+            { task_id: 1, user_id: 1, title: "Alpha", is_complete: false, due_date: null },
+        ],
+        error: null,
+    });
+    renderTasks();
+    await screen.findByText("Alpha");
+    expect(titlesIn("Active")).toEqual(["Charlie", "Alpha"]);
+
+    const data = dragData();
+    fireEvent.pointerDown(screen.getByText("Alpha"));
+    fireEvent.dragStart(cardFor("Alpha"), { dataTransfer: data });
+    fireEvent.drop(cardFor("Charlie"), { dataTransfer: data });
+
+    expect(titlesIn("Active")).toEqual(["Alpha", "Charlie"]);
+    expect(titlesIn("Completed")).toEqual(["Bravo"]);
+});
+
+test("dropping something that isn't a task (e.g. text from another app) changes nothing", async () => {
+    renderTasks();
+    await screen.findByText("Buy milk");
+
+    fireEvent.drop(cardFor("Write report"), { dataTransfer: { getData: () => "just some text" } });
+
+    expect(titlesIn("Active")).toEqual(["Write report", "Buy milk"]);
+});
+
+test("while a completion is saving, the checkbox is locked and a second click sends nothing", async () => {
+    let finish;
+    taskApi.updateTask.mockImplementation(
+        (id, changes) => new Promise((resolve) => {
+            finish = () => resolve({ success: true, data: { ...serverTasks().find((t) => t.task_id === id), ...changes }, error: null });
+        })
+    );
+    renderTasks();
+    const card = (await screen.findByText("Buy milk")).closest("div.group");
+    const box = within(card).getByRole("button", { name: "Mark complete" });
+
+    fireEvent.click(box);
+    fireEvent.click(box); // before React re-renders
+
+    // The task moves to Completed at once; its new card is locked while saving
+    const savingCard = () => screen.getByText("Buy milk").closest("div.group");
+    await waitFor(() => expect(within(savingCard()).getAllByRole("button")[0].disabled).toBe(true));
+    expect(within(savingCard()).getByText("syncing")).toBeTruthy();
+    fireEvent.click(within(savingCard()).getAllByRole("button")[0]);
+
+    expect(taskApi.updateTask).toHaveBeenCalledTimes(1);
+    finish();
+    expect(await screen.findByRole("heading", { name: "Completed" })).toBeTruthy();
+});
+
+test("clicking a task card opens it in the editor", async () => {
+    renderTasks();
+    fireEvent.click(await screen.findByText("Write report"));
+
+    expect(await screen.findByRole("heading", { name: "Edit Task" })).toBeTruthy();
+    expect(screen.getByPlaceholderText("Task title...").value).toBe("Write report");
+});
+
+test("deleting the task that is open in the editor closes the editor", async () => {
+    taskApi.deleteTask.mockResolvedValue({ success: true, data: null, error: null });
+    renderTasks();
+    const card = (await screen.findByText("Write report")).closest("div.group");
+    fireEvent.click(within(card).getByRole("button", { name: "Edit" }));
+    await screen.findByRole("heading", { name: "Edit Task" });
+
+    fireEvent.click(within(card).getByRole("button", { name: "Delete" }));
+    fireEvent.click(within(card).getByRole("button", { name: "Yes, delete" }));
+
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "Edit Task" })).toBeNull());
+    expect(screen.queryByText("Write report")).toBeNull();
+});
