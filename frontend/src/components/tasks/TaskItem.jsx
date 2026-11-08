@@ -1,42 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 
 import DueChip from "./DueChip";
+import CheckMark from "../ui/CheckMark";
+import { dueStatus } from "../../utils/dates";
 
-// The round checkbox: an empty ring, or a filled accent disc whose tick
-// draws itself when the task is completed
-function CheckMark({ checked, saving }) {
-    if (saving) {
-        return <Loader2 size={18} className="animate-spin text-cyan-300" aria-hidden="true" />;
-    }
-
-    return (
-        <motion.span
-            aria-hidden="true"
-            initial={false}
-            animate={checked ? { scale: [1, 1.18, 1] } : { scale: 1 }}
-            transition={{ duration: 0.35 }}
-            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors duration-200
-                ${checked
-                    ? "border-emerald-400 bg-emerald-400"
-                    : "border-white/25 group-hover/check:border-cyan-300 group-hover/check:bg-cyan-400/10"}`}
-        >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
-                <motion.path
-                    d="M5 12.5l4.5 4.5L19 7.5"
-                    stroke={checked ? "#04140d" : "transparent"}
-                    strokeWidth={3.2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    initial={false}
-                    animate={{ pathLength: checked ? 1 : 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut", delay: checked ? 0.05 : 0 }}
-                />
-            </svg>
-        </motion.span>
-    );
-}
+// An open task that is overdue or due today carries a thin edge in its
+// status colour, so urgent cards stand out while scanning the list
+const EDGES = {
+    overdue: "before:bg-rose-400/80",
+    today: "before:bg-amber-300/80",
+};
 
 function TaskItem({
     task,
@@ -64,6 +39,7 @@ function TaskItem({
     const isUpdating = isActiveActionId === task.task_id;
     const isCompleted = task.is_complete;
     const isLocked = isUpdating;
+    const edge = !isCompleted && EDGES[dueStatus(task.due_date)?.kind];
 
     const handleSelect = () => {
         if (isLocked) return;
@@ -83,11 +59,14 @@ function TaskItem({
         <div
             onClick={handleSelect}
             className={`group relative flex items-start gap-3 rounded-2xl border p-4 transition-colors duration-200 cursor-pointer
-                ${isSelected
-                    ? "border-cyan-400/45 bg-cyan-400/[0.08] shadow-[0_0_0_1px_color-mix(in_oklab,var(--color-cyan-400)_25%,transparent)]"
-                    : isCompleted
-                        ? "border-white/[0.06] bg-white/[0.02] hover:border-white/15"
-                        : "border-white/[0.09] bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.055]"}
+                ${edge ? `before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:rounded-r-full ${edge}` : ""}
+                ${confirmingDelete
+                    ? "border-rose-400/35 bg-rose-500/[0.06]"
+                    : isSelected
+                        ? "border-cyan-400/45 bg-cyan-400/[0.08] shadow-[0_0_0_1px_color-mix(in_oklab,var(--color-cyan-400)_25%,transparent)]"
+                        : isCompleted
+                            ? "border-white/[0.06] bg-white/[0.02] hover:border-white/15"
+                            : "border-white/[0.09] bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.055]"}
                 ${isUpdating ? "ring-1 ring-cyan-400/30" : ""}`}
         >
             {/* CHECK (first control in the card) */}
@@ -96,9 +75,10 @@ function TaskItem({
                 onClick={handleToggle}
                 disabled={isLocked}
                 aria-label={isCompleted ? "Mark as not done" : "Mark complete"}
-                className="group/check -m-1.5 shrink-0 rounded-full p-1.5 disabled:opacity-60"
+                className="group/check -m-1.5 shrink-0 rounded-full p-1.5 disabled:opacity-60 touch:-m-2.5 touch:p-2.5"
             >
-                <CheckMark checked={isCompleted} saving={isUpdating} />
+                {/* The tick shows at once; "syncing" beside the date says it's saving */}
+                <CheckMark checked={isCompleted} />
             </button>
 
             {/* CONTENT */}
@@ -127,7 +107,7 @@ function TaskItem({
                             e.stopPropagation();
                             onEdit(task);
                         }}
-                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 transition-colors hover:bg-white/[0.06] hover:text-cyan-200"
+                        className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-white/[0.06] hover:text-cyan-200"
                     >
                         <Pencil size={12} aria-hidden="true" />
                         Edit
@@ -153,7 +133,7 @@ function TaskItem({
                                     setConfirmingDelete(false);
                                     onDelete(task.task_id);
                                 }}
-                                className="min-h-9 rounded-lg bg-rose-500/15 px-2.5 py-1 font-medium sm:min-h-0 text-rose-300 transition-colors hover:bg-rose-500/25"
+                                className="min-h-9 rounded-lg bg-rose-500/15 px-2.5 py-1 font-medium sm:min-h-0 touch:min-h-11 text-rose-300 transition-colors hover:bg-rose-500/25"
                             >
                                 Yes, delete
                             </button>
@@ -161,7 +141,7 @@ function TaskItem({
                                 ref={keepRef}
                                 type="button"
                                 onClick={() => setConfirmingDelete(false)}
-                                className="min-h-9 rounded-lg px-2.5 py-1 text-white/70 sm:min-h-0 transition-colors hover:bg-white/[0.06] hover:text-white"
+                                className="min-h-9 rounded-lg px-2.5 py-1 text-white/70 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-white/[0.06] hover:text-white"
                             >
                                 Keep
                             </button>
@@ -174,7 +154,7 @@ function TaskItem({
                                 e.stopPropagation();
                                 setConfirmingDelete(true);
                             }}
-                            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
+                            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/55 sm:min-h-0 touch:min-h-11 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
                         >
                             <Trash2 size={12} aria-hidden="true" />
                             Delete
@@ -184,10 +164,11 @@ function TaskItem({
                 </div>
             </div>
 
-            {/* DRAG HANDLE (a cue; the whole card is draggable, see TaskList) */}
+            {/* DRAG HANDLE (a cue; the whole card is draggable, see TaskList).
+                Shown only with a mouse: touch screens can't drag here. */}
             <div
                 aria-hidden="true"
-                className="hidden self-center text-white/25 transition-colors group-hover:text-white/55 sm:block cursor-grab active:cursor-grabbing"
+                className="hidden self-center rounded-md p-0.5 text-white/30 transition-colors group-hover:bg-white/[0.05] group-hover:text-white/70 [@media(hover:hover)]:block cursor-grab active:cursor-grabbing"
             >
                 <GripVertical size={16} />
             </div>

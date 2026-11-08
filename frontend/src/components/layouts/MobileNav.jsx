@@ -17,7 +17,7 @@ function MobileNav() {
                 z-30
                 border-t
                 border-white/[0.08]
-                bg-[#050816]/85
+                bg-base/85
                 backdrop-blur-xl
                 lg:hidden
             "
@@ -28,7 +28,7 @@ function MobileNav() {
                         <NavLink
                             to={to}
                             className={({ isActive }) =>
-                                `relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${isActive
+                                `relative flex flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors ${isActive
                                     ? "text-cyan-300"
                                     : "text-white/50 hover:text-white"
                                 }`

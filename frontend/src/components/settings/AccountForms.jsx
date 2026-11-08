@@ -12,7 +12,7 @@ function FormShell({ title, onSubmit, onCancel, saving, error, submitLabel, chil
             <p className="text-sm font-medium text-white">{title}</p>
             {children}
             {error && (
-                <p role="alert" className="text-sm text-red-300">
+                <p role="alert" className="text-sm text-rose-300">
                     {error}
                 </p>
             )}

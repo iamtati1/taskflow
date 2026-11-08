@@ -490,3 +490,76 @@ test("while tasks load it says so, instead of showing an empty list", () => {
     expect(screen.getByText("Loading tasks...")).toBeTruthy();
     expect(screen.queryByText(/Nothing on your plate yet/)).toBeNull();
 });
+
+// ---------- Stage 3: completion, drop feedback, arrivals ----------
+
+const echoUpdates = () =>
+    taskApi.updateTask.mockImplementation(async (id, changes) => ({
+        success: true,
+        data: { ...serverTasks().find((t) => t.task_id === id), ...changes },
+        error: null,
+    }));
+
+test("a completed task stays in Active, ticked, for a moment before it moves to Completed", async () => {
+    echoUpdates();
+    renderTasks();
+    const card = (await screen.findByText("Buy milk")).closest("div.group");
+    fireEvent.click(within(card).getByRole("button", { name: "Mark complete" }));
+
+    // Ticked at once, still in Active
+    expect(within(screen.getByText("Buy milk").closest("div.group")).getByRole("button", { name: "Mark as not done" })).toBeTruthy();
+    expect(titlesIn("Active")).toEqual(["Write report", "Buy milk"]);
+
+    // Then it moves
+    await waitFor(() => expect(titlesIn("Completed")).toEqual(["Buy milk"]));
+    expect(titlesIn("Active")).toEqual(["Write report"]);
+});
+
+test("the drop line shows where a dragged card will land, and only within its own section", async () => {
+    taskApi.getTasks.mockResolvedValue({
+        success: true,
+        data: [
+            { task_id: 3, user_id: 1, title: "Charlie", is_complete: false, due_date: null },
+            { task_id: 1, user_id: 1, title: "Alpha", is_complete: false, due_date: null },
+            { task_id: 2, user_id: 1, title: "Bravo", is_complete: true, due_date: null },
+        ],
+        error: null,
+    });
+    renderTasks();
+    await screen.findByText("Alpha");
+    const line = (title) => cardFor(title).querySelector("span.bg-cyan-400");
+
+    fireEvent.pointerDown(screen.getByText("Charlie"));
+    fireEvent.dragStart(cardFor("Charlie"), { dataTransfer: dragData() });
+
+    // Dragging Charlie down over Alpha: it will land below Alpha
+    fireEvent.dragOver(cardFor("Alpha"), { dataTransfer: { dropEffect: "move" } });
+    expect(line("Alpha").className).toMatch(/-bottom-/);
+
+    // A completed card doesn't accept an active one
+    fireEvent.dragOver(cardFor("Bravo"), { dataTransfer: { dropEffect: "move" } });
+    expect(line("Bravo")).toBeNull();
+
+    fireEvent.dragEnd(cardFor("Charlie"));
+    expect(line("Alpha")).toBeNull();
+});
+
+test("a task that has just been added glows briefly in the list", async () => {
+    taskApi.createTask.mockImplementation(async (fields) => ({
+        success: true,
+        data: { task_id: 9, user_id: 1, is_complete: false, due_date: null, ...fields },
+        error: null,
+    }));
+    renderTasks();
+    await screen.findByText("Buy milk");
+    const glow = (title) => cardFor(title).querySelector("span.ring-1");
+
+    expect(glow("Buy milk")).toBeNull(); // tasks already there don't glow
+
+    fireEvent.click(screen.getByRole("button", { name: "New Task" }));
+    fireEvent.change(await screen.findByLabelText("Title"), { target: { value: "Call the bank" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
+
+    await waitFor(() => expect(glow("Call the bank")).toBeTruthy());
+    expect(glow("Buy milk")).toBeNull();
+});

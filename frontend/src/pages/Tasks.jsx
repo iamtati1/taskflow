@@ -8,6 +8,7 @@ import TaskList from "../components/tasks/TaskList";
 import AddTaskForm from "../components/tasks/AddTaskForm";
 import TasksLoadState from "../components/tasks/TasksLoadState";
 import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
 import Dialog from "../components/ui/Dialog";
 import useTasks from "../hooks/useTasks";
 import { useNotifications } from "../context/NotificationContext";
@@ -181,17 +182,9 @@ function Tasks() {
                     </p>
                 </div>
 
-                <motion.button
-                    ref={newTaskButton}
-                    type="button"
-                    onClick={openNewTask}
-                    whileHover={{ y: -1 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_10px_30px_-10px_color-mix(in_oklab,var(--color-cyan-400)_70%,transparent)] transition-colors hover:bg-cyan-300"
-                >
-                    <Plus size={18} aria-hidden="true" />
+                <Button ref={newTaskButton} size="lg" leftIcon={Plus} onClick={openNewTask}>
                     New Task
-                </motion.button>
+                </Button>
             </motion.div>
 
             {/* ACTION ERRORS (the list stays visible) */}

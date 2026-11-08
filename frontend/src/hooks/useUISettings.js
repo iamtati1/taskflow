@@ -88,11 +88,26 @@ export function useUISettings() {
     // =====================================================
     // ACTIONS
     // =====================================================
+    // Switching themes crossfades the whole page where the browser supports
+    // view transitions (Chromium, Safari 18); instant elsewhere and for
+    // reduced motion. The attribute is set inside the transition so the new
+    // colours are what it captures.
     const setTheme = useCallback((theme) => {
-        setGlobalState((prev) => ({
-            ...prev,
-            theme,
-        }));
+        const apply = () => {
+            document.documentElement.setAttribute("data-theme", theme);
+            setGlobalState((prev) => ({
+                ...prev,
+                theme,
+            }));
+        };
+
+        const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+        const changing = document.documentElement.getAttribute("data-theme") !== theme;
+        if (changing && !reduceMotion && typeof document.startViewTransition === "function") {
+            document.startViewTransition(apply);
+        } else {
+            apply();
+        }
     }, []);
 
     const toggleAI = useCallback((key) => {

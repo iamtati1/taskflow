@@ -148,3 +148,16 @@ test("the theme picker is one tab stop and arrow keys change the theme", () => {
     expect(document.activeElement).toBe(violet);
     expect(document.documentElement.getAttribute("data-theme")).toBe("violet");
 });
+
+test("each theme's preview is drawn in that theme, whatever theme the page uses", () => {
+    renderSettings();
+
+    for (const name of ["Midnight", "Violet", "Emerald", "Sunset"]) {
+        const radio = screen.getByRole("radio", { name });
+        expect(radio.querySelector("[data-theme]").getAttribute("data-theme")).toBe(name.toLowerCase());
+    }
+    // The ring gradients don't collide: one id per preview, no colons
+    const ids = [...document.querySelectorAll("linearGradient")].map((g) => g.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.every((id) => /^[\w-]+$/.test(id))).toBe(true);
+});

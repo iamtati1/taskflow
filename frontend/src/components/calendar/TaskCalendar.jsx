@@ -124,7 +124,7 @@ function TaskCalendar({ tasks = [], onDateChange }) {
                 </div>
 
                 {/* LEGEND */}
-                <div className="flex flex-col gap-1 text-[11px] text-white/50">
+                <div className="flex flex-col gap-1 text-xs text-white/60">
                     {[
                         ["bg-cyan-400", "1–2"],
                         ["bg-amber-400", "3–4"],

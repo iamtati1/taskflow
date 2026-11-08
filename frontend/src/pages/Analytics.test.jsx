@@ -98,3 +98,30 @@ test("with no tasks it explains where the charts will come from", async () => {
     expect(await screen.findByText("No data yet")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Add a task" })).toBeTruthy();
 });
+
+test("the closing note states today's numbers, without claiming a trend", async () => {
+    taskApi.getTasks.mockResolvedValue({
+        success: true,
+        data: [task(1, inDays(-2)), task(2, inDays(3)), task(3, null, true), task(4, null, true)],
+        error: null,
+    });
+    renderPage();
+
+    expect(await screen.findByText("Start with what's overdue")).toBeTruthy();
+    expect(screen.getByText(/You've completed 2 of your 4 tasks\. 1 open task is past due/)).toBeTruthy();
+    expect(screen.queryByText(/consistent/i)).toBeNull();
+});
+
+test("the busiest of the next 7 days is named", async () => {
+    taskApi.getTasks.mockResolvedValue({
+        success: true,
+        data: [task(1, inDays(0)), task(2, inDays(2)), task(3, inDays(2)), task(4, inDays(2))],
+        error: null,
+    });
+    renderPage();
+
+    const day = new Date();
+    day.setDate(day.getDate() + 2);
+    const name = day.toLocaleDateString(undefined, { weekday: "long" });
+    expect(await screen.findByText(`Busiest: ${name} (3 tasks)`)).toBeTruthy();
+});

@@ -11,10 +11,10 @@ const ICONS = {
 };
 
 const ICON_COLORS = {
-    success: "text-cyan-300",
+    success: "text-emerald-300",
     info: "text-white/60",
     warning: "text-amber-300",
-    error: "text-red-300",
+    error: "text-rose-300",
 };
 
 // Shows the toasts from NotificationContext: above the mobile nav on small
@@ -33,7 +33,7 @@ function ToastViewport() {
                 pointer-events-none
                 fixed
                 inset-x-4
-                bottom-24
+                bottom-[calc(6rem+env(safe-area-inset-bottom))]
                 z-50
                 flex
                 flex-col
@@ -66,7 +66,7 @@ function ToastViewport() {
                                 rounded-2xl
                                 border
                                 border-white/10
-                                bg-[#050816]/95
+                                bg-raised/95
                                 px-4
                                 py-3
                                 text-sm

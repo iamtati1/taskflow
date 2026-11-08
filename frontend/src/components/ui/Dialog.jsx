@@ -6,7 +6,8 @@ import { EASE_OUT } from "../../utils/motion";
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
 
-// A modal dialog: a sheet from the bottom on phones, centred from sm up.
+// A modal dialog on the app's raised surface: a sheet from the bottom on
+// phones (with a grab handle, clear of the home indicator), centred from sm up.
 // Keeps Tab inside, closes on Escape, locks page scroll while open, and
 // returns focus to whatever opened it. The content decides what gets focus
 // first (the dialog itself if nothing claims it).
@@ -69,11 +70,16 @@ function Dialog({ open, onClose, labelledBy, children }) {
     return createPortal(
         <AnimatePresence>
             {open && (
-                // The key keeps the content mounted (not re-created) while it animates out
-                <div key="dialog" className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+                // The key keeps the content mounted (not re-created) while it
+                // animates out; once closing, it lets clicks through to the page
+                <motion.div
+                    key="dialog"
+                    exit={{ pointerEvents: "none" }}
+                    className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6"
+                >
                     <motion.div
                         aria-hidden="true"
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        className="absolute inset-0 bg-[#02030a]/60 backdrop-blur-[6px]"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -87,14 +93,15 @@ function Dialog({ open, onClose, labelledBy, children }) {
                         aria-labelledby={labelledBy}
                         tabIndex={-1}
                         onKeyDown={handleKeyDown}
-                        className="relative w-full max-h-[92vh] overflow-y-auto rounded-t-3xl outline-none sm:max-w-lg sm:rounded-3xl"
+                        className="relative w-full max-h-[92dvh] overscroll-contain overflow-y-auto rounded-t-3xl border border-white/10 bg-raised pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_30px_80px_-20px_rgba(0,0,0,0.85)] outline-none sm:max-w-lg sm:rounded-3xl sm:pb-0"
                         initial={{ opacity: 0, y: 32, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.32, ease: EASE_OUT } }}
                         exit={{ opacity: 0, y: 24, scale: 0.98, transition: { duration: 0.18 } }}
                     >
+                        <div aria-hidden="true" className="mx-auto mt-3 h-1.5 w-10 rounded-full bg-white/20 sm:hidden" />
                         {children}
                     </motion.div>
-                </div>
+                </motion.div>
             )}
         </AnimatePresence>,
         document.body

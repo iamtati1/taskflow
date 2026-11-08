@@ -20,9 +20,11 @@ export const rise = {
     show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE_OUT } },
 };
 
-// List items that enter, leave and move (tasks, toasts)
+// List items that enter, leave and move (tasks, toasts). A leaving item
+// stops taking clicks at once: it may still show a task's old state (or a
+// temporary id), so a click on it must not reach the server.
 export const listItem = {
     initial: { opacity: 0, y: 8, scale: 0.98 },
-    animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: EASE_OUT } },
-    exit: { opacity: 0, scale: 0.96, transition: { duration: 0.2 } },
+    animate: { opacity: 1, y: 0, scale: 1, pointerEvents: "auto", transition: { duration: 0.3, ease: EASE_OUT } },
+    exit: { opacity: 0, scale: 0.96, pointerEvents: "none", transition: { duration: 0.2 } },
 };
