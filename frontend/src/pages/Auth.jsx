@@ -27,7 +27,7 @@ function Card({ children, className = "" }) {
 
 function Auth() {
     const navigate = useNavigate();
-    const { signIn, register, error, user, loading } = useAuth();
+    const { signIn, register, error, clearError, user, loading } = useAuth();
 
     const [isRegistering, setIsRegistering] = useState(false);
     const [username, setUsername] = useState("");
@@ -42,6 +42,13 @@ function Auth() {
     if (!loading && user && status === "idle") {
         return <Navigate to="/tasks" replace />;
     }
+
+    // An error belongs to the attempt that caused it: editing or switching
+    // between sign-in and registration clears it
+    const clearMessages = () => {
+        clearError?.();
+        if (status === "error") setStatus("idle");
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -169,7 +176,10 @@ function Auth() {
 
                             <input
                                 value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                onChange={(e) => {
+                                    setUsername(e.target.value);
+                                    clearMessages();
+                                }}
                                 placeholder="Username"
                                 className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/[0.04] focus:border-cyan-400/40 outline-none"
                             />
@@ -178,7 +188,10 @@ function Auth() {
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        clearMessages();
+                                    }}
                                     placeholder="Password"
                                     className="w-full h-14 px-5 pr-14 rounded-2xl border border-white/10 bg-white/[0.04] focus:border-violet-400/40 outline-none"
                                 />
@@ -227,7 +240,10 @@ function Auth() {
 
                         {/* SWITCH */}
                         <button
-                            onClick={() => setIsRegistering(!isRegistering)}
+                            onClick={() => {
+                                setIsRegistering(!isRegistering);
+                                clearMessages();
+                            }}
                             className="mt-6 w-full text-sm text-white/40 hover:text-cyan-300"
                         >
                             {isRegistering

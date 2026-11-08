@@ -133,6 +133,7 @@ export function AuthProvider({ children }) {
                 authReady,
                 error,
 
+                clearError: () => setError(null),
                 signIn: handleLogin,
                 signOut: handleLogout,
                 logout: handleLogout,
