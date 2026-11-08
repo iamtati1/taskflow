@@ -10,6 +10,7 @@ import { toDateKey } from "../../utils/dates";
 function AddTaskForm({
     addTask,
     updateTask,
+    onCancel,
     initialData = null
 }) {
     const isEditMode = !!initialData;
@@ -43,7 +44,12 @@ function AddTaskForm({
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!title.trim() || isSubmitting) return;
+        if (isSubmitting) return;
+
+        if (!title.trim()) {
+            setSubmitError("Enter a title for the task.");
+            return;
+        }
 
         setIsSubmitting(true);
         setSuccess(false);
@@ -95,11 +101,20 @@ function AddTaskForm({
                 </div>
 
                 {/* FORM */}
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form
+                    onSubmit={handleSubmit}
+                    onKeyDown={(e) => {
+                        if (e.key === "Escape") onCancel?.();
+                    }}
+                    className="space-y-4"
+                >
 
                     <Input
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        onChange={(e) => {
+                            setTitle(e.target.value);
+                            setSubmitError(null);
+                        }}
                         placeholder="Task title..."
                         maxLength={200}
                     />
@@ -148,19 +163,32 @@ function AddTaskForm({
                             </AnimatePresence>
                         </div>
 
-                        {/* SUBMIT */}
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            disabled={isSubmitting}
-                        >
-                            <Sparkles size={14} className="inline mr-1" />
-                            {isSubmitting
-                                ? "Saving..."
-                                : isEditMode
-                                    ? "Update Task"
-                                    : "Add Task"}
-                        </Button>
+                        {/* CANCEL + SUBMIT */}
+                        <div className="flex items-center gap-2">
+                            {onCancel && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={onCancel}
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                disabled={isSubmitting}
+                            >
+                                <Sparkles size={14} className="inline mr-1" />
+                                {isSubmitting
+                                    ? "Saving..."
+                                    : isEditMode
+                                        ? "Update Task"
+                                        : "Add Task"}
+                            </Button>
+                        </div>
                     </div>
                 </form>
             </Card>

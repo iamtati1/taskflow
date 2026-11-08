@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 
 import TaskCalendar from "../components/calendar/TaskCalendar";
 import TaskList from "../components/tasks/TaskList";
@@ -134,6 +134,13 @@ function Tasks() {
         setIsModalOpen(true);
     };
 
+    // Closing without saving puts focus back where new tasks start
+    const newTaskButton = useRef(null);
+    const cancelForm = () => {
+        closeModal();
+        newTaskButton.current?.focus();
+    };
+
 
     // ===============================
     // STATS
@@ -206,6 +213,8 @@ function Tasks() {
                 </div>
 
                 <button
+                    ref={newTaskButton}
+                    type="button"
                     onClick={openNewTask}
                     className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-white transition hover:bg-cyan-400/15"
                 >
@@ -278,6 +287,7 @@ function Tasks() {
                 <AddTaskForm
                     addTask={handleCreate}
                     updateTask={handleUpdate}
+                    onCancel={cancelForm}
                     initialData={editingTask}
                 />
             )}

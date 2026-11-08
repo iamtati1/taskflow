@@ -432,3 +432,48 @@ test("deleting the task that is open in the editor closes the editor", async () 
     await waitFor(() => expect(screen.queryByRole("heading", { name: "Edit Task" })).toBeNull());
     expect(screen.queryByText("Write report")).toBeNull();
 });
+
+// ---------- Task form: cancelling and empty titles ----------
+
+test("Cancel closes the new-task form without saving and returns focus to New Task", async () => {
+    renderTasks();
+    await screen.findByText("Buy milk");
+    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    fireEvent.change(screen.getByPlaceholderText("Task title..."), { target: { value: "Never mind" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("heading", { name: "Create Task" })).toBeNull();
+    expect(taskApi.createTask).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "+ New Task" }));
+});
+
+test("Escape cancels an edit and leaves the task unchanged", async () => {
+    renderTasks();
+    const card = (await screen.findByText("Write report")).closest("div.group");
+    fireEvent.click(within(card).getByRole("button", { name: "Edit" }));
+    const input = await screen.findByPlaceholderText("Task title...");
+    fireEvent.change(input, { target: { value: "Changed my mind" } });
+
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    expect(screen.queryByRole("heading", { name: "Edit Task" })).toBeNull();
+    expect(taskApi.updateTask).not.toHaveBeenCalled();
+    expect(screen.getByText("Write report")).toBeTruthy();
+});
+
+test("submitting without a title explains why, and typing clears the message", async () => {
+    renderTasks();
+    await screen.findByText("Buy milk");
+    fireEvent.click(screen.getByRole("button", { name: "+ New Task" }));
+    const input = screen.getByPlaceholderText("Task title...");
+    fireEvent.change(input, { target: { value: "   " } });
+
+    fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
+
+    expect(screen.getByRole("alert").textContent).toBe("Enter a title for the task.");
+    expect(taskApi.createTask).not.toHaveBeenCalled();
+
+    fireEvent.change(input, { target: { value: "Real title" } });
+    expect(screen.queryByRole("alert")).toBeNull();
+});
