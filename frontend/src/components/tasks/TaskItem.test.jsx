@@ -34,9 +34,54 @@ test("Delete is a separate button and never triggers Edit", () => {
 
     expect(del.getAttribute("type")).toBe("button");
     fireEvent.click(del);
+    fireEvent.click(screen.getByRole("button", { name: "Yes, delete" }));
 
     expect(onDelete).toHaveBeenCalledWith(7);
     expect(onEdit).not.toHaveBeenCalled();
+});
+
+// ---------- Deleting asks first ----------
+
+test("Delete asks for confirmation instead of deleting, and focuses the safe choice", () => {
+    const { onDelete, onSelect } = renderItem();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
+    const confirm = screen.getByRole("group", { name: "Delete this task?" });
+    expect(confirm.textContent).toContain("Delete this task?");
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Keep" }));
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+});
+
+test("Yes, delete deletes the task once", () => {
+    const { onDelete, onSelect } = renderItem();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, delete" }));
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(onDelete).toHaveBeenCalledWith(7);
+    expect(onSelect).not.toHaveBeenCalled();
+});
+
+test("Keep cancels and puts focus back on Delete", () => {
+    const { onDelete, onSelect } = renderItem();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
+
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.queryByRole("group", { name: "Delete this task?" })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Delete" }));
+});
+
+test("Escape cancels the confirmation", () => {
+    const { onDelete } = renderItem();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Keep" }), { key: "Escape" });
+
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeTruthy();
 });
 
 test("Edit and Delete sit in the spaced actions row, not jammed together", () => {

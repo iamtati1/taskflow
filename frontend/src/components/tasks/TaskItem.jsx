@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { formatDueDate } from "../../utils/dates";
 
@@ -18,6 +19,18 @@ function TaskItem({
   isSelected = false,
   isActiveActionId,
 }) {
+  // Deleting is permanent, so Delete first asks (inline, focus on Keep)
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const deleteRef = useRef(null);
+  const keepRef = useRef(null);
+  const wasConfirming = useRef(false);
+
+  useEffect(() => {
+    if (confirmingDelete) keepRef.current?.focus();
+    else if (wasConfirming.current) deleteRef.current?.focus();
+    wasConfirming.current = confirmingDelete;
+  }, [confirmingDelete]);
+
   if (!task?.task_id) return null;
 
   // =====================================================
@@ -79,8 +92,10 @@ function TaskItem({
 
         {/* CHECK */}
         <button
+          type="button"
           onClick={handleToggle}
           disabled={isLocked}
+          aria-label={isCompleted ? "Mark as not done" : "Mark complete"}
           className="mt-1 shrink-0 transition-transform hover:scale-105 disabled:opacity-50"
         >
           {isUpdating ? (
@@ -117,17 +132,50 @@ function TaskItem({
               Edit
             </button>
 
-            {/* DELETE BUTTON */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(task.task_id);
-              }}
-              className="text-xs text-red-400 hover:text-red-300"
-            >
-              Delete
-            </button>
+            {/* DELETE BUTTON, then a confirmation in its place */}
+            {confirmingDelete ? (
+              <div
+                role="group"
+                aria-label="Delete this task?"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setConfirmingDelete(false);
+                }}
+                className="flex items-center gap-2 text-xs"
+              >
+                <span className="text-white/60">Delete this task?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmingDelete(false);
+                    onDelete(task.task_id);
+                  }}
+                  className="rounded-lg bg-red-500/15 px-2 py-0.5 text-red-300 hover:bg-red-500/25"
+                >
+                  Yes, delete
+                </button>
+                <button
+                  ref={keepRef}
+                  type="button"
+                  onClick={() => setConfirmingDelete(false)}
+                  className="rounded-lg px-2 py-0.5 text-white/70 hover:text-white"
+                >
+                  Keep
+                </button>
+              </div>
+            ) : (
+              <button
+                ref={deleteRef}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmingDelete(true);
+                }}
+                className="text-xs text-red-400 hover:text-red-300"
+              >
+                Delete
+              </button>
+            )}
           </div>
 
 

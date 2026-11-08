@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import MobileNav from "./MobileNav";
+import ToastViewport from "../notifications/ToastViewport";
 import { motion } from "framer-motion";
 import useUISettings from "../../hooks/useUISettings";
 
@@ -42,7 +43,7 @@ function AppLayout() {
     const themeClass = "bg-[#050816]";
 
     return (
-        <div className={`relative min-h-screen text-white overflow-hidden transition-colors duration-300 ${themeClass}`}>
+        <div className={`relative min-h-screen text-white overflow-x-clip transition-colors duration-300 ${themeClass}`}>
 
             {/* BACKGROUND SYSTEM */}
             <div className="fixed inset-0 pointer-events-none">
@@ -54,7 +55,7 @@ function AppLayout() {
             </div>
 
             {/* APP SHELL */}
-            <div className="relative min-h-screen text-white overflow-hidden flex">
+            <div className="relative min-h-screen text-white overflow-x-clip flex">
 
                 {/* SIDEBAR */}
                 <aside
@@ -95,6 +96,7 @@ function AppLayout() {
             </div>
 
             <MobileNav />
+            <ToastViewport />
         </div>
     );
 }

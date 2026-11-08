@@ -4,8 +4,13 @@ import TaskCalendar from "../components/calendar/TaskCalendar";
 import TaskList from "../components/tasks/TaskList";
 import AddTaskForm from "../components/tasks/AddTaskForm";
 import useTasks from "../hooks/useTasks";
+import { useNotifications } from "../context/NotificationContext";
 
 import { CheckCircle2, ListTodo } from "lucide-react";
+
+// A task title for a toast, shortened so the toast stays small
+const quoted = (title = "") =>
+    `"${title.length > 60 ? `${title.slice(0, 60)}…` : title}"`;
 
 // =====================================================
 // CARD
@@ -40,6 +45,10 @@ function Tasks() {
         reorderTasks,
     } = useTasks();
 
+    // Success is confirmed with a toast; failures keep their inline errors,
+    // which stay until dismissed
+    const { addNotification } = useNotifications();
+
     // ===============================
     // FIX: safe loading state
     // ===============================
@@ -51,7 +60,10 @@ function Tasks() {
     const handleCreate = async (data) => {
         const result = await addTask(data);
         // Keep the form open on failure so the error is visible and the text isn't lost
-        if (result?.success) closeModal();
+        if (result?.success) {
+            closeModal();
+            addNotification(`Added ${quoted(result.data?.title ?? data.title)}`, "success");
+        }
         return result;
     };
 
@@ -61,7 +73,39 @@ function Tasks() {
     const handleUpdate = async (id, data) => {
         const result = await editTask(id, data);
         // Keep the form open on failure so the error is visible and the edit isn't lost
-        if (result?.success) closeModal();
+        if (result?.success) {
+            closeModal();
+            addNotification(`Saved ${quoted(result.data?.title)}`, "success");
+        }
+        return result;
+    };
+
+    // ===============================
+    // COMPLETE / REOPEN
+    // ===============================
+    const handleToggle = async (id) => {
+        const task = tasks.find((t) => t.task_id === id);
+        const result = await toggleTask(id);
+        if (result?.success && task) {
+            addNotification(
+                task.is_complete
+                    ? `Moved ${quoted(task.title)} back to active`
+                    : `Completed ${quoted(task.title)}`,
+                "success"
+            );
+        }
+        return result;
+    };
+
+    // ===============================
+    // DELETE
+    // ===============================
+    const handleDelete = async (id) => {
+        const task = tasks.find((t) => t.task_id === id);
+        const result = await removeTask(id);
+        if (result?.success && task) {
+            addNotification(`Deleted ${quoted(task.title)}`, "success");
+        }
         return result;
     };
 
@@ -219,8 +263,8 @@ function Tasks() {
                     <TaskList
                         tasks={tasks}
                         selectedTaskId={selectedTaskId}
-                        onDelete={removeTask}
-                        onToggle={toggleTask}
+                        onDelete={handleDelete}
+                        onToggle={handleToggle}
                         onSelect={onSelect}
                         onEdit={handleEdit}
                         reorderTasks={reorderTasks}

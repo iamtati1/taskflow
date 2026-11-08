@@ -49,7 +49,9 @@ module.exports.getMe = async (req, res, next) => {
 
     const user = await userModel.find(user_id);
 
+    // The account was deleted: end the session so the cookie stops coming back
     if (!user) {
+      req.session = null;
       return res.status(401).json({
         error: "User not found"
       });

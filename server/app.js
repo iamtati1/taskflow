@@ -54,6 +54,16 @@ app.use(cookieSession({
   secure: isProduction(),
 }));
 
+// Signed-in requests re-send the session cookie (at most once a minute, when
+// this value changes), so the 24 hours count from the last activity rather
+// than from sign-in
+app.use((req, res, next) => {
+  if (req.session && req.session.user_id) {
+    req.session.lastActive = Math.floor(Date.now() / 60000);
+  }
+  next();
+});
+
 app.use(logRoutes);
 
 // ====================================
@@ -101,6 +111,11 @@ app.use('/api', (req, res) => {
 // Global Error Handler
 // ====================================
 const handleError = (err, req, res, next) => {
+  // A body that isn't valid JSON is the client's mistake, not a server error
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'The request body must be valid JSON.' });
+  }
+
   // Never let a submitted password appear in a log line
   const body = req.body || {};
   logError("SERVER ERROR:", err, [body.password, body.currentPassword, body.newPassword]);

@@ -9,6 +9,7 @@ const bcrypt = require("bcrypt");
 const COLUMNS = ["id", "username", "password_hash"];
 let rows;
 let queries;
+let failUpdates; // makes UPDATE queries throw, like a dropped connection
 
 const missingColumn = (name) => Object.assign(new Error(`column "${name}" does not exist`), { code: "42703" });
 
@@ -43,6 +44,13 @@ const fakePool = {
       rows.push(row);
       return { rows: [project(row, projection)] };
     }
+    m = sql.match(/^UPDATE users SET password_hash = \$1 WHERE id = \$2 AND password_hash = \$3$/i);
+    if (m) {
+      if (failUpdates) throw new Error("connection lost");
+      const row = rows.find((r) => r.id === params[1] && r.password_hash === params[2]);
+      if (row) row.password_hash = params[0];
+      return { rows: [], rowCount: row ? 1 : 0 };
+    }
     m = sql.match(/^SELECT (.+) FROM users WHERE LOWER\((\w+)\) = LOWER\(\$1\)$/i);
     if (m) {
       const projection = parseProjection(m[1]);
@@ -66,10 +74,12 @@ const userModel = require("./userModel");
 beforeEach(() => {
   rows = [];
   queries = [];
+  failUpdates = false;
+  process.env.BCRYPT_COST = "4";
 });
 
-const addExistingUser = async (username, password) => {
-  rows.push({ id: rows.length + 1, username, password_hash: await bcrypt.hash(password, 4) });
+const addExistingUser = async (username, password, cost = 4) => {
+  rows.push({ id: rows.length + 1, username, password_hash: await bcrypt.hash(password, cost) });
   return rows.length;
 };
 
@@ -127,4 +137,90 @@ test("no query references a user_id column on users (only the alias)", async () 
 
 test("the fake table rejects the old user_id column like Postgres (sanity check)", async () => {
   await assert.rejects(fakePool.query("SELECT user_id, username FROM users WHERE username = $1", ["x"]), { code: "42703" });
+});
+
+// ---------- Signing in with a different capitalisation or spaces ----------
+
+test("sign-in accepts another capitalisation and surrounding spaces, as registration does", async () => {
+  const id = await addExistingUser("Jordan", "correct-horse");
+  for (const typed of ["Jordan", "jordan", "JORDAN", "  Jordan ", "jordan\t"]) {
+    assert.deepStrictEqual(await userModel.validatePassword(typed, "correct-horse"), { user_id: id, username: "Jordan" }, JSON.stringify(typed));
+  }
+  assert.strictEqual(await userModel.validatePassword("jordan", "wrong"), null);
+});
+
+test("the password itself is not trimmed or case-folded", async () => {
+  await addExistingUser("pat", "Secret-Pass ");
+  assert.strictEqual(await userModel.validatePassword("pat", "Secret-Pass"), null);
+  assert.strictEqual(await userModel.validatePassword("pat", "secret-pass "), null);
+  assert.ok(await userModel.validatePassword("pat", "Secret-Pass "));
+});
+
+test("older accounts that differ only in capitalisation: the exact name signs in, an ambiguous one doesn't", async () => {
+  // Possible for accounts created before registration ignored capitalisation
+  const upper = await addExistingUser("Sam", "upper-pass");
+  const lower = await addExistingUser("sam", "lower-pass");
+
+  assert.deepStrictEqual(await userModel.validatePassword("Sam", "upper-pass"), { user_id: upper, username: "Sam" });
+  assert.deepStrictEqual(await userModel.validatePassword("sam", "lower-pass"), { user_id: lower, username: "sam" });
+  assert.strictEqual(await userModel.validatePassword("Sam", "lower-pass"), null, "never falls through to the other account");
+  assert.strictEqual(await userModel.validatePassword("SAM", "upper-pass"), null, "ambiguous: neither account");
+  assert.strictEqual(await userModel.validatePassword("SAM", "lower-pass"), null, "ambiguous: neither account");
+});
+
+test("an older account whose name has surrounding spaces still signs in with exactly that name", async () => {
+  const id = await addExistingUser("  spaced", "spaced-pass");
+  assert.deepStrictEqual(await userModel.validatePassword("  spaced", "spaced-pass"), { user_id: id, username: "  spaced" });
+});
+
+// ---------- Password hashing strength ----------
+
+test("passwordCost is 12 by default and honours a valid BCRYPT_COST", () => {
+  assert.strictEqual(userModel.passwordCost({}), 12);
+  assert.strictEqual(userModel.passwordCost({ BCRYPT_COST: "10" }), 10);
+  for (const bad of ["", "abc", "3", "16", "10.5"]) {
+    assert.strictEqual(userModel.passwordCost({ BCRYPT_COST: bad }), 12, bad);
+  }
+});
+
+test("new passwords are hashed at the configured cost", async () => {
+  process.env.BCRYPT_COST = "5";
+  await userModel.create("costly", "costly-pass");
+  assert.strictEqual(bcrypt.getRounds(rows[0].password_hash), 5);
+});
+
+test("a successful sign-in upgrades an older, weaker hash; the password keeps working", async () => {
+  await addExistingUser("legacy", "legacy-pass", 4);
+  process.env.BCRYPT_COST = "6";
+
+  assert.ok(await userModel.validatePassword("legacy", "legacy-pass"));
+  assert.strictEqual(bcrypt.getRounds(rows[0].password_hash), 6);
+  assert.ok(await userModel.validatePassword("legacy", "legacy-pass"));
+});
+
+test("a failed sign-in, or a hash that is already strong enough, is left alone", async () => {
+  await addExistingUser("weak", "weak-pass", 4);
+  await addExistingUser("strong", "strong-pass", 5);
+  process.env.BCRYPT_COST = "5";
+  const [weakHash, strongHash] = rows.map((r) => r.password_hash);
+
+  assert.strictEqual(await userModel.validatePassword("weak", "wrong-pass"), null);
+  assert.ok(await userModel.validatePassword("strong", "strong-pass"));
+
+  assert.deepStrictEqual(rows.map((r) => r.password_hash), [weakHash, strongHash]);
+  assert.ok(!queries.some((q) => /^UPDATE/i.test(q)));
+});
+
+test("if upgrading the hash fails, the sign-in still succeeds", async () => {
+  await addExistingUser("flaky", "flaky-pass", 4);
+  process.env.BCRYPT_COST = "6";
+  failUpdates = true;
+  const quiet = console.error;
+  console.error = () => {};
+  try {
+    assert.ok(await userModel.validatePassword("flaky", "flaky-pass"));
+  } finally {
+    console.error = quiet;
+  }
+  assert.strictEqual(bcrypt.getRounds(rows[0].password_hash), 4);
 });
