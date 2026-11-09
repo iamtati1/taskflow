@@ -25,6 +25,7 @@ const renderAt = (path) =>
                         <Route element={<AppLayout />}>
                             <Route path="/tasks" element={<h1>Tasks heading</h1>} />
                             <Route path="/analytics" element={<h1>Analytics heading</h1>} />
+                            <Route path="/calendar" element={<h1>Calendar heading</h1>} />
                         </Route>
                     </Routes>
                 </MemoryRouter>
@@ -38,6 +39,12 @@ test("the browser tab names the current page", async () => {
     renderAt("/analytics");
     await screen.findByText("Analytics heading");
     expect(document.title).toBe("Analytics · TaskFlow");
+});
+
+test("every page in the navigation names its tab, Calendar included", async () => {
+    renderAt("/calendar");
+    await screen.findByText("Calendar heading");
+    expect(document.title).toBe("Calendar · TaskFlow");
 });
 
 test("a skip link leads keyboard users straight to the page content", async () => {

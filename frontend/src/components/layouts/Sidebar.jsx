@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import {
     LayoutDashboard,
     ListChecks,
+    CalendarDays,
     BarChart3,
     Settings,
     LogOut,
@@ -24,6 +25,11 @@ export const links = [
         to: "/tasks",
         label: "Tasks",
         icon: ListChecks,
+    },
+    {
+        to: "/calendar",
+        label: "Calendar",
+        icon: CalendarDays,
     },
     {
         to: "/analytics",

@@ -149,8 +149,8 @@ test("task CRUD: create, update, toggle, and delete", async () => {
   const api = client();
   await api("POST", "/api/auth/register", { username: "crud", password: "crud-pass" });
 
-  // Extra fields the UI sends (priority, description) are accepted and ignored
-  const created = await api("POST", "/api/tasks", { title: "Write tests", priority: "high", description: "x", due_date: "2026-12-01" });
+  // Fields TaskFlow doesn't store (priority) are accepted and ignored
+  const created = await api("POST", "/api/tasks", { title: "Write tests", priority: "high", due_date: "2026-12-01" });
   assert.strictEqual(created.status, 201);
   assert.strictEqual(created.data.title, "Write tests");
   assert.strictEqual(created.data.is_complete, false);
@@ -257,11 +257,35 @@ test("edit: only the task with the given id changes", async () => {
   assert.deepStrictEqual(titles, { [ids[0]]: "One", [ids[1]]: "Two (edited)", [ids[2]]: "Three" });
 });
 
-test("edit: the form's extra fields (description, priority) are accepted and don't break the save", async () => {
+test("edit: fields TaskFlow doesn't store (priority) are accepted and don't break the save", async () => {
   const { api, ids } = await signedInWithTasks("editor3", ["Task"]);
-  const res = await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Task v2", description: "notes", priority: "high" });
+  const res = await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Task v2", priority: "high" });
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.title, "Task v2");
+});
+
+// This database is the production shape before db/schema.sql adds the
+// description and scheduled_time columns (see app.details.test.js for after)
+test("before the new columns exist: tasks still work, and a description or time is refused, not dropped", async () => {
+  const { api, ids } = await signedInWithTasks("premigration", ["Task"]);
+
+  const list = await api("GET", "/api/tasks");
+  assert.strictEqual(list.status, 200);
+  assert.ok(!("description" in list.data[0]), "no column, no field");
+
+  const withNotes = await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Task v2", description: "notes" });
+  assert.strictEqual(withNotes.status, 503);
+  assert.match(withNotes.data.error, /Descriptions can't be saved yet/);
+  assert.strictEqual((await api("GET", "/api/tasks")).data[0].title, "Task", "nothing in the refused edit was saved");
+
+  const created = await api("POST", "/api/tasks", { title: "Meet", due_date: "2026-12-01", scheduled_time: "09:30" });
+  assert.strictEqual(created.status, 503);
+  assert.match(created.data.error, /Times can't be saved yet/);
+
+  // Empty values have nothing to lose, so they don't block the rest
+  const empty = await api("PATCH", `/api/tasks/${ids[0]}`, { title: "Task v3", description: "", scheduled_time: null });
+  assert.strictEqual(empty.status, 200);
+  assert.strictEqual(empty.data.title, "Task v3");
 });
 
 test("edit: another user's task is rejected and left unchanged", async () => {

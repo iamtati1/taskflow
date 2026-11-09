@@ -17,7 +17,7 @@ test("the mobile navigation links to every page, including Settings (where Log O
     const nav = screen.getByRole("navigation", { name: "Main" });
     const hrefs = within(nav).getAllByRole("link").map((a) => a.getAttribute("href"));
 
-    expect(hrefs).toEqual(["/dashboard", "/tasks", "/analytics", "/settings"]);
+    expect(hrefs).toEqual(["/dashboard", "/tasks", "/calendar", "/analytics", "/settings"]);
 });
 
 test("it only shows below the sidebar breakpoint and marks the current page", () => {

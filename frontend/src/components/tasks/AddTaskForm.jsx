@@ -1,18 +1,18 @@
-import { useState, useEffect, useId, useRef } from "react";
+import { useState, useEffect, useId, useLayoutEffect, useRef } from "react";
 import { Sparkles, X } from "lucide-react";
 
 import Button from "../ui/Button";
 import Input from "../ui/Input";
-import Field, { describedBy, fieldClass } from "../ui/Field";
+import Field, { describedBy, fieldClass, textareaClass } from "../ui/Field";
 import PillGroup from "../ui/PillGroup";
-import { toDateKey } from "../../utils/dates";
+import { daysFrom, toDateKey } from "../../utils/dates";
+
+const DESCRIPTION_MAX = 2000;
+const rowFieldClass = fieldClass.replace("w-full ", "");
+// The description box grows with its text up to about ten lines, then scrolls
+const DESCRIPTION_MAX_HEIGHT = 260;
 
 // One-tap due dates, relative to today
-const daysFromToday = (days) => {
-    const date = new Date();
-    date.setDate(date.getDate() + days);
-    return toDateKey(date);
-};
 const QUICK_DATES = [
     { label: "Today", days: 0 },
     { label: "Tomorrow", days: 1 },
@@ -20,33 +20,57 @@ const QUICK_DATES = [
 ];
 
 // The task editor, shown in a Dialog (see Tasks). `titleId` labels the dialog.
+// `initialDate` ("YYYY-MM-DD") prefills a new task's due date, e.g. from the
+// calendar.
 function AddTaskForm({
     addTask,
     updateTask,
     onCancel,
     initialData = null,
+    initialDate = "",
     titleId,
 }) {
     const isEditMode = !!initialData;
     const fieldId = useId();
     const titleInputId = `${fieldId}-title`;
+    const descriptionId = `${fieldId}-description`;
     const dateInputId = `${fieldId}-date`;
+    const timeInputId = `${fieldId}-time`;
 
     // The task fields the database stores (completion is the checkbox)
     const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState(""); // "YYYY-MM-DD" or "" for none
+    const [scheduledTime, setScheduledTime] = useState(""); // "HH:MM" or "" for none
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
     const formRef = useRef(null);
+    const descriptionRef = useRef(null);
+
+    // Grow the description box to fit its text
+    useLayoutEffect(() => {
+        const box = descriptionRef.current;
+        if (!box) return;
+        box.style.height = "auto";
+        box.style.height = `${Math.min(box.scrollHeight + 2, DESCRIPTION_MAX_HEIGHT)}px`;
+    }, [description]);
+
+    // A time belongs to a date: removing the date removes the time
+    const changeDueDate = (value) => {
+        setDueDate(value);
+        if (!value) setScheduledTime("");
+    };
 
     // =========================
     // PREFILL FOR EDIT MODE
     // =========================
     useEffect(() => {
         setTitle(initialData?.title || "");
-        setDueDate(toDateKey(initialData?.due_date) || "");
+        setDescription(initialData?.description || "");
+        setDueDate(toDateKey(initialData?.due_date) || initialDate || "");
+        setScheduledTime(initialData?.scheduled_time || "");
         setSubmitError(null);
-    }, [initialData]);
+    }, [initialData, initialDate]);
 
     // =========================
     // FOCUS THE TITLE
@@ -71,7 +95,13 @@ function AddTaskForm({
 
         try {
             // An empty date field means "no due date" (null clears an existing one)
-            const fields = { title, due_date: dueDate || null };
+            // Empty description and time are sent as "none", so clearing them saves
+            const fields = {
+                title,
+                due_date: dueDate || null,
+                description: description.trim() ? description : null,
+                scheduled_time: dueDate && scheduledTime ? scheduledTime : null,
+            };
 
             const result = isEditMode
                 ? await updateTask(initialData.task_id, fields)
@@ -80,7 +110,9 @@ function AddTaskForm({
             if (result?.success) {
                 if (!isEditMode) {
                     setTitle("");
+                    setDescription("");
                     setDueDate("");
+                    setScheduledTime("");
                 }
             } else if (result) {
                 setSubmitError(result.error || "Couldn't save the task. Please try again.");
@@ -145,31 +177,69 @@ function AddTaskForm({
                 </Field>
 
                 <Field
+                    id={descriptionId}
+                    label="Description (optional)"
+                    hint={description.length > DESCRIPTION_MAX - 200
+                        ? `${description.length.toLocaleString()} / ${DESCRIPTION_MAX.toLocaleString()} characters`
+                        : null}
+                >
+                    <textarea
+                        id={descriptionId}
+                        ref={descriptionRef}
+                        value={description}
+                        onChange={(e) => {
+                            setDescription(e.target.value);
+                            setSubmitError(null);
+                        }}
+                        placeholder="Add more details about this task..."
+                        rows={3}
+                        maxLength={DESCRIPTION_MAX}
+                        aria-describedby={describedBy(descriptionId, description.length > DESCRIPTION_MAX - 200, null)}
+                        className={textareaClass}
+                    />
+                </Field>
+
+                <Field
                     id={dateInputId}
                     label="Due date (optional)"
                     action={dueDate && (
                         <button
                             type="button"
-                            onClick={() => setDueDate("")}
+                            onClick={() => changeDueDate("")}
                             className="rounded-lg px-2 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white touch:min-h-11 touch:px-3"
                         >
                             Clear date
                         </button>
                     )}
                 >
-                    <input
-                        id={dateInputId}
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                        className={fieldClass}
-                    />
+                    {/* The date is the deadline; a time is optional on top of it.
+                        They share a row, or stack on the narrowest phones so the
+                        date stays readable. (fieldClass is full width.) */}
+                    <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                        <input
+                            id={dateInputId}
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => changeDueDate(e.target.value)}
+                            className={`${rowFieldClass} min-w-0 flex-1`}
+                        />
+                        <input
+                            id={timeInputId}
+                            type="time"
+                            value={scheduledTime}
+                            onChange={(e) => setScheduledTime(e.target.value)}
+                            disabled={!dueDate}
+                            aria-label="Time (optional)"
+                            title={dueDate ? "Time (optional)" : "Choose a date to add a time"}
+                            className={`${rowFieldClass} w-full shrink-0 px-3 min-[400px]:w-[9.25rem] disabled:cursor-not-allowed disabled:opacity-40`}
+                        />
+                    </div>
 
                     <PillGroup
                         label="Quick due dates"
                         value={dueDate}
-                        onChange={setDueDate}
-                        options={QUICK_DATES.map(({ label, days }) => ({ label, value: daysFromToday(days) }))}
+                        onChange={changeDueDate}
+                        options={QUICK_DATES.map(({ label, days }) => ({ label, value: daysFrom(days) }))}
                     />
                 </Field>
 

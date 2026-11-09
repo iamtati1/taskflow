@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
-import Sidebar from "./Sidebar";
+import Sidebar, { links } from "./Sidebar";
 import Topbar from "./Topbar";
 import MobileNav from "./MobileNav";
 import ToastViewport from "../notifications/ToastViewport";
@@ -13,12 +13,8 @@ import { EASE_OUT } from "../../utils/motion";
 // =====================================================
 // ROUTE CONFIG
 // =====================================================
-const PAGE_TITLES = {
-    "/dashboard": "Dashboard",
-    "/tasks": "Tasks",
-    "/analytics": "Analytics",
-    "/settings": "Settings",
-};
+// The browser tab is named after the page, as the navigation names it
+const PAGE_TITLES = Object.fromEntries(links.map(({ to, label }) => [to, label]));
 
 function AppLayout() {
     const location = useLocation();

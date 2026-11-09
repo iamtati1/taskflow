@@ -1,30 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AlertCircle, Plus, X } from "lucide-react";
 
-import TaskCalendar from "../components/calendar/TaskCalendar";
+import CalendarWidget from "../components/calendar/CalendarWidget";
 import TaskList from "../components/tasks/TaskList";
-import AddTaskForm from "../components/tasks/AddTaskForm";
 import TasksLoadState from "../components/tasks/TasksLoadState";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
-import Dialog from "../components/ui/Dialog";
 import useTasks from "../hooks/useTasks";
+import useTaskSheet, { quoted } from "../hooks/useTaskSheet";
 import { useNotifications } from "../context/NotificationContext";
 import { dueStatus } from "../utils/dates";
 import { rise, stagger } from "../utils/motion";
 
-// A task title for a toast, shortened so the toast stays small
-const quoted = (title = "") =>
-    `"${title.length > 60 ? `${title.slice(0, 60)}…` : title}"`;
-
-const FORM_TITLE_ID = "task-form-title";
-
 function Tasks() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingTask, setEditingTask] = useState(null);
-
+    const taskState = useTasks();
     const {
         tasks,
         status,
@@ -32,62 +23,21 @@ function Tasks() {
         notice,
         dismissNotice,
         refreshTasks,
-        addTask,
-        editTask,
-        toggleTask,
         removeTask,
         reorderTasks,
         activeActions,
-    } = useTasks();
+    } = taskState;
 
     // Success is confirmed with a toast; failures keep their inline errors,
     // which stay until dismissed
     const { addNotification } = useNotifications();
 
+    // Task details and the editor, in a sheet over the page
+    const newTaskButton = useRef(null);
+    const { openTaskId, openDetails, openEditor, openNewTask, closeSheet, toggle, dialog } =
+        useTaskSheet(taskState, { newTaskButton });
+
     const isLoading = status === "loading";
-
-    // ===============================
-    // CREATE
-    // ===============================
-    const handleCreate = async (data) => {
-        const result = await addTask(data);
-        // Keep the form open on failure so the error is visible and the text isn't lost
-        if (result?.success) {
-            closeModal();
-            addNotification(`Added ${quoted(result.data?.title ?? data.title)}`, "success");
-        }
-        return result;
-    };
-
-    // ===============================
-    // UPDATE
-    // ===============================
-    const handleUpdate = async (id, data) => {
-        const result = await editTask(id, data);
-        // Keep the form open on failure so the error is visible and the edit isn't lost
-        if (result?.success) {
-            closeModal();
-            addNotification(`Saved ${quoted(result.data?.title)}`, "success");
-        }
-        return result;
-    };
-
-    // ===============================
-    // COMPLETE / REOPEN
-    // ===============================
-    const handleToggle = async (id) => {
-        const task = tasks.find((t) => t.task_id === id);
-        const result = await toggleTask(id);
-        if (result?.success && task) {
-            addNotification(
-                task.is_complete
-                    ? `Moved ${quoted(task.title)} back to active`
-                    : `Completed ${quoted(task.title)}`,
-                "success"
-            );
-        }
-        return result;
-    };
 
     // ===============================
     // DELETE
@@ -96,37 +46,11 @@ function Tasks() {
         const task = tasks.find((t) => t.task_id === id);
         const result = await removeTask(id);
         if (result?.success && task) {
-            // Don't leave the editor open on a task that no longer exists
-            if (editingTask?.task_id === id) closeModal();
+            // Don't leave a sheet open on a task that no longer exists
+            if (openTaskId === id) closeSheet();
             addNotification(`Deleted ${quoted(task.title)}`, "success");
         }
         return result;
-    };
-
-    // ===============================
-    // EDITOR
-    // ===============================
-    const handleEdit = (task) => {
-        setEditingTask(task);
-        setIsModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setEditingTask(null);
-    };
-
-    const openNewTask = () => {
-        setEditingTask(null);
-        setIsModalOpen(true);
-    };
-
-    // Closing without saving puts focus back where new tasks start (the
-    // dialog returns it to the opener instead when that was a button)
-    const newTaskButton = useRef(null);
-    const cancelForm = () => {
-        closeModal();
-        newTaskButton.current?.focus();
     };
 
     // The Dashboard's "New task" arrives here with { newTask: true }
@@ -182,7 +106,7 @@ function Tasks() {
                     </p>
                 </div>
 
-                <Button ref={newTaskButton} size="lg" leftIcon={Plus} onClick={openNewTask}>
+                <Button ref={newTaskButton} size="lg" leftIcon={Plus} onClick={() => openNewTask()}>
                     New Task
                 </Button>
             </motion.div>
@@ -216,34 +140,24 @@ function Tasks() {
                     <Card>
                         <TaskList
                             tasks={tasks}
-                            editingTaskId={isModalOpen ? editingTask?.task_id : undefined}
+                            editingTaskId={openTaskId}
                             activeActions={activeActions}
                             onDelete={handleDelete}
-                            onToggle={handleToggle}
-                            onEdit={handleEdit}
-                            onCreate={openNewTask}
+                            onToggle={toggle}
+                            onEdit={openEditor}
+                            onOpen={openDetails}
+                            onCreate={() => openNewTask()}
                             reorderTasks={reorderTasks}
                         />
                     </Card>
                 </motion.div>
 
                 <motion.div variants={rise}>
-                    <Card>
-                        <TaskCalendar tasks={tasks} />
-                    </Card>
+                    <CalendarWidget tasks={tasks} />
                 </motion.div>
             </div>
 
-            {/* EDITOR */}
-            <Dialog open={isModalOpen} onClose={cancelForm} labelledBy={FORM_TITLE_ID}>
-                <AddTaskForm
-                    addTask={handleCreate}
-                    updateTask={handleUpdate}
-                    onCancel={cancelForm}
-                    initialData={editingTask}
-                    titleId={FORM_TITLE_ID}
-                />
-            </Dialog>
+            {dialog}
         </motion.div>
     );
 }

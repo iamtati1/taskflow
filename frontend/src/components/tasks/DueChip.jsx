@@ -1,6 +1,6 @@
 import { AlertCircle, CalendarClock, CalendarDays } from "lucide-react";
 
-import { dueStatus, formatDueDate } from "../../utils/dates";
+import { dueStatus, formatDueDate, formatTime } from "../../utils/dates";
 
 const STYLES = {
     overdue: "border-rose-400/25 bg-rose-500/10 text-rose-300",
@@ -13,7 +13,8 @@ const ICONS = { overdue: AlertCircle, today: CalendarClock, tomorrow: CalendarCl
 
 // A task's due date as a small coloured label: rose when overdue, amber
 // when due today. Finished tasks show the date plainly (nothing is urgent).
-function DueChip({ dueDate, done = false }) {
+// An optional scheduled time ("14:30") is added after the date.
+function DueChip({ dueDate, time = null, done = false }) {
     const status = dueStatus(dueDate);
     if (!status) return null;
 
@@ -22,11 +23,13 @@ function DueChip({ dueDate, done = false }) {
         ? `Due ${formatDueDate(dueDate, { month: "short", day: "numeric" })}`
         : status.text;
     const Icon = ICONS[kind];
+    const at = formatTime(time);
 
     return (
         <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STYLES[kind]}`}>
             <Icon size={12} aria-hidden="true" />
             {text}
+            {at && <span className="tabular">· {at}</span>}
         </span>
     );
 }

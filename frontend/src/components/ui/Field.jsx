@@ -5,6 +5,10 @@ import { AnimatePresence, motion } from "framer-motion";
 export const fieldClass =
     "h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-white outline-none transition-[border-color,background-color,box-shadow] duration-200 placeholder-white/30 [color-scheme:dark] hover:border-white/20 focus:border-cyan-400/60 focus:bg-black/40 focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-cyan-400)_14%,transparent)] aria-[invalid=true]:border-rose-400/60";
 
+// The same look for a multi-line text box: no fixed height (it grows with
+// its text, see AddTaskForm), comfortable line spacing, no resize handle
+export const textareaClass = fieldClass.replace("h-12 ", "") + " block min-h-24 resize-none py-3 leading-relaxed";
+
 // A labelled control: label above, then the control (children), then an
 // optional hint and an announced error. Give the control id={id}, and
 // aria-describedby={describedBy(id, hint, error)} to link the text.

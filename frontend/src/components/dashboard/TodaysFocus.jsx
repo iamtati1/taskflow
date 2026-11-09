@@ -91,7 +91,7 @@ function TodaysFocus({ task, total, focusMode = false, onComplete, onNewTask }) 
                                 </motion.p>
                             ) : (
                                 <>
-                                    <DueChip dueDate={shown.due_date} />
+                                    <DueChip dueDate={shown.due_date} time={shown.scheduled_time} />
                                     <p className="text-sm text-white/60">
                                         {focusNote(shown, focusMode)}
                                     </p>

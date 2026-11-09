@@ -1,6 +1,6 @@
 // Task fields the database stores; anything else in an update is not saved,
 // so it is never shown as changed.
-export const STORED_TASK_FIELDS = ["title", "is_complete", "due_date"];
+export const STORED_TASK_FIELDS = ["title", "is_complete", "due_date", "description", "scheduled_time"];
 
 // The subset of an edit that the server will save
 export const storedFields = (updates = {}) =>

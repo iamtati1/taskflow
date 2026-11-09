@@ -90,9 +90,19 @@ function TaskItem({
                     {task.title}
                 </h3>
 
+                {/* A short preview; the full text is in the task's details */}
+                {task.description && (
+                    <p
+                        className={`mt-1 line-clamp-2 whitespace-pre-line break-words text-sm leading-snug
+                            ${isCompleted ? "text-white/50" : "text-white/60"}`}
+                    >
+                        {task.description}
+                    </p>
+                )}
+
                 {/* META: due date and status, actions on the right */}
                 <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                    <DueChip dueDate={task.due_date} done={isCompleted} />
+                    <DueChip dueDate={task.due_date} time={task.scheduled_time} done={isCompleted} />
                     {isUpdating && (
                         <span className="animate-pulse text-xs text-cyan-300">
                             syncing
