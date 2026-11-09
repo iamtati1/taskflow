@@ -20,6 +20,7 @@ import TodaysFocus from "../components/dashboard/TodaysFocus";
 import WorkflowInsight from "../components/dashboard/WorkflowInsight";
 import UpcomingTasks from "../components/dashboard/UpcomingTasks";
 import LatestTasks from "../components/dashboard/LatestTasks";
+import CalendarWidget from "../components/calendar/CalendarWidget";
 import TasksLoadState from "../components/tasks/TasksLoadState";
 import { dueStatus, toDateKey } from "../utils/dates";
 import { rise, stagger } from "../utils/motion";
@@ -157,7 +158,7 @@ function Dashboard() {
             )}
 
             {/* =====================================================
-                FOCUS + INSIGHT, then UPCOMING + LATEST
+                FOCUS + INSIGHT, UPCOMING + CALENDAR, then LATEST
                 Rows, so each pair lines up; one column on phones.
             ===================================================== */}
             <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
@@ -185,6 +186,10 @@ function Dashboard() {
                         </motion.div>
 
                         <motion.div variants={rise}>
+                            <CalendarWidget tasks={tasks} />
+                        </motion.div>
+
+                        <motion.div variants={rise} className="lg:col-span-2">
                             <LatestTasks tasks={tasks} />
                         </motion.div>
                     </>

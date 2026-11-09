@@ -5,6 +5,7 @@ import AppLayout from "./components/layouts/AppLayout";
 
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
+import Calendar from "./pages/Calendar";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -77,6 +78,7 @@ function App() {
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
