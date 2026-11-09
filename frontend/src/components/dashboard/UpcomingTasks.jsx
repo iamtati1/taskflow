@@ -44,7 +44,7 @@ function UpcomingTasks({ tasks, limit = 5 }) {
                                 <p className="min-w-0 break-words font-medium text-white">
                                     {task.title}
                                 </p>
-                                <DueChip dueDate={task.due_date} />
+                                <DueChip dueDate={task.due_date} time={task.scheduled_time} />
                             </motion.li>
                         ))}
                     </AnimatePresence>

@@ -10,8 +10,8 @@ const tasks = [
 
 test("storedFields keeps only what the server saves", () => {
     assert.deepStrictEqual(
-        storedFields({ title: "New", description: "notes", priority: "high", is_complete: undefined }),
-        { title: "New" }
+        storedFields({ title: "New", description: "notes", scheduled_time: null, priority: "high", is_complete: undefined }),
+        { title: "New", description: "notes", scheduled_time: null }
     );
     assert.deepStrictEqual(storedFields(), {});
 });

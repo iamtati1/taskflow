@@ -5,6 +5,7 @@ const USERNAME_PATTERN = /^[A-Za-z0-9_.-]{3,30}$/;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX_BYTES = 72; // bcrypt ignores anything past 72 bytes
 const TITLE_MAX = 200;
+const DESCRIPTION_MAX = 2000;
 
 // New usernames (registration and renames). Existing accounts can still log
 // in with older usernames that don't meet these rules.
@@ -53,4 +54,38 @@ const dueDateError = (value) => {
   return "Due dates must be a real date in YYYY-MM-DD format.";
 };
 
-module.exports = { usernameError, passwordError, registrationError, titleError, dueDateError, TITLE_MAX };
+// A description is optional free text: a string (may be empty) or null
+const descriptionError = (value) => {
+  if (value === null) return null;
+  if (typeof value !== "string") return "Descriptions must be text.";
+  if (value.length > DESCRIPTION_MAX) return `Descriptions can be at most ${DESCRIPTION_MAX} characters.`;
+  return null;
+};
+
+// Empty or whitespace-only descriptions are stored as none (null); Windows
+// line endings become plain newlines so line breaks read the same everywhere
+const normalizeDescription = (value) => {
+  if (value === null || value === undefined) return value;
+  const text = value.replace(/\r\n?/g, "\n");
+  return text.trim() ? text : null;
+};
+
+// A scheduled time is a 24-hour clock time ("HH:MM") or null (no time)
+const scheduledTimeError = (value) => {
+  if (value === null) return null;
+  if (typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
+  return "Times must be a valid time in HH:MM (24-hour) format.";
+};
+
+module.exports = {
+  usernameError,
+  passwordError,
+  registrationError,
+  titleError,
+  dueDateError,
+  descriptionError,
+  normalizeDescription,
+  scheduledTimeError,
+  TITLE_MAX,
+  DESCRIPTION_MAX,
+};

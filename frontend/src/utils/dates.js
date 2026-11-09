@@ -46,3 +46,16 @@ export const dueStatus = (value, today = new Date()) => {
     if (key === toDateKey(tomorrow)) return { kind: "tomorrow", text: "Due tomorrow" };
     return { kind: "later", text: `Due ${day}` };
 };
+
+// A scheduled time ("14:30", 24-hour, no time zone) as the user's locale
+// writes clock times ("2:30 PM"), or "" for none
+export const formatTime = (value) => {
+    const match = /^(\d{2}):(\d{2})/.exec(value ?? "");
+    if (!match) return "";
+    return new Date(2000, 0, 1, Number(match[1]), Number(match[2]))
+        .toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+};
+
+// A day `days` after today (or another date), as "YYYY-MM-DD"
+export const daysFrom = (days, from = new Date()) =>
+    toDateKey(new Date(from.getFullYear(), from.getMonth(), from.getDate() + days));

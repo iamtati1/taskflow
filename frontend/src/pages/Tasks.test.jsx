@@ -76,7 +76,7 @@ test("saving an edit sends the right task id and shows the saved title", async (
     fireEvent.click(screen.getByRole("button", { name: /Update Task/ }));
 
     await waitFor(() => expect(screen.queryByRole("heading", { name: "Edit Task" })).toBeNull());
-    expect(taskApi.updateTask).toHaveBeenCalledWith(2, { title: "Write final report", due_date: null });
+    expect(taskApi.updateTask).toHaveBeenCalledWith(2, { title: "Write final report", due_date: null, description: null, scheduled_time: null });
     expect(screen.getByText("Write final report")).toBeTruthy();
     expect(screen.queryByText("Write report")).toBeNull();
     expect(screen.getByText("Buy milk")).toBeTruthy();
@@ -219,7 +219,7 @@ test("creating a task with a due date sends it as YYYY-MM-DD and keeps the task 
     fireEvent.change(screen.getByLabelText("Due date (optional)"), { target: { value: "2027-04-15" } });
     fireEvent.click(screen.getByRole("button", { name: /Add Task/ }));
 
-    await waitFor(() => expect(taskApi.createTask).toHaveBeenCalledWith({ title: "File taxes", due_date: "2027-04-15" }));
+    await waitFor(() => expect(taskApi.createTask).toHaveBeenCalledWith({ title: "File taxes", due_date: "2027-04-15", description: null, scheduled_time: null }));
     // A task due on another day is still listed (the calendar shows the day view)
     expect(await screen.findByText("File taxes")).toBeTruthy();
     expect(screen.getByText("Due Apr 15")).toBeTruthy();
@@ -243,7 +243,7 @@ test("editing a dated task prefills the date, and Clear date removes it", async 
     fireEvent.click(screen.getByRole("button", { name: "Clear date" }));
     fireEvent.click(screen.getByRole("button", { name: /Update Task/ }));
 
-    await waitFor(() => expect(taskApi.updateTask).toHaveBeenCalledWith(5, { title: "Dentist", due_date: null }));
+    await waitFor(() => expect(taskApi.updateTask).toHaveBeenCalledWith(5, { title: "Dentist", due_date: null, description: null, scheduled_time: null }));
 });
 
 // ---------- Toasts for task actions ----------
@@ -414,10 +414,15 @@ test("while a completion is saving, the checkbox is locked and a second click se
     expect(await screen.findByRole("heading", { name: "Completed" })).toBeTruthy();
 });
 
-test("clicking a task card opens it in the editor", async () => {
+test("clicking a task card opens its details, and Edit task opens the editor", async () => {
     renderTasks();
     fireEvent.click(await screen.findByText("Write report"));
 
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("heading", { level: 2, name: "Write report" })).toBeTruthy();
+    expect(within(dialog).getByText("No due date")).toBeTruthy();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Edit task" }));
     expect(await screen.findByRole("heading", { name: "Edit Task" })).toBeTruthy();
     expect(screen.getByPlaceholderText("Task title...").value).toBe("Write report");
 });

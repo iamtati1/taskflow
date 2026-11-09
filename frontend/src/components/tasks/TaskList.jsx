@@ -101,8 +101,9 @@ function TaskList({
     onDelete,
     onToggle,
     onEdit,
+    onOpen, // a click on the card (defaults to onEdit)
     onCreate,
-    editingTaskId, // highlighted while it is open in the editor
+    editingTaskId, // highlighted while it is open in details or the editor
     activeActions = {}, // task_id -> the action being saved
     reorderTasks,
 }) {
@@ -293,7 +294,7 @@ function TaskList({
                     onDelete={onDelete}
                     onToggle={handleToggle}
                     onEdit={onEdit}
-                    onSelect={() => onEdit(task)}
+                    onSelect={() => (onOpen ?? onEdit)(task)}
                     isSelected={editingTaskId === task.task_id}
                     isActiveActionId={activeActions[task.task_id] ? task.task_id : undefined}
                 />
